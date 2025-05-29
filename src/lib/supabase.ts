@@ -1,7 +1,11 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = 'https://nskebkbwvkthjswxjejo.supabase.co'
-const supabaseKey = '[YOUR-PASSWORD]' // Bu kısmı kendi Supabase projenizin anon key'i ile değiştirmelisiniz
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+
+if (!supabaseUrl || !supabaseKey) {
+  throw new Error('Supabase URL ve API Key tanımlanmamış!')
+}
 
 export const supabase = createClient(supabaseUrl, supabaseKey)
 
