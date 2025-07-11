@@ -163,6 +163,15 @@ const KullaniciYonetimPaneli: React.FC = () => {
 
   const filteredDepartmanlar = departmanlar.filter(d => d.kurum_id === formData.kurum_id);
   const filteredBirimler = birimler.filter(b => b.kurum_id === formData.kurum_id);
+  
+  // Debug - filtreleme kontrolü
+  console.log('🔍 Debug filtreleme:');
+  console.log('formData.kurum_id:', formData.kurum_id);
+  console.log('formData.kurum_id type:', typeof formData.kurum_id);
+  console.log('tüm departmanlar:', departmanlar);
+  console.log('departmanlar kurum_id örnekleri:', departmanlar.map(d => ({id: d.id, kurum_id: d.kurum_id, type: typeof d.kurum_id})));
+  console.log('filtrelenmiş departmanlar:', filteredDepartmanlar);
+  console.log('filtrelenmiş birimler:', filteredBirimler);
 
   // Handlers
   const handleFormSubmit = (e: React.FormEvent) => {
@@ -418,7 +427,10 @@ const KullaniciYonetimPaneli: React.FC = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">Kurum</label>
                   <select
                     value={formData.kurum_id}
-                    onChange={(e) => setFormData(prev => ({ ...prev, kurum_id: e.target.value, departman_id: '', birim_id: '' }))}
+                    onChange={(e) => {
+                      console.log('🎯 Kurum seçildi:', e.target.value);
+                      setFormData(prev => ({ ...prev, kurum_id: e.target.value, departman_id: '', birim_id: '' }));
+                    }}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors hover:border-blue-300"
                     required
                   >
