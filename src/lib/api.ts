@@ -36,18 +36,18 @@ const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
   }
 };
 
-// Kurumları getir
+// Kurumları getir - YENİ DOKÜMANTASYON
 export const getKurumlar = async () => {
   try {
-    const response = await apiRequest(`/api/v1/data/table/${API_CONFIG.tableId}`);
-    return response.data || [];
+    const response = await apiRequest(`/api/v1/data/table/${API_CONFIG.tableId}?page=1&limit=100&sort=id&order=DESC`);
+    return response.data?.rows || [];
   } catch (error) {
     console.error('Kurumlar getirilemedi:', error);
     throw error;
   }
 };
 
-// Kurum ekle
+// Kurum ekle - YENİ DOKÜMANTASYON  
 export const addKurum = async (kurumData: {
   kurum_adi: string;
   kurum_turu?: string;
@@ -57,21 +57,16 @@ export const addKurum = async (kurumData: {
   aktif_mi?: boolean;
 }) => {
   try {
-    // Veri formatını düzenle
-    const apiData = {
-      data: {
+    const response = await apiRequest(`/api/v1/data/table/${API_CONFIG.tableId}/rows`, {
+      method: 'POST',
+      body: JSON.stringify({
         kurum_adi: kurumData.kurum_adi,
         kurum_turu: kurumData.kurum_turu || '',
         adres: kurumData.adres || '',
         il: kurumData.il || '',
         ilce: kurumData.ilce || '',
         aktif_mi: kurumData.aktif_mi !== false // default true
-      }
-    };
-
-    const response = await apiRequest(`/api/v1/data/table/${API_CONFIG.tableId}/rows`, {
-      method: 'POST',
-      body: JSON.stringify(apiData),
+      }),
     });
     return response;
   } catch (error) {
@@ -80,7 +75,7 @@ export const addKurum = async (kurumData: {
   }
 };
 
-// Kurum güncelle
+// Kurum güncelle - YENİ DOKÜMANTASYON
 export const updateKurum = async (kurumId: string, kurumData: {
   kurum_adi?: string;
   kurum_turu?: string;
@@ -90,13 +85,9 @@ export const updateKurum = async (kurumId: string, kurumData: {
   aktif_mi?: boolean;
 }) => {
   try {
-    const apiData = {
-      data: kurumData
-    };
-
     const response = await apiRequest(`/api/v1/data/table/${API_CONFIG.tableId}/rows/${kurumId}`, {
       method: 'PUT',
-      body: JSON.stringify(apiData),
+      body: JSON.stringify(kurumData),
     });
     return response;
   } catch (error) {
@@ -105,7 +96,7 @@ export const updateKurum = async (kurumId: string, kurumData: {
   }
 };
 
-// Kurum sil
+// Kurum sil - YENİ DOKÜMANTASYON
 export const deleteKurum = async (kurumId: string) => {
   try {
     const response = await apiRequest(`/api/v1/data/table/${API_CONFIG.tableId}/rows/${kurumId}`, {
