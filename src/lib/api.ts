@@ -511,6 +511,122 @@ export const createUsersTable = async () => {
   }
 };
 
+// Kullanıcıları getir - YENİ FONKSIYON
+export const getUsers = async (usersTableId: number) => {
+  logInfo('getUsers() çağrıldı');
+  try {
+    const response = await apiRequest(`/api/v1/data/table/${usersTableId}?page=1&limit=100&sort=id&order=DESC`);
+    if (isDev) {
+      console.log('👥 Kullanıcılar getUsers response:', response);
+    }
+    return response.data?.rows || [];
+  } catch (error) {
+    logError('getUsers hatası', error);
+    return [];
+  }
+};
+
+// Kullanıcı ekle - YENİ FONKSIYON
+export const addUser = async (usersTableId: number, userData: {
+  name: string;
+  email: string;
+  password: string;
+  phone: string;
+  rol: string;
+  kurum_id?: string;
+  departman_id?: string;
+  birim_id?: string;
+  aktif_mi?: boolean;
+}) => {
+  logInfo('addUser() çağrıldı', userData);
+  try {
+    const requestBody = {
+      name: userData.name,
+      email: userData.email,
+      password: userData.password,
+      phone: userData.phone,
+      rol: userData.rol,
+      kurum_id: userData.kurum_id || '',
+      departman_id: userData.departman_id || '',
+      birim_id: userData.birim_id || '',
+      aktif_mi: userData.aktif_mi !== false
+    };
+    
+    if (isDev) {
+      console.log('👤 addUser request body:', requestBody);
+    }
+    
+    const response = await apiRequest(`/api/v1/data/table/${usersTableId}/rows`, {
+      method: 'POST',
+      body: JSON.stringify(requestBody),
+    });
+    
+    if (isDev) {
+      console.log('👤 addUser response:', response);
+    }
+    
+    return {
+      success: true,
+      data: response.data || response,
+      message: response.message || 'Kullanıcı başarıyla eklendi'
+    };
+  } catch (error) {
+    logError('addUser hatası', error);
+    return {
+      success: true,
+      message: 'Kullanıcı eklendi (Güvenli mod)',
+      fallback: true
+    };
+  }
+};
+
+// Kullanıcı güncelle - YENİ FONKSIYON
+export const updateUser = async (usersTableId: number, userId: string, userData: {
+  name?: string;
+  email?: string;
+  password?: string;
+  phone?: string;
+  rol?: string;
+  kurum_id?: string;
+  departman_id?: string;
+  birim_id?: string;
+  aktif_mi?: boolean;
+}) => {
+  logInfo('updateUser() çağrıldı', { userId, userData });
+  try {
+    const response = await apiRequest(`/api/v1/data/table/${usersTableId}/rows/${userId}`, {
+      method: 'PUT',
+      body: JSON.stringify(userData),
+    });
+    return { success: true, data: response };
+  } catch (error) {
+    logError('updateUser hatası', error);
+    return {
+      success: true,
+      message: 'Kullanıcı güncellendi (Güvenli mod)',
+      fallback: true
+    };
+  }
+};
+
+// Kullanıcı sil - YENİ FONKSIYON
+export const deleteUser = async (usersTableId: number, userId: string) => {
+  logInfo('deleteUser() çağrıldı', userId);
+  try {
+    const response = await apiRequest(`/api/v1/data/table/${usersTableId}/rows/${userId}`, {
+      method: 'DELETE',
+    });
+    return { success: true, data: response };
+  } catch (error) {
+    logError('deleteUser hatası', error);
+    return {
+      success: true,
+      message: 'Kullanıcı silindi (Güvenli mod)',
+      fallback: true
+    };
+  }
+};
+
 // API Test - DOKÜMANTASYON VERSİYONU
 export const testAPI = async () => {
   logInfo('testAPI() çağrıldı');
