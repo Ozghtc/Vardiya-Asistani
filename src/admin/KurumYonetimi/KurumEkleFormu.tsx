@@ -1,186 +1,10 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { useCapitalization } from '../../hooks/useCapitalization';
-import { Plus, Trash2, ChevronLeft } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
 import Select from 'react-select';
 import turkiyeIller from './il-ilceler/turkiye-il-ilce.json';
 import { useNavigate } from 'react-router-dom';
 import { addKurum, testAPI } from '../../lib/api';
-
-function generateKurumKodu() {
-  return (
-    'KURUM-' +
-    Date.now().toString(36) +
-    '-' +
-    Math.random().toString(36).substring(2, 8).toUpperCase()
-  );
-}
-
-// Benzersiz id üretmek için
-// @ts-ignore
-const getUUID = () => (window.crypto?.randomUUID ? window.crypto.randomUUID() : Math.random().toString(36).substring(2, 12));
-
-// Türkiye il-ilçe listesi (örnek, tam liste eklenebilir)
-const ILLER = [
-  { ad: 'İstanbul', ilceler: ['Kadıköy', 'Beşiktaş', 'Üsküdar', 'Bakırköy', 'Şişli'] },
-  { ad: 'Ankara', ilceler: ['Çankaya', 'Keçiören', 'Yenimahalle', 'Mamak', 'Sincan'] },
-  { ad: 'İzmir', ilceler: ['Konak', 'Karşıyaka', 'Bornova', 'Buca', 'Gaziemir'] },
-  // ... diğer iller ve ilçeler
-];
-
-// Türkçe karakterleri normalize eden küçük harfe çevirme fonksiyonu
-function normalizeTr(str: string) {
-  return str
-    .replace(/İ/g, 'i')
-    .replace(/I/g, 'ı')
-    .replace(/Ş/g, 'ş')
-    .replace(/Ğ/g, 'ğ')
-    .replace(/Ü/g, 'ü')
-    .replace(/Ö/g, 'ö')
-    .replace(/Ç/g, 'ç')
-    .toLowerCase();
-}
-
-function DepartmanKarti({ kurumId }: { kurumId: string }) {
-  const [departmanlar, setDepartmanlar] = useState([{ id: Date.now(), ad: '' }]);
-  const [successMsg, setSuccessMsg] = useState('');
-  const [errorMsg, setErrorMsg] = useState('');
-  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
-
-  const handleInputChange = (i: number, e: React.ChangeEvent<HTMLInputElement>) => {
-    const yeni = [...departmanlar];
-    yeni[i].ad = e.target.value.toUpperCase();
-    setDepartmanlar(yeni);
-  };
-
-  const handleAdd = () => {
-    setDepartmanlar([...departmanlar, { id: Date.now(), ad: '' }]);
-    setTimeout(() => {
-      inputRefs.current[departmanlar.length]?.focus();
-    }, 100);
-  };
-
-  const handleRemove = (i: number) => {
-    setDepartmanlar(departmanlar.filter((_, idx) => idx !== i));
-  };
-
-  const handleKaydet = async () => {
-    setSuccessMsg(''); setErrorMsg('');
-    const kaydedilecekler = departmanlar.filter(d => d.ad.trim() !== '');
-    if (kaydedilecekler.length === 0) {
-      setErrorMsg('En az bir departman girin!');
-      return;
-    }
-    
-    // LocalStorage'a kaydet
-    let localDep = [];
-    try { localDep = JSON.parse(localStorage.getItem('admin_kurumlar_departmanlar') || '[]'); } catch {}
-    kaydedilecekler.forEach(d => localDep.push({ ad: d.ad, kurum_id: kurumId }));
-    localStorage.setItem('admin_kurumlar_departmanlar', JSON.stringify(localDep));
-    
-    setSuccessMsg('Departmanlar başarıyla kaydedildi!');
-    setDepartmanlar([{ id: Date.now(), ad: '' }]);
-  };
-
-  return (
-    <div className="bg-white rounded-xl shadow-sm p-6 flex-1 mr-2">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2 text-blue-700 font-semibold text-lg">
-          <span role="img" aria-label="departman">🏥</span> Departman Tanımları
-        </div>
-        <button onClick={handleAdd} className="p-2 bg-blue-100 rounded hover:bg-blue-200"><Plus /></button>
-      </div>
-      <div className="space-y-2">
-        {departmanlar.map((d, i) => (
-          <div key={d.id} className="flex items-center gap-2">
-            <input
-              ref={el => inputRefs.current[i] = el}
-              value={d.ad}
-              onChange={e => handleInputChange(i, e)}
-              placeholder="Departman Adı"
-              className="flex-1 border rounded p-2"
-              onKeyDown={e => e.key === 'Enter' && handleAdd()}
-            />
-            <button onClick={() => handleRemove(i)} className="p-2 text-gray-400 hover:text-red-600"><Trash2 /></button>
-          </div>
-        ))}
-      </div>
-      <button onClick={handleKaydet} className="mt-4 w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">KAYDET</button>
-      {successMsg && <div className="text-green-600 mt-2 text-sm">{successMsg}</div>}
-      {errorMsg && <div className="text-red-600 mt-2 text-sm">{errorMsg}</div>}
-    </div>
-  );
-}
-
-function BirimKarti({ kurumId }: { kurumId: string }) {
-  const [birimler, setBirimler] = useState([{ id: Date.now(), ad: '' }]);
-  const [successMsg, setSuccessMsg] = useState('');
-  const [errorMsg, setErrorMsg] = useState('');
-  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
-
-  const handleInputChange = (i: number, e: React.ChangeEvent<HTMLInputElement>) => {
-    const yeni = [...birimler];
-    yeni[i].ad = e.target.value.toUpperCase();
-    setBirimler(yeni);
-  };
-
-  const handleAdd = () => {
-    setBirimler([...birimler, { id: Date.now(), ad: '' }]);
-    setTimeout(() => {
-      inputRefs.current[birimler.length]?.focus();
-    }, 100);
-  };
-
-  const handleRemove = (i: number) => {
-    setBirimler(birimler.filter((_, idx) => idx !== i));
-  };
-
-  const handleKaydet = async () => {
-    setSuccessMsg(''); setErrorMsg('');
-    const kaydedilecekler = birimler.filter(b => b.ad.trim() !== '');
-    if (kaydedilecekler.length === 0) {
-      setErrorMsg('En az bir birim girin!');
-      return;
-    }
-    
-    // LocalStorage'a kaydet
-    let localBirim = [];
-    try { localBirim = JSON.parse(localStorage.getItem('admin_kurumlar_birimler') || '[]'); } catch {}
-    kaydedilecekler.forEach(b => localBirim.push({ ad: b.ad, kurum_id: kurumId }));
-    localStorage.setItem('admin_kurumlar_birimler', JSON.stringify(localBirim));
-    
-    setSuccessMsg('Birimler başarıyla kaydedildi!');
-    setBirimler([{ id: Date.now(), ad: '' }]);
-  };
-
-  return (
-    <div className="bg-white rounded-xl shadow-sm p-6 flex-1 ml-2">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2 text-green-700 font-semibold text-lg">
-          <span role="img" aria-label="birim">👩‍⚕️</span> Birim Tanımları
-        </div>
-        <button onClick={handleAdd} className="p-2 bg-green-100 rounded hover:bg-green-200"><Plus /></button>
-      </div>
-      <div className="space-y-2">
-        {birimler.map((b, i) => (
-          <div key={b.id} className="flex items-center gap-2">
-            <input
-              ref={el => inputRefs.current[i] = el}
-              value={b.ad}
-              onChange={e => handleInputChange(i, e)}
-              placeholder="Birim Adı"
-              className="flex-1 border rounded p-2"
-              onKeyDown={e => e.key === 'Enter' && handleAdd()}
-            />
-            <button onClick={() => handleRemove(i)} className="p-2 text-gray-400 hover:text-red-600"><Trash2 /></button>
-          </div>
-        ))}
-      </div>
-      <button onClick={handleKaydet} className="mt-4 w-full bg-green-600 text-white py-2 rounded hover:bg-green-700">KAYDET</button>
-      {successMsg && <div className="text-green-600 mt-2 text-sm">{successMsg}</div>}
-      {errorMsg && <div className="text-red-600 mt-2 text-sm">{errorMsg}</div>}
-    </div>
-  );
-}
 
 const KurumEkleFormu = () => {
   const [kurumAdi, handleKurumAdiChange] = useCapitalization('');
@@ -222,17 +46,11 @@ const KurumEkleFormu = () => {
     };
 
     try {
-      // Gerçek API'ye kaydet
+      // Sadece API'ye kaydet
       const response = await addKurum(kurumData);
       
       if (response.success) {
         setSuccessMsg('Kurum başarıyla kaydedildi!');
-        
-        // LocalStorage'a da kaydet (fallback için)
-        const localKurumlar = JSON.parse(localStorage.getItem('admin_kurumlar') || '[]');
-        const kurumKaydi = { ...kurumData, id: Date.now().toString() };
-        localKurumlar.push(kurumKaydi);
-        localStorage.setItem('admin_kurumlar', JSON.stringify(localKurumlar));
         
         // Formu sıfırla
         handleKurumAdiChange({ target: { value: '' } } as any);
@@ -247,13 +65,6 @@ const KurumEkleFormu = () => {
     } catch (error: any) {
       setErrorMsg(`Hata: ${error.message}`);
       console.error('Kurum kaydetme hatası:', error);
-      
-      // Hata durumunda LocalStorage'a kaydet
-      const localKurumlar = JSON.parse(localStorage.getItem('admin_kurumlar') || '[]');
-      const kurumKaydi = { ...kurumData, id: Date.now().toString() };
-      localKurumlar.push(kurumKaydi);
-      localStorage.setItem('admin_kurumlar', JSON.stringify(localKurumlar));
-      setSuccessMsg('Kurum LocalStorage\'a kaydedildi (API hatası)');
     } finally {
       setLoading(false);
     }

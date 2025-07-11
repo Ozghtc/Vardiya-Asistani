@@ -43,13 +43,11 @@ export const getKurumlar = async () => {
     return response.data || [];
   } catch (error) {
     console.error('Kurumlar getirilemedi:', error);
-    // Fallback: localStorage'dan getir
-    const localKurumlar = localStorage.getItem('admin_kurumlar');
-    return localKurumlar ? JSON.parse(localKurumlar) : [];
+    throw error;
   }
 };
 
-// Kurum ekle - YENİ: Tüm 6 alan desteği
+// Kurum ekle
 export const addKurum = async (kurumData: {
   kurum_adi: string;
   kurum_turu?: string;
@@ -78,22 +76,45 @@ export const addKurum = async (kurumData: {
     return response;
   } catch (error) {
     console.error('API Kurum ekleme hatası:', error);
-    
-    // Fallback: localStorage'a kaydet
-    const localKurumlar = JSON.parse(localStorage.getItem('admin_kurumlar') || '[]');
-    const kurumKaydi = { 
-      ...kurumData, 
-      id: Date.now().toString(),
-      created_at: new Date().toISOString()
+    throw error;
+  }
+};
+
+// Kurum güncelle
+export const updateKurum = async (kurumId: string, kurumData: {
+  kurum_adi?: string;
+  kurum_turu?: string;
+  adres?: string;
+  il?: string;
+  ilce?: string;
+  aktif_mi?: boolean;
+}) => {
+  try {
+    const apiData = {
+      data: kurumData
     };
-    localKurumlar.push(kurumKaydi);
-    localStorage.setItem('admin_kurumlar', JSON.stringify(localKurumlar));
-    
-    return { 
-      success: true, 
-      message: 'Kurum localStorage\'a kaydedildi (API hatası)',
-      fallback: true 
-    };
+
+    const response = await apiRequest(`/api/v1/data/table/${API_CONFIG.tableId}/rows/${kurumId}`, {
+      method: 'PUT',
+      body: JSON.stringify(apiData),
+    });
+    return response;
+  } catch (error) {
+    console.error('API Kurum güncelleme hatası:', error);
+    throw error;
+  }
+};
+
+// Kurum sil
+export const deleteKurum = async (kurumId: string) => {
+  try {
+    const response = await apiRequest(`/api/v1/data/table/${API_CONFIG.tableId}/rows/${kurumId}`, {
+      method: 'DELETE',
+    });
+    return response;
+  } catch (error) {
+    console.error('API Kurum silme hatası:', error);
+    throw error;
   }
 };
 
