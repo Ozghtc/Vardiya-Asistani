@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocalStorage } from '../../hooks/useLocalStorage';
-import { getKurumlar } from '../../lib/api';
+import { getKurumlar, createUsersTable } from '../../lib/api';
 
 // Types
 interface BaseUser {
@@ -63,6 +63,7 @@ const KullaniciYonetimPaneli: React.FC = () => {
   const [permissions, setPermissions] = useLocalStorage<Permission[]>('permissions', []);
   const [loading, setLoading] = useState(true); // Başlangıçta loading true
   const [error, setError] = useState<string | null>(null);
+  const [tableCreating, setTableCreating] = useState(false);
   
   // Form states
   const [formData, setFormData] = useState({
@@ -292,6 +293,28 @@ const KullaniciYonetimPaneli: React.FC = () => {
     }
   };
 
+  // TEST: Kullanıcı tablosu oluştur
+  const handleCreateUsersTable = async () => {
+    setTableCreating(true);
+    try {
+      console.log('🏗️ Kullanıcı tablosu oluşturuluyor...');
+      const result = await createUsersTable();
+      
+      if (result.success) {
+        alert('✅ Kullanıcı tablosu başarıyla oluşturuldu!');
+        console.log('🎯 Tablo oluşturma sonucu:', result);
+      } else {
+        alert('❌ Hata: ' + result.message);
+        console.error('❌ Tablo oluşturma hatası:', result);
+      }
+    } catch (error) {
+      console.error('❌ Tablo oluşturma hatası:', error);
+      alert('❌ Kullanıcı tablosu oluşturulamadı');
+    } finally {
+      setTableCreating(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="w-full max-w-full mx-0 mt-4 bg-white rounded-xl shadow-lg p-6">
@@ -316,6 +339,15 @@ const KullaniciYonetimPaneli: React.FC = () => {
           <div className="text-sm text-blue-600 bg-blue-100 px-3 py-1 rounded-full">
             Kurumlar: {kurumlar.length}
           </div>
+          
+          {/* TEST BUTONU - GEÇİCİ */}
+          <button
+            onClick={handleCreateUsersTable}
+            disabled={tableCreating}
+            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {tableCreating ? '⏳ Oluşturuluyor...' : '🏗️ Kullanıcı Tablosu Oluştur'}
+          </button>
         </div>
       </div>
 

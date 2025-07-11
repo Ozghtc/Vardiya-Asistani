@@ -480,6 +480,37 @@ export const updateKurumlarTable = async () => {
   }
 };
 
+// Kullanıcı tablosu oluştur - YENİ FONKSIYON
+export const createUsersTable = async () => {
+  logInfo('createUsersTable() çağrıldı');
+  try {
+    const response = await apiRequest(`/api/v1/tables/project/${API_CONFIG.projectId}`, {
+      method: 'POST',
+      body: JSON.stringify({
+        name: 'kullanicilar',
+        description: 'Vardiya sistemi kullanıcıları tablosu'
+      }),
+    });
+    
+    if (isDev) {
+      console.log('🎯 Kullanıcı tablosu oluşturuldu:', response);
+    }
+    
+    return {
+      success: true,
+      data: response.data || response,
+      message: response.message || 'Kullanıcı tablosu başarıyla oluşturuldu'
+    };
+  } catch (error) {
+    logError('createUsersTable hatası', error);
+    return {
+      success: false,
+      message: 'Kullanıcı tablosu oluşturulamadı',
+      error: error
+    };
+  }
+};
+
 // API Test - DOKÜMANTASYON VERSİYONU
 export const testAPI = async () => {
   logInfo('testAPI() çağrıldı');
