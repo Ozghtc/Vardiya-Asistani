@@ -62,6 +62,12 @@ const KurumYonetimi = () => {
     aktif_mi: true
   });
 
+  // Form departman/birim states
+  const [formDepartmanlar, setFormDepartmanlar] = useState<string[]>([]);
+  const [formBirimler, setFormBirimler] = useState<string[]>([]);
+  const [newDepartmanInput, setNewDepartmanInput] = useState('');
+  const [newBirimInput, setNewBirimInput] = useState('');
+
   // UI states
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'aktif' | 'pasif'>('all');
@@ -148,6 +154,34 @@ const KurumYonetimi = () => {
         const response = await addKurum(kurumData);
         if (response.success) {
           await loadKurumlar(); // Refresh list
+          
+          // Add departmanlar and birimler to the new kurum
+          const newKurum = response.data || { id: Date.now().toString() };
+          
+          // Create departman entries
+          formDepartmanlar.forEach(departmanAdi => {
+            const newDepartman: DepartmanBirim = {
+              id: Date.now().toString() + Math.random(),
+              kurum_id: newKurum.id,
+              departman_adi: departmanAdi,
+              birimler: formBirimler.join(', '),
+              personel_turleri: ''
+            };
+            setDepartmanBirimler(prev => [...prev, newDepartman]);
+          });
+          
+          // If no departman but has birimler, create a default departman
+          if (formDepartmanlar.length === 0 && formBirimler.length > 0) {
+            const defaultDepartman: DepartmanBirim = {
+              id: Date.now().toString() + Math.random(),
+              kurum_id: newKurum.id,
+              departman_adi: 'GENEL',
+              birimler: formBirimler.join(', '),
+              personel_turleri: ''
+            };
+            setDepartmanBirimler(prev => [...prev, defaultDepartman]);
+          }
+          
           setSuccessMsg('Kurum başarıyla kaydedildi!');
         }
       }
@@ -164,6 +198,10 @@ const KurumYonetimi = () => {
         ilce: null,
         aktif_mi: true
       });
+      setFormDepartmanlar([]);
+      setFormBirimler([]);
+      setNewDepartmanInput('');
+      setNewBirimInput('');
     } catch (error: any) {
       setErrorMsg(`Hata: ${error.message}`);
     } finally {
@@ -214,6 +252,44 @@ const KurumYonetimi = () => {
       ilce: kurum.ilce ? { value: kurum.ilce, label: kurum.ilce } : null,
       aktif_mi: kurum.aktif_mi
     });
+    
+    // Load existing departmanlar and birimler for editing
+    const existingDepartmanlar = getKurumDepartmanlar(kurum.id);
+    const departmanAdlari = existingDepartmanlar.map(d => d.departman_adi);
+    const birimler = existingDepartmanlar.flatMap(d => d.birimler.split(', ').filter(b => b.trim()));
+    setFormDepartmanlar(departmanAdlari);
+    setFormBirimler(birimler);
+  };
+
+  // Form departman/birim handlers
+  const addFormDepartman = () => {
+    const departmanAdi = newDepartmanInput.trim();
+    if (!departmanAdi) return;
+    
+    const upperDepartman = departmanAdi.toLocaleUpperCase('tr-TR');
+    if (!formDepartmanlar.includes(upperDepartman)) {
+      setFormDepartmanlar(prev => [...prev, upperDepartman]);
+      setNewDepartmanInput('');
+    }
+  };
+
+  const removeFormDepartman = (departmanToRemove: string) => {
+    setFormDepartmanlar(prev => prev.filter(d => d !== departmanToRemove));
+  };
+
+  const addFormBirim = () => {
+    const birimAdi = newBirimInput.trim();
+    if (!birimAdi) return;
+    
+    const upperBirim = birimAdi.toLocaleUpperCase('tr-TR');
+    if (!formBirimler.includes(upperBirim)) {
+      setFormBirimler(prev => [...prev, upperBirim]);
+      setNewBirimInput('');
+    }
+  };
+
+  const removeFormBirim = (birimToRemove: string) => {
+    setFormBirimler(prev => prev.filter(b => b !== birimToRemove));
   };
 
   // Departman/Birim inline handlers
@@ -410,16 +486,114 @@ const KurumYonetimi = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="aktif"
-              checked={kurumForm.aktif_mi}
-              onChange={(e) => setKurumForm(prev => ({ ...prev, aktif_mi: e.target.checked }))}
-              className="text-blue-600 focus:ring-blue-500"
-            />
-            <label htmlFor="aktif" className="text-sm font-medium text-gray-700">Aktif mi?</label>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="aktif"
+                checked={kurumForm.aktif_mi}
+                onChange={(e) => setKurumForm(prev => ({ ...prev, aktif_mi: e.target.checked }))}
+                className="text-blue-600 focus:ring-blue-500"
+              />
+              <label htmlFor="aktif" className="text-sm font-medium text-gray-700">Aktif mi?</label>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <CreatableSelect
+                options={DEPARTMAN_SABLONLARI.map(dept => ({ value: dept, label: dept }))}
+                value={newDepartmanInput ? { value: newDepartmanInput, label: newDepartmanInput } : null}
+                onChange={(selected) => setNewDepartmanInput(selected?.value || '')}
+                onInputChange={(inputValue) => setNewDepartmanInput(inputValue)}
+                placeholder="Departman ekle"
+                isClearable
+                classNamePrefix="react-select"
+                className="flex-1"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addFormDepartman();
+                  }
+                }}
+              />
+              <button
+                type="button"
+                onClick={addFormDepartman}
+                disabled={!newDepartmanInput.trim()}
+                className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                ➕
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <CreatableSelect
+                options={BIRIM_SABLONLARI.map(birim => ({ value: birim, label: birim }))}
+                value={newBirimInput ? { value: newBirimInput, label: newBirimInput } : null}
+                onChange={(selected) => setNewBirimInput(selected?.value || '')}
+                onInputChange={(inputValue) => setNewBirimInput(inputValue)}
+                placeholder="Birim ekle"
+                isClearable
+                classNamePrefix="react-select"
+                className="flex-1"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addFormBirim();
+                  }
+                }}
+              />
+              <button
+                type="button"
+                onClick={addFormBirim}
+                disabled={!newBirimInput.trim()}
+                className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                ➕
+              </button>
+            </div>
           </div>
+
+          {/* Eklenen Departmanlar */}
+          {formDepartmanlar.length > 0 && (
+            <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+              <h4 className="text-sm font-medium text-gray-700 mb-2">Eklenen Departmanlar:</h4>
+              <div className="flex flex-wrap gap-2">
+                {formDepartmanlar.map((departman, index) => (
+                  <span key={index} className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 text-sm rounded-full">
+                    {departman}
+                    <button
+                      type="button"
+                      onClick={() => removeFormDepartman(departman)}
+                      className="text-red-500 hover:text-red-700 ml-1"
+                    >
+                      ❌
+                    </button>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Eklenen Birimler */}
+          {formBirimler.length > 0 && (
+            <div className="mt-4 p-4 bg-green-50 rounded-lg">
+              <h4 className="text-sm font-medium text-gray-700 mb-2">Eklenen Birimler:</h4>
+              <div className="flex flex-wrap gap-2">
+                {formBirimler.map((birim, index) => (
+                  <span key={index} className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-700 text-sm rounded-full">
+                    {birim}
+                    <button
+                      type="button"
+                      onClick={() => removeFormBirim(birim)}
+                      className="text-red-500 hover:text-red-700 ml-1"
+                    >
+                      ❌
+                    </button>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="flex gap-4 pt-4">
             <button
@@ -446,6 +620,10 @@ const KurumYonetimi = () => {
                     ilce: null,
                     aktif_mi: true
                   });
+                  setFormDepartmanlar([]);
+                  setFormBirimler([]);
+                  setNewDepartmanInput('');
+                  setNewBirimInput('');
                 }}
                 className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
               >
