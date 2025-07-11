@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLocalStorage } from '../../hooks/useLocalStorage';
 import { useCapitalization } from '../../hooks/useCapitalization';
 import Select from 'react-select';
+import CreatableSelect from 'react-select/creatable';
 import turkiyeIller from './il-ilceler/turkiye-il-ilce.json';
 import { addKurum, getKurumlar, updateKurum, deleteKurum, testAPI } from '../../lib/api';
 
@@ -14,30 +15,16 @@ interface Kurum {
   il: string;
   ilce: string;
   aktif_mi: boolean;
-  departmanlar?: Departman[];
+  departmanlar?: string; // Virgülle ayrılmış string
   created_at: string;
 }
 
-interface Departman {
+interface DepartmanBirim {
   id: string;
+  kurum_id: string;
   departman_adi: string;
-  kurum_id: string;
-  birimler?: Birim[];
-  personel_turleri?: PersonelTuru[];
-}
-
-interface Birim {
-  id: string;
-  birim_adi: string;
-  departman_id: string;
-  kurum_id: string;
-}
-
-interface PersonelTuru {
-  id: string;
-  tur_adi: string;
-  departman_id: string;
-  kurum_id: string;
+  birimler: string; // Virgülle ayrılmış string
+  personel_turleri: string; // Virgülle ayrılmış string
 }
 
 // Predefined options
@@ -63,9 +50,7 @@ const PERSONEL_TURLERI = [
 const KurumYonetimi = () => {
   // States
   const [kurumlar, setKurumlar] = useState<Kurum[]>([]);
-  const [departmanlar, setDepartmanlar] = useLocalStorage<Departman[]>('departmanlar', []);
-  const [birimler, setBirimler] = useLocalStorage<Birim[]>('birimler', []);
-  const [personelTurleri, setPersonelTurleri] = useLocalStorage<PersonelTuru[]>('personelTurleri', []);
+  const [departmanBirimler, setDepartmanBirimler] = useLocalStorage<DepartmanBirim[]>('departmanBirimler', []);
 
   // Form states
   const [kurumForm, setKurumForm] = useState({
@@ -83,18 +68,18 @@ const KurumYonetimi = () => {
   const [selectedKurum, setSelectedKurum] = useState<Kurum | null>(null);
   const [editingKurum, setEditingKurum] = useState<Kurum | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState<{kurum: Kurum, confirmText: string} | null>(null);
-  const [showDepartmanModal, setShowDepartmanModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [apiLoading, setApiLoading] = useState(false);
+
+  // Inline editing states
+  const [editingDepartman, setEditingDepartman] = useState<{kurumId: string, departmanIndex: number} | null>(null);
+  const [newDepartmanInputs, setNewDepartmanInputs] = useState<{[kurumId: string]: string}>({});
+  const [newBirimInputs, setNewBirimInputs] = useState<{[key: string]: string}>({});
+  const [newPersonelInputs, setNewPersonelInputs] = useState<{[key: string]: string}>({});
 
   // Messages
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
-
-  // Departman/Birim form states
-  const [departmanForm, setDepartmanForm] = useState<Departman[]>([
-    { id: '', departman_adi: '', kurum_id: '', birimler: [{ id: '', birim_adi: '', departman_id: '', kurum_id: '' }], personel_turleri: [{ id: '', tur_adi: '', departman_id: '', kurum_id: '' }] }
-  ]);
 
   const [kurumAdi, handleKurumAdiChange] = useCapitalization(kurumForm.kurum_adi);
   const [kurumTuru, handleKurumTuruChange] = useCapitalization(kurumForm.kurum_turu);
@@ -195,6 +180,8 @@ const KurumYonetimi = () => {
       try {
         await deleteKurum(showDeleteModal.kurum.id);
         setKurumlar(prev => prev.filter(k => k.id !== showDeleteModal.kurum.id));
+        // Remove related departmanlar
+        setDepartmanBirimler(prev => prev.filter(d => d.kurum_id !== showDeleteModal.kurum.id));
         setShowDeleteModal(null);
         setSelectedKurum(null);
         setSuccessMsg('Kurum başarıyla silindi!');
@@ -229,87 +216,74 @@ const KurumYonetimi = () => {
     });
   };
 
-  // Departman/Birim handlers
-  const addDepartman = () => {
-    setDepartmanForm(prev => [...prev, {
-      id: '',
-      departman_adi: '',
-      kurum_id: selectedKurum?.id || '',
-      birimler: [{ id: '', birim_adi: '', departman_id: '', kurum_id: selectedKurum?.id || '' }],
-      personel_turleri: [{ id: '', tur_adi: '', departman_id: '', kurum_id: selectedKurum?.id || '' }]
-    }]);
+  // Departman/Birim inline handlers
+  const addDepartman = (kurumId: string) => {
+    const departmanAdi = newDepartmanInputs[kurumId]?.trim();
+    if (!departmanAdi) return;
+
+    const newDepartman: DepartmanBirim = {
+      id: Date.now().toString() + Math.random(),
+      kurum_id: kurumId,
+      departman_adi: departmanAdi.toLocaleUpperCase('tr-TR'),
+      birimler: '',
+      personel_turleri: ''
+    };
+
+    setDepartmanBirimler(prev => [...prev, newDepartman]);
+    setNewDepartmanInputs(prev => ({ ...prev, [kurumId]: '' }));
+    setSuccessMsg('Departman başarıyla eklendi!');
   };
 
-  const removeDepartman = (index: number) => {
-    setDepartmanForm(prev => prev.filter((_, i) => i !== index));
+  const removeDepartman = (departmanId: string) => {
+    setDepartmanBirimler(prev => prev.filter(d => d.id !== departmanId));
+    setSuccessMsg('Departman silindi!');
   };
 
-  const addBirim = (departmanIndex: number) => {
-    setDepartmanForm(prev => prev.map((dep, i) => 
-      i === departmanIndex 
-        ? { ...dep, birimler: [...(dep.birimler || []), { id: '', birim_adi: '', departman_id: '', kurum_id: selectedKurum?.id || '' }] }
-        : dep
+  const addBirim = (departmanId: string) => {
+    const birimAdi = newBirimInputs[departmanId]?.trim();
+    if (!birimAdi) return;
+
+    setDepartmanBirimler(prev => prev.map(d => 
+      d.id === departmanId 
+        ? { ...d, birimler: d.birimler ? `${d.birimler}, ${birimAdi.toLocaleUpperCase('tr-TR')}` : birimAdi.toLocaleUpperCase('tr-TR') }
+        : d
+    ));
+    setNewBirimInputs(prev => ({ ...prev, [departmanId]: '' }));
+    setSuccessMsg('Birim başarıyla eklendi!');
+  };
+
+  const addPersonel = (departmanId: string) => {
+    const personelAdi = newPersonelInputs[departmanId]?.trim();
+    if (!personelAdi) return;
+
+    setDepartmanBirimler(prev => prev.map(d => 
+      d.id === departmanId 
+        ? { ...d, personel_turleri: d.personel_turleri ? `${d.personel_turleri}, ${personelAdi.toLocaleUpperCase('tr-TR')}` : personelAdi.toLocaleUpperCase('tr-TR') }
+        : d
+    ));
+    setNewPersonelInputs(prev => ({ ...prev, [departmanId]: '' }));
+    setSuccessMsg('Personel türü başarıyla eklendi!');
+  };
+
+  const removeBirim = (departmanId: string, birimToRemove: string) => {
+    setDepartmanBirimler(prev => prev.map(d => 
+      d.id === departmanId 
+        ? { ...d, birimler: d.birimler.split(', ').filter(b => b !== birimToRemove).join(', ') }
+        : d
     ));
   };
 
-  const removeBirim = (departmanIndex: number, birimIndex: number) => {
-    setDepartmanForm(prev => prev.map((dep, i) => 
-      i === departmanIndex 
-        ? { ...dep, birimler: dep.birimler?.filter((_, bi) => bi !== birimIndex) || [] }
-        : dep
+  const removePersonel = (departmanId: string, personelToRemove: string) => {
+    setDepartmanBirimler(prev => prev.map(d => 
+      d.id === departmanId 
+        ? { ...d, personel_turleri: d.personel_turleri.split(', ').filter(p => p !== personelToRemove).join(', ') }
+        : d
     ));
   };
 
-  const addPersonelTuru = (departmanIndex: number) => {
-    setDepartmanForm(prev => prev.map((dep, i) => 
-      i === departmanIndex 
-        ? { ...dep, personel_turleri: [...(dep.personel_turleri || []), { id: '', tur_adi: '', departman_id: '', kurum_id: selectedKurum?.id || '' }] }
-        : dep
-    ));
-  };
-
-  const removePersonelTuru = (departmanIndex: number, personelIndex: number) => {
-    setDepartmanForm(prev => prev.map((dep, i) => 
-      i === departmanIndex 
-        ? { ...dep, personel_turleri: dep.personel_turleri?.filter((_, pi) => pi !== personelIndex) || [] }
-        : dep
-    ));
-  };
-
-  const saveDepartmanlar = () => {
-    if (!selectedKurum) return;
-
-    // Save to localStorage for now
-    const newDepartmanlar = departmanForm.map(dep => ({
-      ...dep,
-      id: dep.id || Date.now().toString() + Math.random(),
-      kurum_id: selectedKurum.id
-    }));
-
-    const newBirimler = departmanForm.flatMap(dep => 
-      (dep.birimler || []).map(birim => ({
-        ...birim,
-        id: birim.id || Date.now().toString() + Math.random(),
-        departman_id: dep.id || Date.now().toString() + Math.random(),
-        kurum_id: selectedKurum.id
-      }))
-    );
-
-    const newPersonelTurleri = departmanForm.flatMap(dep => 
-      (dep.personel_turleri || []).map(personel => ({
-        ...personel,
-        id: personel.id || Date.now().toString() + Math.random(),
-        departman_id: dep.id || Date.now().toString() + Math.random(),
-        kurum_id: selectedKurum.id
-      }))
-    );
-
-    setDepartmanlar(prev => [...prev.filter(d => d.kurum_id !== selectedKurum.id), ...newDepartmanlar]);
-    setBirimler(prev => [...prev.filter(b => b.kurum_id !== selectedKurum.id), ...newBirimler]);
-    setPersonelTurleri(prev => [...prev.filter(p => p.kurum_id !== selectedKurum.id), ...newPersonelTurleri]);
-
-    setShowDepartmanModal(false);
-    setSuccessMsg('Departman ve birimler başarıyla kaydedildi!');
+  // Get departmanlar for kurum
+  const getKurumDepartmanlar = (kurumId: string) => {
+    return departmanBirimler.filter(d => d.kurum_id === kurumId);
   };
 
   // Auto-clear messages
@@ -326,18 +300,6 @@ const KurumYonetimi = () => {
       return () => clearTimeout(timer);
     }
   }, [errorMsg]);
-
-  const getKurumDepartmanlar = (kurumId: string) => {
-    return departmanlar.filter(d => d.kurum_id === kurumId);
-  };
-
-  const getDepartmanBirimler = (departmanId: string) => {
-    return birimler.filter(b => b.departman_id === departmanId);
-  };
-
-  const getDepartmanPersoneller = (departmanId: string) => {
-    return personelTurleri.filter(p => p.departman_id === departmanId);
-  };
 
   return (
     <div className="w-full max-w-full mx-0 mt-4 bg-white rounded-xl shadow-lg p-6">
@@ -547,319 +509,282 @@ const KurumYonetimi = () => {
               <p className="text-sm">Yukarıdaki formdan yeni kurum ekleyebilirsiniz</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-              {filteredKurumlar.map(kurum => (
-                <div
-                  key={kurum.id}
-                  className={`bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-all duration-300 hover:border-blue-300 cursor-pointer ${
-                    selectedKurum?.id === kurum.id ? 'ring-2 ring-blue-500 border-blue-500' : ''
-                  } ${!kurum.aktif_mi ? 'opacity-60 bg-gray-50' : ''}`}
-                  onClick={() => setSelectedKurum(selectedKurum?.id === kurum.id ? null : kurum)}
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="text-2xl">🏥</div>
-                      <div>
-                        <h3 className="font-semibold text-gray-800 hover:text-blue-600 transition-colors">
-                          {kurum.kurum_adi}
-                        </h3>
-                        <span className={`inline-block px-2 py-1 text-xs rounded-full ${kurum.aktif_mi ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
-                          {kurum.aktif_mi ? 'Aktif' : 'Pasif'}
-                        </span>
+            <div className="space-y-6">
+              {filteredKurumlar.map(kurum => {
+                const kurumDepartmanlar = getKurumDepartmanlar(kurum.id);
+                const isExpanded = selectedKurum?.id === kurum.id;
+                
+                return (
+                  <div
+                    key={kurum.id}
+                    className={`bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-all duration-300 hover:border-blue-300 ${
+                      isExpanded ? 'ring-2 ring-blue-500 border-blue-500 shadow-lg' : ''
+                    } ${!kurum.aktif_mi ? 'opacity-60 bg-gray-50' : ''}`}
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="text-2xl">🏥</div>
+                        <div>
+                          <h3 className="font-semibold text-gray-800 hover:text-blue-600 transition-colors text-lg">
+                            {kurum.kurum_adi}
+                          </h3>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className={`inline-block px-2 py-1 text-xs rounded-full ${kurum.aktif_mi ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
+                              {kurum.aktif_mi ? 'Aktif' : 'Pasif'}
+                            </span>
+                            {kurum.kurum_turu && (
+                              <span className="inline-block px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-600">
+                                {kurum.kurum_turu}
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleToggleActive(kurum);
-                        }}
-                        className={`p-2 rounded-lg transition-colors ${
-                          kurum.aktif_mi 
-                            ? 'bg-green-100 text-green-600 hover:bg-green-200' 
-                            : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
-                        }`}
-                        title={kurum.aktif_mi ? 'Pasif Yap' : 'Aktif Yap'}
-                      >
-                        {kurum.aktif_mi ? '✅' : '⏸️'}
-                      </button>
-                    </div>
-                  </div>
+                      
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setSelectedKurum(isExpanded ? null : kurum)}
+                          className="p-2 rounded-lg transition-colors bg-blue-100 text-blue-600 hover:bg-blue-200"
+                          title="Departman Yönetimi"
+                        >
+                          {isExpanded ? '🔼' : '🔽'}
+                        </button>
+                        
+                        <button
+                          onClick={() => handleToggleActive(kurum)}
+                          className={`p-2 rounded-lg transition-colors ${
+                            kurum.aktif_mi 
+                              ? 'bg-green-100 text-green-600 hover:bg-green-200' 
+                              : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+                          }`}
+                          title={kurum.aktif_mi ? 'Pasif Yap' : 'Aktif Yap'}
+                        >
+                          {kurum.aktif_mi ? '✅' : '⏸️'}
+                        </button>
 
-                  <div className="space-y-2 text-sm text-gray-600">
-                    {kurum.kurum_turu && (
-                      <div className="flex items-center gap-2">
-                        <span>🏷️</span>
-                        <span>{kurum.kurum_turu}</span>
+                        <button
+                          onClick={() => handleEditKurum(kurum)}
+                          className="p-2 rounded-lg transition-colors bg-yellow-100 text-yellow-600 hover:bg-yellow-200"
+                          title="Düzenle"
+                        >
+                          ✏️
+                        </button>
+                        
+                        <button
+                          onClick={() => handleDeleteKurum(kurum)}
+                          className="p-2 rounded-lg transition-colors bg-red-100 text-red-600 hover:bg-red-200"
+                          title="Sil"
+                        >
+                          🗑️
+                        </button>
                       </div>
-                    )}
-                    {kurum.adres && (
+                    </div>
+
+                    {/* Kurum Bilgileri */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600 mb-4">
+                      {kurum.adres && (
+                        <div className="flex items-center gap-2">
+                          <span>📍</span>
+                          <span>{kurum.adres}</span>
+                        </div>
+                      )}
+                      {(kurum.il || kurum.ilce) && (
+                        <div className="flex items-center gap-2">
+                          <span>🗺️</span>
+                          <span>{kurum.il} {kurum.ilce}</span>
+                        </div>
+                      )}
                       <div className="flex items-center gap-2">
-                        <span>📍</span>
-                        <span>{kurum.adres}</span>
+                        <span>🏢</span>
+                        <span>{kurumDepartmanlar.length} Departman</span>
                       </div>
-                    )}
-                    {(kurum.il || kurum.ilce) && (
-                      <div className="flex items-center gap-2">
-                        <span>🗺️</span>
-                        <span>{kurum.il} {kurum.ilce}</span>
-                      </div>
-                    )}
-                    
-                    {/* Departman Özeti */}
-                    <div className="mt-3 p-2 bg-gray-50 rounded-lg">
-                      <div className="text-xs text-gray-500 mb-1">Departmanlar</div>
-                      {getKurumDepartmanlar(kurum.id).length > 0 ? (
+                    </div>
+
+                    {/* Departman Özeti - Always Visible */}
+                    {kurumDepartmanlar.length > 0 && (
+                      <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                        <div className="text-xs text-gray-500 mb-2">Departmanlar</div>
                         <div className="flex flex-wrap gap-1">
-                          {getKurumDepartmanlar(kurum.id).slice(0, 3).map(dept => (
+                          {kurumDepartmanlar.slice(0, 4).map(dept => (
                             <span key={dept.id} className="px-2 py-1 bg-blue-100 text-blue-600 text-xs rounded">
                               {dept.departman_adi}
                             </span>
                           ))}
-                          {getKurumDepartmanlar(kurum.id).length > 3 && (
+                          {kurumDepartmanlar.length > 4 && (
                             <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">
-                              +{getKurumDepartmanlar(kurum.id).length - 3} daha
+                              +{kurumDepartmanlar.length - 4} daha
                             </span>
                           )}
                         </div>
-                      ) : (
-                        <p className="text-xs text-gray-400">Departman tanımlanmamış</p>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Expanded Actions */}
-                  {selectedKurum?.id === kurum.id && (
-                    <div className="mt-4 pt-4 border-t border-gray-200">
-                      <div className="flex gap-2">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEditKurum(kurum);
-                          }}
-                          className="flex-1 px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-sm font-medium"
-                        >
-                          ✏️ Düzenle
-                        </button>
-                        
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedKurum(kurum);
-                            setDepartmanForm([
-                              { id: '', departman_adi: '', kurum_id: kurum.id, birimler: [{ id: '', birim_adi: '', departman_id: '', kurum_id: kurum.id }], personel_turleri: [{ id: '', tur_adi: '', departman_id: '', kurum_id: kurum.id }] }
-                            ]);
-                            setShowDepartmanModal(true);
-                          }}
-                          className="flex-1 px-3 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors text-sm font-medium"
-                        >
-                          🏢 Departman
-                        </button>
-                        
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteKurum(kurum);
-                          }}
-                          className="px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-sm font-medium"
-                        >
-                          🗑️
-                        </button>
                       </div>
+                    )}
 
-                      {/* Departman Detayları */}
-                      {getKurumDepartmanlar(kurum.id).length > 0 && (
-                        <div className="mt-3 p-3 bg-gray-50 rounded-lg">
-                          <div className="text-xs text-gray-500 mb-2">Departman Detayları</div>
-                          <div className="space-y-2">
-                            {getKurumDepartmanlar(kurum.id).map(dept => (
-                              <div key={dept.id} className="text-xs">
-                                <div className="font-medium text-gray-700">{dept.departman_adi}</div>
-                                <div className="ml-2 text-gray-500">
-                                  Birimler: {getDepartmanBirimler(dept.id).length} • 
-                                  Personel: {getDepartmanPersoneller(dept.id).length}
-                                </div>
-                              </div>
-                            ))}
+                    {/* Expanded Departman Management */}
+                    {isExpanded && (
+                      <div className="border-t border-gray-200 pt-4">
+                        <h4 className="font-medium text-gray-800 mb-4 flex items-center gap-2">
+                          <span>🏢</span>
+                          Departman Yönetimi
+                        </h4>
+
+                        {/* Add New Departman */}
+                        <div className="mb-6 p-4 bg-blue-50 rounded-lg">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-sm font-medium text-gray-700">Yeni Departman Ekle:</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <CreatableSelect
+                              options={DEPARTMAN_SABLONLARI.map(dept => ({ value: dept, label: dept }))}
+                              value={newDepartmanInputs[kurum.id] ? { value: newDepartmanInputs[kurum.id], label: newDepartmanInputs[kurum.id] } : null}
+                              onChange={(selected) => setNewDepartmanInputs(prev => ({ ...prev, [kurum.id]: selected?.value || '' }))}
+                              onInputChange={(inputValue) => setNewDepartmanInputs(prev => ({ ...prev, [kurum.id]: inputValue }))}
+                              placeholder="Departman adı seçin veya yazın"
+                              isClearable
+                              classNamePrefix="react-select"
+                              className="flex-1"
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  addDepartman(kurum.id);
+                                }
+                              }}
+                            />
+                            <button
+                              onClick={() => addDepartman(kurum.id)}
+                              disabled={!newDepartmanInputs[kurum.id]?.trim()}
+                              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            >
+                              ➕ Ekle
+                            </button>
                           </div>
                         </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ))}
+
+                        {/* Departman List */}
+                        <div className="space-y-4">
+                          {kurumDepartmanlar.map((departman, index) => (
+                            <div key={departman.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                              <div className="flex items-center justify-between mb-3">
+                                <h5 className="font-medium text-gray-800 flex items-center gap-2">
+                                  <span className="text-blue-600">📋</span>
+                                  {departman.departman_adi}
+                                </h5>
+                                <button
+                                  onClick={() => removeDepartman(departman.id)}
+                                  className="p-1 text-red-600 hover:bg-red-100 rounded"
+                                  title="Departmanı Sil"
+                                >
+                                  🗑️
+                                </button>
+                              </div>
+
+                              {/* Birimler */}
+                              <div className="mb-4">
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="text-sm font-medium text-gray-700">Birimler:</span>
+                                </div>
+                                <div className="flex items-center gap-2 mb-2">
+                                  <CreatableSelect
+                                    options={BIRIM_SABLONLARI.map(birim => ({ value: birim, label: birim }))}
+                                    value={newBirimInputs[departman.id] ? { value: newBirimInputs[departman.id], label: newBirimInputs[departman.id] } : null}
+                                    onChange={(selected) => setNewBirimInputs(prev => ({ ...prev, [departman.id]: selected?.value || '' }))}
+                                    onInputChange={(inputValue) => setNewBirimInputs(prev => ({ ...prev, [departman.id]: inputValue }))}
+                                    placeholder="Birim adı"
+                                    isClearable
+                                    classNamePrefix="react-select"
+                                    className="flex-1"
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                        addBirim(departman.id);
+                                      }
+                                    }}
+                                  />
+                                  <button
+                                    onClick={() => addBirim(departman.id)}
+                                    disabled={!newBirimInputs[departman.id]?.trim()}
+                                    className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 text-sm"
+                                  >
+                                    ➕
+                                  </button>
+                                </div>
+                                <div className="flex flex-wrap gap-1">
+                                  {departman.birimler.split(', ').filter(b => b.trim()).map((birim, birimIndex) => (
+                                    <span key={birimIndex} className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 text-xs rounded">
+                                      {birim}
+                                      <button
+                                        onClick={() => removeBirim(departman.id, birim)}
+                                        className="text-red-500 hover:text-red-700"
+                                      >
+                                        ❌
+                                      </button>
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+
+                              {/* Personel Türleri */}
+                              <div>
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="text-sm font-medium text-gray-700">Personel Türleri:</span>
+                                </div>
+                                <div className="flex items-center gap-2 mb-2">
+                                  <CreatableSelect
+                                    options={PERSONEL_TURLERI.map(personel => ({ value: personel, label: personel }))}
+                                    value={newPersonelInputs[departman.id] ? { value: newPersonelInputs[departman.id], label: newPersonelInputs[departman.id] } : null}
+                                    onChange={(selected) => setNewPersonelInputs(prev => ({ ...prev, [departman.id]: selected?.value || '' }))}
+                                    onInputChange={(inputValue) => setNewPersonelInputs(prev => ({ ...prev, [departman.id]: inputValue }))}
+                                    placeholder="Personel türü"
+                                    isClearable
+                                    classNamePrefix="react-select"
+                                    className="flex-1"
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                        addPersonel(departman.id);
+                                      }
+                                    }}
+                                  />
+                                  <button
+                                    onClick={() => addPersonel(departman.id)}
+                                    disabled={!newPersonelInputs[departman.id]?.trim()}
+                                    className="px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 text-sm"
+                                  >
+                                    ➕
+                                  </button>
+                                </div>
+                                <div className="flex flex-wrap gap-1">
+                                  {departman.personel_turleri.split(', ').filter(p => p.trim()).map((personel, personelIndex) => (
+                                    <span key={personelIndex} className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded">
+                                      {personel}
+                                      <button
+                                        onClick={() => removePersonel(departman.id, personel)}
+                                        className="text-red-500 hover:text-red-700"
+                                      >
+                                        ❌
+                                      </button>
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        {kurumDepartmanlar.length === 0 && (
+                          <div className="text-center py-6 text-gray-500">
+                            <div className="text-4xl mb-2">🏢</div>
+                            <p className="text-sm">Henüz departman eklenmemiş</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
       </div>
-
-      {/* Departman/Birim Modal */}
-      {showDepartmanModal && selectedKurum && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xl font-semibold text-gray-800">
-                  Departman ve Birim Yönetimi: {selectedKurum.kurum_adi}
-                </h3>
-                <button
-                  onClick={() => setShowDepartmanModal(false)}
-                  className="text-gray-500 hover:text-gray-700 text-xl"
-                >
-                  ❌
-                </button>
-              </div>
-            </div>
-
-            <div className="p-6">
-              <div className="space-y-6">
-                {departmanForm.map((departman, deptIndex) => (
-                  <div key={deptIndex} className="border border-gray-200 rounded-xl p-6 bg-gray-50">
-                    <div className="flex items-center justify-between mb-4">
-                      <h4 className="text-lg font-medium text-gray-800">Departman {deptIndex + 1}</h4>
-                      {departmanForm.length > 1 && (
-                        <button
-                          onClick={() => removeDepartman(deptIndex)}
-                          className="p-2 text-red-600 hover:bg-red-100 rounded-lg"
-                        >
-                          🗑️
-                        </button>
-                      )}
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Departman Adı</label>
-                        <Select
-                          options={DEPARTMAN_SABLONLARI.map(dept => ({ value: dept, label: dept }))}
-                          value={departman.departman_adi ? { value: departman.departman_adi, label: departman.departman_adi } : null}
-                          onChange={(selected) => {
-                            const newForm = [...departmanForm];
-                            newForm[deptIndex].departman_adi = selected?.value || '';
-                            setDepartmanForm(newForm);
-                          }}
-                          placeholder="Departman seçiniz veya yazınız"
-                          isClearable
-                          isCreatable
-                          classNamePrefix="react-select"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Birimler */}
-                    <div className="mb-6">
-                      <div className="flex items-center justify-between mb-3">
-                        <h5 className="font-medium text-gray-700">Birimler</h5>
-                        <button
-                          onClick={() => addBirim(deptIndex)}
-                          className="px-3 py-1 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors text-sm"
-                        >
-                          ➕ Birim Ekle
-                        </button>
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {(departman.birimler || []).map((birim, birimIndex) => (
-                          <div key={birimIndex} className="flex items-center gap-2">
-                            <Select
-                              options={BIRIM_SABLONLARI.map(b => ({ value: b, label: b }))}
-                              value={birim.birim_adi ? { value: birim.birim_adi, label: birim.birim_adi } : null}
-                              onChange={(selected) => {
-                                const newForm = [...departmanForm];
-                                if (newForm[deptIndex].birimler) {
-                                  newForm[deptIndex].birimler![birimIndex].birim_adi = selected?.value || '';
-                                }
-                                setDepartmanForm(newForm);
-                              }}
-                              placeholder="Birim seçiniz"
-                              isClearable
-                              isCreatable
-                              classNamePrefix="react-select"
-                              className="flex-1"
-                            />
-                            <button
-                              onClick={() => removeBirim(deptIndex, birimIndex)}
-                              className="p-2 text-red-600 hover:bg-red-100 rounded-lg"
-                            >
-                              ❌
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Personel Türleri */}
-                    <div>
-                      <div className="flex items-center justify-between mb-3">
-                        <h5 className="font-medium text-gray-700">Personel Türleri</h5>
-                        <button
-                          onClick={() => addPersonelTuru(deptIndex)}
-                          className="px-3 py-1 bg-green-100 text-green-600 rounded-lg hover:bg-green-200 transition-colors text-sm"
-                        >
-                          ➕ Personel Ekle
-                        </button>
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {(departman.personel_turleri || []).map((personel, personelIndex) => (
-                          <div key={personelIndex} className="flex items-center gap-2">
-                            <Select
-                              options={PERSONEL_TURLERI.map(p => ({ value: p, label: p }))}
-                              value={personel.tur_adi ? { value: personel.tur_adi, label: personel.tur_adi } : null}
-                              onChange={(selected) => {
-                                const newForm = [...departmanForm];
-                                if (newForm[deptIndex].personel_turleri) {
-                                  newForm[deptIndex].personel_turleri![personelIndex].tur_adi = selected?.value || '';
-                                }
-                                setDepartmanForm(newForm);
-                              }}
-                              placeholder="Personel türü seçiniz"
-                              isClearable
-                              isCreatable
-                              classNamePrefix="react-select"
-                              className="flex-1"
-                            />
-                            <button
-                              onClick={() => removePersonelTuru(deptIndex, personelIndex)}
-                              className="p-2 text-red-600 hover:bg-red-100 rounded-lg"
-                            >
-                              ❌
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="flex gap-4 mt-6">
-                <button
-                  onClick={addDepartman}
-                  className="px-6 py-3 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors font-medium"
-                >
-                  ➕ Yeni Departman Ekle
-                </button>
-                
-                <button
-                  onClick={saveDepartmanlar}
-                  className="flex-1 bg-gradient-to-r from-green-600 to-green-700 text-white px-6 py-3 rounded-lg font-medium hover:from-green-700 hover:to-green-800 transition-all"
-                >
-                  💾 Departmanları Kaydet
-                </button>
-                
-                <button
-                  onClick={() => setShowDepartmanModal(false)}
-                  className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  ❌ İptal
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Silme Onay Modalı */}
       {showDeleteModal && (
