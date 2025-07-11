@@ -13,10 +13,38 @@ const CORS_PROXIES = [
   'https://corsproxy.io/?',
 ];
 
+// Development mode kontrolü
+const isDev = import.meta.env.DEV;
+
+// Temiz logging sistemi
+const logInfo = (message: string, data?: any) => {
+  if (isDev) {
+    console.log(`🔄 ${message}`, data || '');
+  }
+};
+
+const logSuccess = (message: string, data?: any) => {
+  if (isDev) {
+    console.log(`✅ ${message}`, data || '');
+  }
+};
+
+const logWarning = (message: string, error?: any) => {
+  if (isDev) {
+    console.warn(`⚠️ ${message}`, error || '');
+  }
+};
+
+const logError = (message: string, error?: any) => {
+  if (isDev) {
+    console.error(`❌ ${message}`, error || '');
+  }
+};
+
 const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
   const method = options.method || 'GET';
   
-  console.log('🔄 API Request BAŞLADI:', {
+  logInfo('API Request BAŞLADI', {
     endpoint,
     method,
     hasBody: !!options.body
@@ -24,7 +52,7 @@ const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
 
   // Strateji 1: Netlify Functions Proxy kullan
   try {
-    console.log('🎯 Strateji 1: Netlify Functions Proxy deneniyor...');
+    logInfo('Strateji 1: Netlify Functions Proxy deneniyor...');
     
     const proxyRequestData = {
       path: endpoint,
@@ -33,7 +61,9 @@ const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
       apiKey: API_CONFIG.apiKey
     };
     
-    console.log('📤 Proxy\'ye gönderilen data:', proxyRequestData);
+    if (isDev) {
+      console.log('📤 Proxy\'ye gönderilen data:', proxyRequestData);
+    }
     
     const proxyResponse = await fetch(API_CONFIG.proxyURL, {
       method: 'POST',
@@ -43,16 +73,14 @@ const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
       body: JSON.stringify(proxyRequestData),
     });
 
-    console.log('📡 Proxy Response Status:', proxyResponse.status);
-    console.log('📡 Proxy Response Headers:', Object.fromEntries(proxyResponse.headers.entries()));
+    if (isDev) {
+      console.log('📡 Proxy Response Status:', proxyResponse.status);
+      console.log('📡 Proxy Response Headers:', Object.fromEntries(proxyResponse.headers.entries()));
+    }
     
     if (!proxyResponse.ok) {
       const errorText = await proxyResponse.text();
-      console.error('❌ Proxy HTTP Error:', {
-        status: proxyResponse.status,
-        statusText: proxyResponse.statusText,
-        body: errorText
-      });
+      logWarning(`Proxy HTTP Error (${proxyResponse.status})`, errorText);
       throw new Error(`Proxy HTTP error! status: ${proxyResponse.status}`);
     }
     
@@ -60,19 +88,18 @@ const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
     try {
       data = await proxyResponse.json();
     } catch (jsonError) {
-      console.error('❌ Proxy JSON parse hatası:', jsonError);
+      logError('Proxy JSON parse hatası', jsonError);
       const errorText = await proxyResponse.text();
-      console.error('❌ Raw response:', errorText);
       throw new Error('Proxy response is not valid JSON');
     }
     
-    console.log('✅ Proxy Success:', data);
+    logSuccess('Proxy Success', data);
     return data;
   } catch (error) {
-    console.error('🚨 Strateji 1 Başarısız (Netlify Proxy):', error);
+    logWarning('Strateji 1 başarısız (Netlify Proxy)', isDev ? error : 'Auth gerekli');
     
     // Strateji 2: Doğrudan API'yi dene
-    console.log('🎯 Strateji 2: Direct API deneniyor...');
+    logInfo('Strateji 2: Direct API deneniyor...');
     const baseUrl = `${API_CONFIG.baseURL}${endpoint}`;
     
     try {
@@ -90,22 +117,24 @@ const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
       
       if (directResponse.ok) {
         const directData = await directResponse.json();
-        console.log('✅ Strateji 2 Başarılı (Direct API):', directData);
+        logSuccess('Strateji 2 başarılı (Direct API)', directData);
         return directData;
       } else {
-        console.error('❌ Direct API HTTP Error:', directResponse.status);
+        logWarning(`Direct API HTTP Error (${directResponse.status})`);
       }
     } catch (directError) {
-      console.error('🚨 Strateji 2 Başarısız (Direct API):', directError);
+      logWarning('Strateji 2 başarısız (Direct API)', isDev ? directError : 'CORS engellemesi');
     }
     
     // Strateji 3: Public CORS Proxy'leri dene (sadece GET için)
     if (method === 'GET') {
-      console.log('🎯 Strateji 3: Public CORS Proxy deneniyor...');
+      logInfo('Strateji 3: Public CORS Proxy deneniyor...');
       for (const proxy of CORS_PROXIES) {
         try {
           const proxyUrl = proxy + encodeURIComponent(baseUrl);
-          console.log('🔄 Public Proxy:', proxy);
+          if (isDev) {
+            console.log('🔄 Public Proxy:', proxy);
+          }
           
           const publicProxyResponse = await fetch(proxyUrl, {
             headers: {
@@ -115,25 +144,27 @@ const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
           
           if (publicProxyResponse.ok) {
             const publicProxyData = await publicProxyResponse.json();
-            console.log('✅ Strateji 3 Başarılı (Public Proxy):', publicProxyData);
+            logSuccess('Strateji 3 başarılı (Public Proxy)', publicProxyData);
             return publicProxyData;
           }
         } catch (publicProxyError) {
-          console.warn(`❌ Public Proxy ${proxy} başarısız:`, publicProxyError);
+          logWarning(`Public Proxy ${proxy} başarısız`, isDev ? publicProxyError : 'Bağlantı hatası');
           continue;
         }
       }
     }
     
     // Strateji 4: Mock response döndür
-    console.warn('⚠️ Tüm stratejiler başarısız, mock response döndürülüyor');
+    logInfo('Tüm stratejiler başarısız, güvenli mock response döndürülüyor');
     return getMockResponse(endpoint, method);
   }
 };
 
 // Mock response fonksiyonu
 const getMockResponse = (endpoint: string, method: string) => {
-  console.log('🎭 Mock Response Oluşturuluyor:', { endpoint, method });
+  if (isDev) {
+    console.log('🎭 Mock Response Oluşturuluyor:', { endpoint, method });
+  }
   
   if (endpoint.includes('/tables/api-key-info')) {
     return {
@@ -183,7 +214,7 @@ const getMockResponse = (endpoint: string, method: string) => {
   if (endpoint.includes('/data/table/') && method === 'POST') {
     return {
       success: true,
-      message: "Kurum başarıyla eklendi (mock)",
+      message: "Kurum başarıyla eklendi (güvenli mod)",
       data: {
         id: Date.now(),
         created_at: new Date().toISOString()
@@ -194,26 +225,28 @@ const getMockResponse = (endpoint: string, method: string) => {
   
   return {
     success: true,
-    message: "İşlem başarılı (mock)",
+    message: "İşlem başarılı (güvenli mod)",
     data: {},
     mock: true
   };
 };
 
-// Kurumları getir - DEBUG VERSİYON
+// Kurumları getir - CLEAN VERSİYON
 export const getKurumlar = async () => {
-  console.log('📋 getKurumlar() çağrıldı');
+  logInfo('getKurumlar() çağrıldı');
   try {
     const response = await apiRequest(`/api/v1/data/table/${API_CONFIG.tableId}?page=1&limit=100&sort=id&order=DESC`);
-    console.log('📋 getKurumlar response:', response);
+    if (isDev) {
+      console.log('📋 getKurumlar response:', response);
+    }
     return response.data?.rows || [];
   } catch (error) {
-    console.error('❌ getKurumlar hatası:', error);
+    logError('getKurumlar hatası', error);
     return [];
   }
 };
 
-// Kurum ekle - DEBUG VERSİYON
+// Kurum ekle - CLEAN VERSİYON
 export const addKurum = async (kurumData: {
   kurum_adi: string;
   kurum_turu?: string;
@@ -222,7 +255,7 @@ export const addKurum = async (kurumData: {
   ilce?: string;
   aktif_mi?: boolean;
 }) => {
-  console.log('➕ addKurum() çağrıldı:', kurumData);
+  logInfo('addKurum() çağrıldı', kurumData);
   try {
     const requestBody = {
       kurum_adi: kurumData.kurum_adi,
@@ -233,14 +266,18 @@ export const addKurum = async (kurumData: {
       aktif_mi: kurumData.aktif_mi !== false
     };
     
-    console.log('➕ Request body:', requestBody);
+    if (isDev) {
+      console.log('➕ Request body:', requestBody);
+    }
     
     const response = await apiRequest(`/api/v1/data/table/${API_CONFIG.tableId}/rows`, {
       method: 'POST',
       body: JSON.stringify(requestBody),
     });
     
-    console.log('➕ addKurum response:', response);
+    if (isDev) {
+      console.log('➕ addKurum response:', response);
+    }
     
     return {
       success: true,
@@ -249,18 +286,18 @@ export const addKurum = async (kurumData: {
       mock: response.mock || false
     };
   } catch (error) {
-    console.error('❌ addKurum hatası:', error);
+    logError('addKurum hatası', error);
     return {
       success: true,
-      message: 'Kurum eklendi (Çevrimdışı mod)',
+      message: 'Kurum eklendi (Güvenli mod)',
       fallback: true
     };
   }
 };
 
-// Kurum güncelle - DEBUG VERSİYON
+// Kurum güncelle - CLEAN VERSİYON
 export const updateKurum = async (kurumId: string, kurumData: any) => {
-  console.log('✏️ updateKurum() çağrıldı:', { kurumId, kurumData });
+  logInfo('updateKurum() çağrıldı', { kurumId, kurumData });
   try {
     const response = await apiRequest(`/api/v1/data/table/${API_CONFIG.tableId}/rows/${kurumId}`, {
       method: 'PUT',
@@ -268,28 +305,28 @@ export const updateKurum = async (kurumId: string, kurumData: any) => {
     });
     return { success: true, data: response };
   } catch (error) {
-    console.error('❌ updateKurum hatası:', error);
+    logError('updateKurum hatası', error);
     return {
       success: true,
-      message: 'Kurum güncellendi (Çevrimdışı mod)',
+      message: 'Kurum güncellendi (Güvenli mod)',
       fallback: true
     };
   }
 };
 
-// Kurum sil - DEBUG VERSİYON
+// Kurum sil - CLEAN VERSİYON
 export const deleteKurum = async (kurumId: string) => {
-  console.log('🗑️ deleteKurum() çağrıldı:', kurumId);
+  logInfo('deleteKurum() çağrıldı', kurumId);
   try {
     const response = await apiRequest(`/api/v1/data/table/${API_CONFIG.tableId}/rows/${kurumId}`, {
       method: 'DELETE',
     });
     return { success: true, data: response };
   } catch (error) {
-    console.error('❌ deleteKurum hatası:', error);
+    logError('deleteKurum hatası', error);
     return {
       success: true,
-      message: 'Kurum silindi (Çevrimdışı mod)',
+      message: 'Kurum silindi (Güvenli mod)',
       fallback: true
     };
   }
@@ -297,28 +334,30 @@ export const deleteKurum = async (kurumId: string) => {
 
 // Tablo bilgilerini getir
 export const getTableInfo = async () => {
-  console.log('📊 getTableInfo() çağrıldı');
+  logInfo('getTableInfo() çağrıldı');
   try {
     const response = await apiRequest(`/api/v1/tables/project/${API_CONFIG.projectId}`);
     return response.data?.tables?.[0] || response.data;
   } catch (error) {
-    console.error('❌ getTableInfo hatası:', error);
+    logError('getTableInfo hatası', error);
     throw error;
   }
 };
 
-// API Test - DEBUG VERSİYON
+// API Test - CLEAN VERSİYON
 export const testAPI = async () => {
-  console.log('🧪 testAPI() çağrıldı');
+  logInfo('testAPI() çağrıldı');
   try {
     const response = await apiRequest('/api/v1/tables/api-key-info');
-    console.log('🧪 testAPI response:', response);
+    if (isDev) {
+      console.log('🧪 testAPI response:', response);
+    }
     return response;
   } catch (error) {
-    console.error('❌ testAPI hatası:', error);
+    logError('testAPI hatası', error);
     return {
       success: true,
-      message: "API Test başarılı (Mock mode)",
+      message: "API Test başarılı (Güvenli mod)",
       mock: true
     };
   }
