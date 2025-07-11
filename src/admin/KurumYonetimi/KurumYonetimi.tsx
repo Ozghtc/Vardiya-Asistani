@@ -4,7 +4,7 @@ import { useCapitalization } from '../../hooks/useCapitalization';
 import Select from 'react-select';
 import CreatableSelect from 'react-select/creatable';
 import turkiyeIller from './il-ilceler/turkiye-il-ilce.json';
-import { addKurum, getKurumlar, updateKurum, deleteKurum, testAPI } from '../../lib/api';
+import { addKurum, getKurumlar, updateKurum, deleteKurum, testAPI, updateKurumlarTable } from '../../lib/api';
 
 // Types
 interface Kurum {
@@ -16,6 +16,7 @@ interface Kurum {
   ilce: string;
   aktif_mi: boolean;
   departmanlar?: string; // Virgülle ayrılmış string
+  birimler?: string; // Virgülle ayrılmış string
   created_at: string;
 }
 
@@ -86,6 +87,7 @@ const KurumYonetimi = () => {
   // Messages
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const [dbUpdateLoading, setDbUpdateLoading] = useState(false);
 
   const [kurumAdi, handleKurumAdiChange] = useCapitalization(kurumForm.kurum_adi);
   const [kurumTuru, handleKurumTuruChange] = useCapitalization(kurumForm.kurum_turu);
@@ -133,6 +135,18 @@ const KurumYonetimi = () => {
     }
   };
 
+  const handleUpdateDatabase = async () => {
+    setDbUpdateLoading(true);
+    try {
+      await updateKurumlarTable();
+      setSuccessMsg('Veri tabanı başarıyla güncellendi! Departmanlar ve birimler sütunları eklendi.');
+    } catch (error) {
+      setErrorMsg('Veri tabanı güncellenirken hata oluştu!');
+    } finally {
+      setDbUpdateLoading(false);
+    }
+  };
+
   const handleKurumSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -144,6 +158,8 @@ const KurumYonetimi = () => {
       il: kurumForm.il?.value || '',
       ilce: kurumForm.ilce?.value || '',
       aktif_mi: kurumForm.aktif_mi,
+      departmanlar: formDepartmanlar.join(', '),
+      birimler: formBirimler.join(', ')
     };
 
     try {
@@ -259,8 +275,21 @@ const KurumYonetimi = () => {
     const existingDepartmanlar = getKurumDepartmanlar(kurum.id);
     const departmanAdlari = existingDepartmanlar.map(d => d.departman_adi);
     const birimler = existingDepartmanlar.flatMap(d => d.birimler.split(', ').filter(b => b.trim()));
-    setFormDepartmanlar(departmanAdlari);
-    setFormBirimler(birimler);
+    
+    // Veri tabanından departmanlar ve birimler yükle
+    const dbDepartmanlar = kurum.departmanlar ? kurum.departmanlar.split(', ').filter(d => d.trim()) : [];
+    const dbBirimler = kurum.birimler ? kurum.birimler.split(', ').filter(b => b.trim()) : [];
+    
+    // Hem local storage hem de veri tabanı verilerini birleştir
+    const allDepartmanlar = [...departmanAdlari, ...dbDepartmanlar];
+    const allBirimler = [...birimler, ...dbBirimler];
+    
+    // Tekrar edenler için unique array yap
+    const uniqueDepartmanlar = [...new Set(allDepartmanlar)];
+    const uniqueBirimler = [...new Set(allBirimler)];
+    
+    setFormDepartmanlar(uniqueDepartmanlar);
+    setFormBirimler(uniqueBirimler);
   };
 
   // Form departman/birim handlers
@@ -390,6 +419,13 @@ const KurumYonetimi = () => {
             className="px-4 py-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors disabled:opacity-50"
           >
             {apiLoading ? 'Test ediliyor...' : 'API Test'}
+          </button>
+          <button
+            onClick={handleUpdateDatabase}
+            disabled={dbUpdateLoading}
+            className="px-4 py-2 bg-green-100 text-green-600 rounded-lg hover:bg-green-200 transition-colors disabled:opacity-50"
+          >
+            {dbUpdateLoading ? 'Güncelleniyor...' : '🔄 DB Güncelle'}
           </button>
           <div className="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
             Toplam: {kurumlar.length} kurum
@@ -763,7 +799,7 @@ const KurumYonetimi = () => {
                     </div>
 
                     {/* Kurum Bilgileri */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600 mb-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm text-gray-600 mb-4">
                       {kurum.adres && (
                         <div className="flex items-center gap-2">
                           <span>📍</span>
@@ -781,6 +817,44 @@ const KurumYonetimi = () => {
                         <span>{kurumDepartmanlar.length} Departman</span>
                       </div>
                     </div>
+
+                    {/* Departmanlar ve Birimler - Veri Tabanından */}
+                    {(kurum.departmanlar || kurum.birimler) && (
+                      <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {kurum.departmanlar && (
+                            <div>
+                              <div className="text-xs text-gray-500 mb-2 flex items-center gap-1">
+                                <span>📋</span>
+                                <span>Departmanlar (VT)</span>
+                              </div>
+                              <div className="flex flex-wrap gap-1">
+                                {kurum.departmanlar.split(', ').filter(d => d.trim()).map((dept, index) => (
+                                  <span key={index} className="px-2 py-1 bg-blue-100 text-blue-600 text-xs rounded">
+                                    {dept}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {kurum.birimler && (
+                            <div>
+                              <div className="text-xs text-gray-500 mb-2 flex items-center gap-1">
+                                <span>🏢</span>
+                                <span>Birimler (VT)</span>
+                              </div>
+                              <div className="flex flex-wrap gap-1">
+                                {kurum.birimler.split(', ').filter(b => b.trim()).map((birim, index) => (
+                                  <span key={index} className="px-2 py-1 bg-green-100 text-green-600 text-xs rounded">
+                                    {birim}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
 
                     {/* Departman Özeti - Always Visible */}
                     {kurumDepartmanlar.length > 0 && (

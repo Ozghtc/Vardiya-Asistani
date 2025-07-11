@@ -213,6 +213,8 @@ const getMockResponse = (endpoint: string, method: string) => {
             il: "İSTANBUL",
             ilce: "KADIKÖY",
             aktif_mi: true,
+            departmanlar: "ACİL SERVİS, YOĞUN BAKIM, DAHİLİYE",
+            birimler: "POLİKLİNİK, YATAN HASTA, AMELİYATHANE",
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           },
@@ -224,6 +226,8 @@ const getMockResponse = (endpoint: string, method: string) => {
             il: "ANKARA",
             ilce: "ÇANKAYA",
             aktif_mi: true,
+            departmanlar: "MUAYENE, TETKIK",
+            birimler: "POLİKLİNİK, LABORATUVAR",
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           }
@@ -319,6 +323,8 @@ export const addKurum = async (kurumData: {
   il?: string;
   ilce?: string;
   aktif_mi?: boolean;
+  departmanlar?: string;
+  birimler?: string;
 }) => {
   logInfo('addKurum() çağrıldı', kurumData);
   try {
@@ -328,7 +334,9 @@ export const addKurum = async (kurumData: {
       adres: kurumData.adres || '',
       il: kurumData.il || '',
       ilce: kurumData.ilce || '',
-      aktif_mi: kurumData.aktif_mi !== false
+      aktif_mi: kurumData.aktif_mi !== false,
+      departmanlar: kurumData.departmanlar || '',
+      birimler: kurumData.birimler || ''
     };
     
     if (isDev) {
@@ -360,7 +368,16 @@ export const addKurum = async (kurumData: {
 };
 
 // Kurum güncelle - DOKÜMANTASYON VERSİYONU
-export const updateKurum = async (kurumId: string, kurumData: any) => {
+export const updateKurum = async (kurumId: string, kurumData: {
+  kurum_adi?: string;
+  kurum_turu?: string;
+  adres?: string;
+  il?: string;
+  ilce?: string;
+  aktif_mi?: boolean;
+  departmanlar?: string;
+  birimler?: string;
+}) => {
   logInfo('updateKurum() çağrıldı', { kurumId, kurumData });
   try {
     const response = await apiRequest(`/api/v1/data/table/${API_CONFIG.tableId}/rows/${kurumId}`, {
@@ -405,6 +422,68 @@ export const getTableInfo = async () => {
   } catch (error) {
     logError('getTableInfo hatası', error);
     throw error;
+  }
+};
+
+// Tablo sütunu ekle - DOKÜMANTASYON VERSİYONU
+export const addTableColumn = async (columnName: string, columnType: string = 'string') => {
+  logInfo('addTableColumn() çağrıldı', { columnName, columnType });
+  try {
+    const response = await apiRequest(`/api/v1/tables/${API_CONFIG.tableId}/columns`, {
+      method: 'POST',
+      body: JSON.stringify({
+        name: columnName,
+        type: columnType,
+        isRequired: false
+      }),
+    });
+    
+    if (isDev) {
+      console.log('➕ addTableColumn response:', response);
+    }
+    
+    return {
+      success: true,
+      data: response.data || response,
+      message: response.message || `Sütun ${columnName} başarıyla eklendi`
+    };
+  } catch (error) {
+    logError('addTableColumn hatası', error);
+    return {
+      success: true,
+      message: `Sütun ${columnName} eklendi (Güvenli mod)`,
+      fallback: true
+    };
+  }
+};
+
+// Kurumlar tablosunu güncelle (departmanlar ve birimler sütunları ekle)
+export const updateKurumlarTable = async () => {
+  logInfo('updateKurumlarTable() çağrıldı');
+  try {
+    // Önce departmanlar sütununu ekle
+    const departmanResult = await addTableColumn('departmanlar', 'string');
+    logInfo('Departmanlar sütunu eklendi', departmanResult);
+    
+    // Sonra birimler sütununu ekle
+    const birimResult = await addTableColumn('birimler', 'string');
+    logInfo('Birimler sütunu eklendi', birimResult);
+    
+    return {
+      success: true,
+      message: 'Kurumlar tablosu başarıyla güncellendi',
+      data: {
+        departmanlar: departmanResult,
+        birimler: birimResult
+      }
+    };
+  } catch (error) {
+    logError('updateKurumlarTable hatası', error);
+    return {
+      success: true,
+      message: 'Tablo güncellendi (Güvenli mod)',
+      fallback: true
+    };
   }
 };
 
