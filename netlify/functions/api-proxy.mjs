@@ -1,5 +1,5 @@
-// Netlify Functions - API Proxy (DÜZELTME)
-exports.handler = async (event, context) => {
+// Netlify Functions - API Proxy (ES MODULES)
+export const handler = async (event, context) => {
   // CORS headers
   const headers = {
     'Access-Control-Allow-Origin': '*',
@@ -19,23 +19,27 @@ exports.handler = async (event, context) => {
 
   try {
     console.log('📡 Netlify Function başlatıldı');
-    console.log('Event:', JSON.stringify(event, null, 2));
+    console.log('Event method:', event.httpMethod);
+    console.log('Event body:', event.body);
     
-    // Body parsing - DÜZELTME
-    let requestData;
-    try {
-      requestData = event.body ? JSON.parse(event.body) : {};
-    } catch (parseError) {
-      console.error('❌ Body parse hatası:', parseError);
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({
-          success: false,
-          error: 'Invalid JSON in request body',
-          details: parseError.message
-        }),
-      };
+    // Body parsing
+    let requestData = {};
+    if (event.body) {
+      try {
+        requestData = JSON.parse(event.body);
+      } catch (parseError) {
+        console.error('❌ Body parse hatası:', parseError);
+        return {
+          statusCode: 400,
+          headers,
+          body: JSON.stringify({
+            success: false,
+            error: 'Invalid JSON in request body',
+            details: parseError.message,
+            receivedBody: event.body?.substring(0, 200)
+          }),
+        };
+      }
     }
 
     const { path, method = 'GET', body, apiKey } = requestData;
@@ -71,21 +75,26 @@ exports.handler = async (event, context) => {
 
     if (body && method !== 'GET') {
       fetchOptions.body = typeof body === 'string' ? body : JSON.stringify(body);
-      console.log('📤 Request body:', fetchOptions.body);
+      console.log('📤 Request body length:', fetchOptions.body.length);
     }
 
     console.log('📡 Fetching:', apiUrl);
+    
+    // Modern fetch() kullan
     const response = await fetch(apiUrl, fetchOptions);
     
     console.log('📨 Response status:', response.status);
-    console.log('📨 Response headers:', Object.fromEntries(response.headers.entries()));
+    console.log('📨 Response ok:', response.ok);
+    
+    // Response body'yi bir kez al
+    const responseText = await response.text();
+    console.log('📨 Response text length:', responseText.length);
     
     let data;
     try {
-      data = await response.json();
+      data = JSON.parse(responseText);
     } catch (jsonError) {
       console.error('❌ Response JSON parse hatası:', jsonError);
-      const textResponse = await response.text();
       return {
         statusCode: response.status,
         headers,
@@ -93,12 +102,13 @@ exports.handler = async (event, context) => {
           success: false,
           error: 'Invalid JSON response from API',
           statusCode: response.status,
-          textResponse: textResponse.substring(0, 500) // İlk 500 karakter
+          textResponse: responseText.substring(0, 300),
+          parseError: jsonError.message
         }),
       };
     }
 
-    console.log('✅ API Response:', data);
+    console.log('✅ API Response parsed successfully');
 
     return {
       statusCode: response.status,
@@ -114,8 +124,9 @@ exports.handler = async (event, context) => {
       body: JSON.stringify({
         success: false,
         error: error.message,
-        stack: error.stack,
-        message: 'Netlify Function proxy error'
+        type: error.constructor.name,
+        message: 'Netlify Function proxy error',
+        nodeVersion: process.version
       }),
     };
   }

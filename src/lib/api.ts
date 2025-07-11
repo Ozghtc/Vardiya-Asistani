@@ -3,7 +3,7 @@ const API_CONFIG = {
   apiKey: 'hzm_1ce98c92189d4a109cd604b22bfd86b7',
   projectId: '5',
   tableId: '10',
-  // Netlify Functions proxy
+  // Netlify Functions proxy (.mjs for ES modules)
   proxyURL: '/.netlify/functions/api-proxy'
 };
 
