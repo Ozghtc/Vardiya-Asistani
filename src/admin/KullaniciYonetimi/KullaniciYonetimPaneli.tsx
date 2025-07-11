@@ -161,17 +161,23 @@ const KullaniciYonetimPaneli: React.FC = () => {
     return matchesSearch && matchesRole;
   });
 
-  const filteredDepartmanlar = departmanlar.filter(d => d.kurum_id === formData.kurum_id);
-  const filteredBirimler = birimler.filter(b => b.kurum_id === formData.kurum_id);
+  const filteredDepartmanlar = departmanlar.filter(d => String(d.kurum_id) === String(formData.kurum_id));
+  const filteredBirimler = birimler.filter(b => String(b.kurum_id) === String(formData.kurum_id));
   
   // Debug - filtreleme kontrolü
-  console.log('🔍 Debug filtreleme:');
-  console.log('formData.kurum_id:', formData.kurum_id);
-  console.log('formData.kurum_id type:', typeof formData.kurum_id);
-  console.log('tüm departmanlar:', departmanlar);
-  console.log('departmanlar kurum_id örnekleri:', departmanlar.map(d => ({id: d.id, kurum_id: d.kurum_id, type: typeof d.kurum_id})));
-  console.log('filtrelenmiş departmanlar:', filteredDepartmanlar);
-  console.log('filtrelenmiş birimler:', filteredBirimler);
+  if (formData.kurum_id) {
+    console.log('🔍 DETAYLI DEBUG:');
+    console.log('formData.kurum_id:', formData.kurum_id, 'type:', typeof formData.kurum_id);
+    
+    departmanlar.forEach(d => {
+      console.log(`📋 Departman: ${d.departman_adi}`);
+      console.log(`   kurum_id: "${d.kurum_id}" (${typeof d.kurum_id})`);
+      console.log(`   eşleşme: ${String(d.kurum_id) === String(formData.kurum_id)}`);
+    });
+    
+    console.log('filtrelenmiş departmanlar:', filteredDepartmanlar.length, filteredDepartmanlar);
+    console.log('filtrelenmiş birimler:', filteredBirimler.length, filteredBirimler);
+  }
 
   // Handlers
   const handleFormSubmit = (e: React.FormEvent) => {
