@@ -114,7 +114,7 @@ const PersonelKullanicilar: React.FC<PersonelKullanicilarProps> = ({
           <input name="name" placeholder="Ad Soyad" value={personelForm.name} onChange={e => setPersonelForm((f: UserForm) => ({ ...f, name: e.target.value.toLocaleUpperCase('tr-TR') }))} className="border rounded px-2 py-1 text-sm w-full min-w-[280px]" required />
           <input name="email" placeholder="Email" type="email" value={personelForm.email} onChange={e => setPersonelForm((f: UserForm) => ({ ...f, email: e.target.value }))} className="border rounded px-2 py-1 text-sm w-full min-w-[280px]" required />
           <input name="password" placeholder="Şifre" type="password" value={personelForm.password} onChange={e => setPersonelForm((f: UserForm) => ({ ...f, password: e.target.value.toLocaleUpperCase('tr-TR') }))} className="border rounded px-2 py-1 text-sm w-full min-w-[280px]" required />
-          <input name="phone" placeholder="Telefon" type="tel" value={personelForm.phone} onChange={e => setPersonelForm((f: UserForm) => ({ ...f, phone: e.target.value.toLocaleUpperCase('tr-TR') }))} className="border rounded px-2 py-1 text-sm w-full min-w-[280px]" required />
+          <input name="phone" placeholder="Telefon" type="tel" value={personelForm.phone} onChange={e => setPersonelForm((f: UserForm) => ({ ...f, phone: e.target.value }))} className="border rounded px-2 py-1 text-sm w-full min-w-[280px]" required />
           <select name="kurum_id" value={personelForm.kurum_id || ''} onChange={e => setPersonelForm((f: UserForm) => ({ ...f, kurum_id: e.target.value }))} className="border rounded px-2 py-1 text-sm w-full min-w-[280px]" required>
             <option value="">Kurum Seçiniz</option>
             {kurumlar.map((k: Kurum) => (
@@ -158,7 +158,7 @@ const PersonelKullanicilar: React.FC<PersonelKullanicilarProps> = ({
                   <div className="flex-1 flex flex-col gap-1">
                     <input name="name" value={editPersonelForm.name} onChange={e => setEditPersonelForm((f: UserForm) => ({ ...f, name: e.target.value.toLocaleUpperCase('tr-TR') }))} className="border rounded px-2 py-1 text-sm w-full min-w-[280px]" />
                     <input name="email" value={editPersonelForm.email} onChange={e => setEditPersonelForm((f: UserForm) => ({ ...f, email: e.target.value }))} className="border rounded px-2 py-1 text-sm w-full min-w-[280px]" />
-                    <input name="phone" value={editPersonelForm.phone} onChange={e => setEditPersonelForm((f: UserForm) => ({ ...f, phone: e.target.value.toLocaleUpperCase('tr-TR') }))} className="border rounded px-2 py-1 text-sm w-full min-w-[280px]" />
+                    <input name="phone" value={editPersonelForm.phone} onChange={e => setEditPersonelForm((f: UserForm) => ({ ...f, phone: e.target.value }))} className="border rounded px-2 py-1 text-sm w-full min-w-[280px]" />
                     <input name="password" type="text" value={editPersonelForm.password} onChange={e => setEditPersonelForm((f: UserForm) => ({ ...f, password: e.target.value.toLocaleUpperCase('tr-TR') }))} className="border rounded px-2 py-1 text-sm w-full min-w-[280px]" />
                     <select name="kurum_id" value={editPersonelForm.kurum_id || ''} onChange={e => setEditPersonelForm((f: UserForm) => ({ ...f, kurum_id: e.target.value }))} className="border rounded px-2 py-1 text-sm w-full min-w-[280px]">
                       <option value="">Kurum Seçiniz</option>

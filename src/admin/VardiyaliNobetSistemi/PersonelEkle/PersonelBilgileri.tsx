@@ -32,15 +32,15 @@ export default function PersonelBilgileri({ data, onChange }: Props) {
 
     if (field === 'name') {
       handleNameChange({ target: { value } } as any);
-      updatedData.name = value.toUpperCase();
+      updatedData.name = value.toLocaleUpperCase('tr-TR');
     }
     if (field === 'surname') {
       handleSurnameChange({ target: { value } } as any);
-      updatedData.surname = value.toUpperCase();
+      updatedData.surname = value.toLocaleUpperCase('tr-TR');
     }
     if (field === 'tcno') {
       handleTcnoChange({ target: { value } } as any);
-      updatedData.tcno = value;
+      updatedData.tcno = value; // TC kimlik numarası büyük harfe çevrilmez
     }
     
     onChange(updatedData);

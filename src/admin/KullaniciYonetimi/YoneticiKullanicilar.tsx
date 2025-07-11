@@ -43,7 +43,7 @@ const YoneticiKullanicilar = ({
           <input name="name" placeholder="Ad Soyad" value={yoneticiForm.name} onChange={e => setYoneticiForm(f => ({ ...f, name: e.target.value.toLocaleUpperCase('tr-TR') }))} className="border rounded px-2 py-1 text-sm w-full min-w-[280px]" required />
           <input name="email" placeholder="Email" type="email" value={yoneticiForm.email} onChange={e => setYoneticiForm(f => ({ ...f, email: e.target.value }))} className="border rounded px-2 py-1 text-sm w-full min-w-[280px]" required />
           <input name="password" placeholder="Şifre" type="password" value={yoneticiForm.password} onChange={e => setYoneticiForm(f => ({ ...f, password: e.target.value.toLocaleUpperCase('tr-TR') }))} className="border rounded px-2 py-1 text-sm w-full min-w-[280px]" required />
-          <input name="phone" placeholder="Telefon" type="tel" value={yoneticiForm.phone} onChange={e => setYoneticiForm(f => ({ ...f, phone: e.target.value.toLocaleUpperCase('tr-TR') }))} className="border rounded px-2 py-1 text-sm w-full min-w-[280px]" required />
+          <input name="phone" placeholder="Telefon" type="tel" value={yoneticiForm.phone} onChange={e => setYoneticiForm(f => ({ ...f, phone: e.target.value }))} className="border rounded px-2 py-1 text-sm w-full min-w-[280px]" required />
           <select name="kurum_id" value={yoneticiForm.kurum_id || ''} onChange={e => setYoneticiForm(f => ({ ...f, kurum_id: e.target.value }))} className="border rounded px-2 py-1 text-sm w-full min-w-[280px]" required>
             <option value="">Kurum Seçiniz</option>
             {kurumlar.map((k) => (

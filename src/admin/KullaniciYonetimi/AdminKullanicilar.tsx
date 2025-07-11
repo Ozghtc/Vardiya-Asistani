@@ -37,7 +37,7 @@ const AdminKullanicilar = ({
           <input name="name" placeholder="Ad Soyad" value={adminForm.name} onChange={e => setAdminForm(f => ({ ...f, name: e.target.value.toLocaleUpperCase('tr-TR') }))} className="border rounded px-2 py-1 text-sm w-full min-w-[280px]" required />
           <input name="email" placeholder="Email" type="email" value={adminForm.email} onChange={e => setAdminForm(f => ({ ...f, email: e.target.value }))} className="border rounded px-2 py-1 text-sm w-full min-w-[280px]" required />
           <input name="password" placeholder="Şifre" type="password" value={adminForm.password} onChange={e => setAdminForm(f => ({ ...f, password: e.target.value.toLocaleUpperCase('tr-TR') }))} className="border rounded px-2 py-1 text-sm w-full min-w-[280px]" required />
-          <input name="phone" placeholder="Telefon" type="tel" value={adminForm.phone} onChange={e => setAdminForm(f => ({ ...f, phone: e.target.value.toLocaleUpperCase('tr-TR') }))} className="border rounded px-2 py-1 text-sm w-full min-w-[280px]" required />
+          <input name="phone" placeholder="Telefon" type="tel" value={adminForm.phone} onChange={e => setAdminForm(f => ({ ...f, phone: e.target.value }))} className="border rounded px-2 py-1 text-sm w-full min-w-[280px]" required />
           <button type="submit" className="bg-blue-600 text-white rounded px-4 py-2 hover:bg-blue-700 transition w-full md:w-1/2">Ekle</button>
         </form>
       )}
@@ -63,7 +63,7 @@ const AdminKullanicilar = ({
                   <div className="flex-1 flex flex-col gap-1">
                     <input name="name" value={editAdminForm.name} onChange={e => setEditAdminForm((f) => ({ ...f, name: e.target.value.toLocaleUpperCase('tr-TR') }))} className="border rounded px-2 py-1 text-sm w-full md:w-1/2" />
                     <input name="email" value={editAdminForm.email} onChange={e => setEditAdminForm((f) => ({ ...f, email: e.target.value }))} className="border rounded px-2 py-1 text-sm w-full md:w-1/2" />
-                    <input name="phone" value={editAdminForm.phone} onChange={e => setEditAdminForm((f) => ({ ...f, phone: e.target.value.toLocaleUpperCase('tr-TR') }))} className="border rounded px-2 py-1 text-sm w-full md:w-1/2" />
+                    <input name="phone" value={editAdminForm.phone} onChange={e => setEditAdminForm((f) => ({ ...f, phone: e.target.value }))} className="border rounded px-2 py-1 text-sm w-full md:w-1/2" />
                     <input name="password" type="text" value={editAdminForm.password} onChange={e => setEditAdminForm((f) => ({ ...f, password: e.target.value.toLocaleUpperCase('tr-TR') }))} className="border rounded px-2 py-1 text-sm w-full md:w-1/2" />
                   </div>
                   <div className="flex flex-row md:flex-col gap-2 mt-2 md:mt-0 md:ml-4 self-end md:self-auto">
