@@ -90,6 +90,8 @@ const KurumYonetimi = () => {
   const [kurumAdi, handleKurumAdiChange] = useCapitalization(kurumForm.kurum_adi);
   const [kurumTuru, handleKurumTuruChange] = useCapitalization(kurumForm.kurum_turu);
   const [adres, handleAdresChange] = useCapitalization(kurumForm.adres);
+  const [formDepartmanInput, handleFormDepartmanInputChange] = useCapitalization(newDepartmanInput);
+  const [formBirimInput, handleFormBirimInputChange] = useCapitalization(newBirimInput);
 
   // Load data
   useEffect(() => {
@@ -263,13 +265,13 @@ const KurumYonetimi = () => {
 
   // Form departman/birim handlers
   const addFormDepartman = () => {
-    const departmanAdi = newDepartmanInput.trim();
+    const departmanAdi = formDepartmanInput.trim();
     if (!departmanAdi) return;
     
-    const upperDepartman = departmanAdi.toLocaleUpperCase('tr-TR');
-    if (!formDepartmanlar.includes(upperDepartman)) {
-      setFormDepartmanlar(prev => [...prev, upperDepartman]);
+    if (!formDepartmanlar.includes(departmanAdi)) {
+      setFormDepartmanlar(prev => [...prev, departmanAdi]);
       setNewDepartmanInput('');
+      handleFormDepartmanInputChange({ target: { value: '' } } as any);
     }
   };
 
@@ -278,13 +280,13 @@ const KurumYonetimi = () => {
   };
 
   const addFormBirim = () => {
-    const birimAdi = newBirimInput.trim();
+    const birimAdi = formBirimInput.trim();
     if (!birimAdi) return;
     
-    const upperBirim = birimAdi.toLocaleUpperCase('tr-TR');
-    if (!formBirimler.includes(upperBirim)) {
-      setFormBirimler(prev => [...prev, upperBirim]);
+    if (!formBirimler.includes(birimAdi)) {
+      setFormBirimler(prev => [...prev, birimAdi]);
       setNewBirimInput('');
+      handleFormBirimInputChange({ target: { value: '' } } as any);
     }
   };
 
@@ -499,15 +501,12 @@ const KurumYonetimi = () => {
             </div>
 
             <div className="flex items-center gap-2">
-              <CreatableSelect
-                options={DEPARTMAN_SABLONLARI.map(dept => ({ value: dept, label: dept }))}
-                value={newDepartmanInput ? { value: newDepartmanInput, label: newDepartmanInput } : null}
-                onChange={(selected) => setNewDepartmanInput(selected?.value || '')}
-                onInputChange={(inputValue) => setNewDepartmanInput(inputValue)}
-                placeholder="Departman ekle"
-                isClearable
-                classNamePrefix="react-select"
-                className="flex-1"
+              <input
+                type="text"
+                value={formDepartmanInput}
+                onChange={handleFormDepartmanInputChange}
+                placeholder="Departman ekle (örn: Satış, Üretim, Mutfak, vs.)"
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors hover:border-blue-300"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     e.preventDefault();
@@ -518,7 +517,7 @@ const KurumYonetimi = () => {
               <button
                 type="button"
                 onClick={addFormDepartman}
-                disabled={!newDepartmanInput.trim()}
+                disabled={!formDepartmanInput.trim()}
                 className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 ➕
@@ -526,15 +525,12 @@ const KurumYonetimi = () => {
             </div>
 
             <div className="flex items-center gap-2">
-              <CreatableSelect
-                options={BIRIM_SABLONLARI.map(birim => ({ value: birim, label: birim }))}
-                value={newBirimInput ? { value: newBirimInput, label: newBirimInput } : null}
-                onChange={(selected) => setNewBirimInput(selected?.value || '')}
-                onInputChange={(inputValue) => setNewBirimInput(inputValue)}
-                placeholder="Birim ekle"
-                isClearable
-                classNamePrefix="react-select"
-                className="flex-1"
+              <input
+                type="text"
+                value={formBirimInput}
+                onChange={handleFormBirimInputChange}
+                placeholder="Birim ekle (örn: Kasa, Depo, Servis, vs.)"
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors hover:border-green-300"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     e.preventDefault();
@@ -545,7 +541,7 @@ const KurumYonetimi = () => {
               <button
                 type="button"
                 onClick={addFormBirim}
-                disabled={!newBirimInput.trim()}
+                disabled={!formBirimInput.trim()}
                 className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 ➕
@@ -555,16 +551,20 @@ const KurumYonetimi = () => {
 
           {/* Eklenen Departmanlar */}
           {formDepartmanlar.length > 0 && (
-            <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-              <h4 className="text-sm font-medium text-gray-700 mb-2">Eklenen Departmanlar:</h4>
+            <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200 transition-all duration-300">
+              <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+                <span className="text-blue-600">📋</span>
+                Eklenen Departmanlar ({formDepartmanlar.length})
+              </h4>
               <div className="flex flex-wrap gap-2">
                 {formDepartmanlar.map((departman, index) => (
-                  <span key={index} className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 text-sm rounded-full">
-                    {departman}
+                  <span key={index} className="inline-flex items-center gap-1 px-3 py-2 bg-blue-100 text-blue-700 text-sm rounded-full border border-blue-200 hover:bg-blue-200 transition-colors">
+                    <span className="font-medium">{departman}</span>
                     <button
                       type="button"
                       onClick={() => removeFormDepartman(departman)}
-                      className="text-red-500 hover:text-red-700 ml-1"
+                      className="text-red-500 hover:text-red-700 hover:bg-red-100 rounded-full p-1 transition-colors"
+                      title="Departmanı kaldır"
                     >
                       ❌
                     </button>
@@ -576,16 +576,20 @@ const KurumYonetimi = () => {
 
           {/* Eklenen Birimler */}
           {formBirimler.length > 0 && (
-            <div className="mt-4 p-4 bg-green-50 rounded-lg">
-              <h4 className="text-sm font-medium text-gray-700 mb-2">Eklenen Birimler:</h4>
+            <div className="mt-4 p-4 bg-green-50 rounded-lg border border-green-200 transition-all duration-300">
+              <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+                <span className="text-green-600">🏢</span>
+                Eklenen Birimler ({formBirimler.length})
+              </h4>
               <div className="flex flex-wrap gap-2">
                 {formBirimler.map((birim, index) => (
-                  <span key={index} className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-700 text-sm rounded-full">
-                    {birim}
+                  <span key={index} className="inline-flex items-center gap-1 px-3 py-2 bg-green-100 text-green-700 text-sm rounded-full border border-green-200 hover:bg-green-200 transition-colors">
+                    <span className="font-medium">{birim}</span>
                     <button
                       type="button"
                       onClick={() => removeFormBirim(birim)}
-                      className="text-red-500 hover:text-red-700 ml-1"
+                      className="text-red-500 hover:text-red-700 hover:bg-red-100 rounded-full p-1 transition-colors"
+                      title="Birimi kaldır"
                     >
                       ❌
                     </button>
