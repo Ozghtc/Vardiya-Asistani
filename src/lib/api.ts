@@ -247,7 +247,9 @@ const getMockResponse = (endpoint: string, method: string) => {
             { id: "1752215690026", name: "adres", type: "string", isRequired: false },
             { id: "1752215701042", name: "il", type: "string", isRequired: false },
             { id: "1752215712413", name: "ilce", type: "string", isRequired: false },
-            { id: "1752215724299", name: "aktif_mi", type: "boolean", isRequired: false }
+            { id: "1752215724299", name: "aktif_mi", type: "boolean", isRequired: false },
+            { id: "1752215734455", name: "departmanlar", type: "string", isRequired: false },
+            { id: "1752215744678", name: "birimler", type: "string", isRequired: false }
           ]
         }
       }
@@ -289,6 +291,23 @@ const getMockResponse = (endpoint: string, method: string) => {
         deletedRow: {
           id: Date.now()
         }
+      }
+    };
+  }
+  
+  if (endpoint.includes('/fields') && method === 'POST') {
+    return {
+      success: true,
+      message: "Field added successfully",
+      data: {
+        field: {
+          id: Date.now().toString(),
+          name: endpoint.includes('departmanlar') ? 'departmanlar' : 'birimler',
+          type: "string",
+          isRequired: false,
+          description: "Otomatik eklenen field"
+        },
+        totalFields: 8
       }
     };
   }
@@ -425,16 +444,17 @@ export const getTableInfo = async () => {
   }
 };
 
-// Tablo sütunu ekle - DOKÜMANTASYON VERSİYONU
+// Tablo field'i ekle - DOKÜMANTASYON VERSİYONU (DÜZELTME)
 export const addTableColumn = async (columnName: string, columnType: string = 'string') => {
   logInfo('addTableColumn() çağrıldı', { columnName, columnType });
   try {
-    const response = await apiRequest(`/api/v1/tables/${API_CONFIG.tableId}/columns`, {
+    const response = await apiRequest(`/api/v1/tables/project/${API_CONFIG.projectId}/${API_CONFIG.tableId}/fields`, {
       method: 'POST',
       body: JSON.stringify({
         name: columnName,
         type: columnType,
-        isRequired: false
+        isRequired: false,
+        description: `${columnName} field'i otomatik eklendi`
       }),
     });
     
@@ -445,13 +465,13 @@ export const addTableColumn = async (columnName: string, columnType: string = 's
     return {
       success: true,
       data: response.data || response,
-      message: response.message || `Sütun ${columnName} başarıyla eklendi`
+      message: response.message || `Field ${columnName} başarıyla eklendi`
     };
   } catch (error) {
     logError('addTableColumn hatası', error);
     return {
       success: true,
-      message: `Sütun ${columnName} eklendi (Güvenli mod)`,
+      message: `Field ${columnName} eklendi (Güvenli mod)`,
       fallback: true
     };
   }
