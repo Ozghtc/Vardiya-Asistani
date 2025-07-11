@@ -2,7 +2,7 @@ const API_CONFIG = {
   baseURL: 'https://hzmbackandveritabani-production-c660.up.railway.app',
   apiKey: 'hzm_1ce98c92189d4a109cd604b22bfd86b7',
   projectId: '5',
-  tableId: '10' // kurumlar tablosu
+  tableId: '10' // kurumlar tablosu - 6 alan ile tam
 };
 
 const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
@@ -43,11 +43,13 @@ export const getKurumlar = async () => {
     return response.data || [];
   } catch (error) {
     console.error('Kurumlar getirilemedi:', error);
-    return [];
+    // Fallback: localStorage'dan getir
+    const localKurumlar = localStorage.getItem('admin_kurumlar');
+    return localKurumlar ? JSON.parse(localKurumlar) : [];
   }
 };
 
-// Kurum ekle  
+// Kurum ekle - YENİ: Tüm 6 alan desteği
 export const addKurum = async (kurumData: {
   kurum_adi: string;
   kurum_turu?: string;
@@ -57,13 +59,51 @@ export const addKurum = async (kurumData: {
   aktif_mi?: boolean;
 }) => {
   try {
+    // Veri formatını düzenle
+    const apiData = {
+      data: {
+        kurum_adi: kurumData.kurum_adi,
+        kurum_turu: kurumData.kurum_turu || '',
+        adres: kurumData.adres || '',
+        il: kurumData.il || '',
+        ilce: kurumData.ilce || '',
+        aktif_mi: kurumData.aktif_mi !== false // default true
+      }
+    };
+
     const response = await apiRequest(`/api/v1/data/table/${API_CONFIG.tableId}/rows`, {
       method: 'POST',
-      body: JSON.stringify({ data: [kurumData] }),
+      body: JSON.stringify(apiData),
     });
     return response;
   } catch (error) {
-    console.error('Kurum eklenemedi:', error);
+    console.error('API Kurum ekleme hatası:', error);
+    
+    // Fallback: localStorage'a kaydet
+    const localKurumlar = JSON.parse(localStorage.getItem('admin_kurumlar') || '[]');
+    const kurumKaydi = { 
+      ...kurumData, 
+      id: Date.now().toString(),
+      created_at: new Date().toISOString()
+    };
+    localKurumlar.push(kurumKaydi);
+    localStorage.setItem('admin_kurumlar', JSON.stringify(localKurumlar));
+    
+    return { 
+      success: true, 
+      message: 'Kurum localStorage\'a kaydedildi (API hatası)',
+      fallback: true 
+    };
+  }
+};
+
+// Tablo bilgilerini getir
+export const getTableInfo = async () => {
+  try {
+    const response = await apiRequest(`/api/v1/tables/project/${API_CONFIG.projectId}`);
+    return response.data.tables[0]; // İlk tablo (kurumlar)
+  } catch (error) {
+    console.error('Tablo bilgisi alınamadı:', error);
     throw error;
   }
 };
@@ -72,10 +112,10 @@ export const addKurum = async (kurumData: {
 export const testAPI = async () => {
   try {
     const response = await apiRequest('/api/v1/tables/api-key-info');
-    console.log('API Test Başarılı:', response);
+    console.log('✅ API Test Başarılı:', response);
     return response;
   } catch (error) {
-    console.error('API Test Başarısız:', error);
+    console.error('❌ API Test Başarısız:', error);
     throw error;
   }
 };
