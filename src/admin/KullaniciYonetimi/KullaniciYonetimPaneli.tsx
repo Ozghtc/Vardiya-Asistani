@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocalStorage } from '../../hooks/useLocalStorage';
+import { getKurumlar } from '../../lib/api';
 
 // Types
 interface BaseUser {
@@ -22,7 +23,14 @@ interface User extends BaseUser {
 interface Kurum {
   id: string;
   kurum_adi: string;
+  kurum_turu: string;
+  adres: string;
+  il: string;
+  ilce: string;
   aktif_mi: boolean;
+  departmanlar?: string; // Virgülle ayrılmış string
+  birimler?: string; // Virgülle ayrılmış string
+  created_at: string;
 }
 
 interface Departman {
@@ -43,16 +51,18 @@ interface Permission {
   kullanici_id: string;
   departman_id: string;
   birim_id: string;
-  yetki_turu: 'GOREBILIR' | 'DUZENLEYEBILIR';
+  yetki_turu: 'GOREBILIR' | 'DUZENLEYEBILIR' | 'YONETICI' | 'SADECE_KENDI';
 }
 
 const KullaniciYonetimPaneli: React.FC = () => {
-  // States
+  // States - Tüm veriler API'den
   const [users, setUsers] = useLocalStorage<User[]>('users', []);
-  const [kurumlar, setKurumlar] = useLocalStorage<Kurum[]>('kurumlar', []);
-  const [departmanlar, setDepartmanlar] = useLocalStorage<Departman[]>('departmanlar', []);
-  const [birimler, setBirimler] = useLocalStorage<Birim[]>('birimler', []);
+  const [kurumlar, setKurumlar] = useState<Kurum[]>([]);
+  const [departmanlar, setDepartmanlar] = useState<Departman[]>([]);
+  const [birimler, setBirimler] = useState<Birim[]>([]);
   const [permissions, setPermissions] = useLocalStorage<Permission[]>('permissions', []);
+  const [loading, setLoading] = useState(true); // Başlangıçta loading true
+  const [error, setError] = useState<string | null>(null);
   
   // Form states
   const [formData, setFormData] = useState({
@@ -78,8 +88,70 @@ const KullaniciYonetimPaneli: React.FC = () => {
   const [permissionForm, setPermissionForm] = useState({
     departman_id: '',
     birim_id: '',
-    yetki_turu: 'GOREBILIR' as 'GOREBILIR' | 'DUZENLEYEBILIR'
+    yetki_turu: 'GOREBILIR' as 'GOREBILIR' | 'DUZENLEYEBILIR' | 'YONETICI' | 'SADECE_KENDI'
   });
+
+  // Load kurumlar from API
+  useEffect(() => {
+    const loadKurumlar = async () => {
+      setLoading(true);
+      try {
+        console.log('🔄 API\'den kurumlar çekiliyor...');
+        const apiKurumlar = await getKurumlar();
+        console.log('📊 API\'den gelen kurumlar:', apiKurumlar);
+        
+        if (!apiKurumlar || apiKurumlar.length === 0) {
+          console.warn('⚠️ API\'den kurum verisi gelmedi!');
+          return;
+        }
+        
+        setKurumlar(apiKurumlar);
+        
+        // Parse departmanlar and birimler from kurumlar
+        const allDepartmanlar: Departman[] = [];
+        const allBirimler: Birim[] = [];
+        
+        apiKurumlar.forEach((kurum: Kurum) => {
+          console.log(`🏢 Kurum işleniyor: ${kurum.kurum_adi}`);
+          console.log(`📋 Departmanlar: ${kurum.departmanlar}`);
+          console.log(`🏭 Birimler: ${kurum.birimler}`);
+          
+          if (kurum.departmanlar) {
+            kurum.departmanlar.split(', ').filter((d: string) => d.trim()).forEach((dept: string) => {
+              allDepartmanlar.push({
+                id: `${kurum.id}_${dept}`,
+                departman_adi: dept,
+                kurum_id: kurum.id
+              });
+            });
+          }
+          
+          if (kurum.birimler) {
+            kurum.birimler.split(', ').filter((b: string) => b.trim()).forEach((birim: string) => {
+              allBirimler.push({
+                id: `${kurum.id}_${birim}`,
+                birim_adi: birim,
+                kurum_id: kurum.id,
+                departman_id: '' // Birimler kuruma bağlı, departmana göre filtrelenebilir
+              });
+            });
+          }
+        });
+        
+        console.log('📋 Toplam departman:', allDepartmanlar.length);
+        console.log('🏭 Toplam birim:', allBirimler.length);
+        
+        setDepartmanlar(allDepartmanlar);
+        setBirimler(allBirimler);
+      } catch (error) {
+        console.error('❌ Kurumlar yüklenirken hata:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadKurumlar();
+  }, []);
 
   // Filtered data
   const filteredUsers = users.filter(user => {
@@ -229,6 +301,19 @@ const KullaniciYonetimPaneli: React.FC = () => {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="w-full max-w-full mx-0 mt-4 bg-white rounded-xl shadow-lg p-6">
+        <div className="flex items-center justify-center py-12">
+          <div className="flex items-center gap-3">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <span className="text-gray-600">Kurumlar yükleniyor...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full max-w-full mx-0 mt-4 bg-white rounded-xl shadow-lg p-6">
       <div className="flex items-center justify-between mb-8">
@@ -236,6 +321,9 @@ const KullaniciYonetimPaneli: React.FC = () => {
         <div className="flex items-center gap-4">
           <div className="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
             Toplam: {users.length} kullanıcı
+          </div>
+          <div className="text-sm text-blue-600 bg-blue-100 px-3 py-1 rounded-full">
+            Kurumlar: {kurumlar.length}
           </div>
         </div>
       </div>
@@ -566,12 +654,18 @@ const KullaniciYonetimPaneli: React.FC = () => {
                                   <span>
                                     {departmanlar.find(d => d.id === permission.departman_id)?.departman_adi} › {birimler.find(b => b.id === permission.birim_id)?.birim_adi}
                                   </span>
-                                  <span className={`px-2 py-1 rounded ${
-                                    permission.yetki_turu === 'DUZENLEYEBILIR' 
-                                      ? 'bg-orange-100 text-orange-600' 
-                                      : 'bg-blue-100 text-blue-600'
+                                  <span className={`px-2 py-1 rounded text-xs ${
+                                    permission.yetki_turu === 'YONETICI' 
+                                      ? 'bg-red-100 text-red-600' 
+                                      : permission.yetki_turu === 'DUZENLEYEBILIR' 
+                                        ? 'bg-orange-100 text-orange-600' 
+                                        : permission.yetki_turu === 'SADECE_KENDI'
+                                          ? 'bg-purple-100 text-purple-600'
+                                          : 'bg-blue-100 text-blue-600'
                                   }`}>
-                                    {permission.yetki_turu === 'DUZENLEYEBILIR' ? '✏️' : '👁️'}
+                                    {permission.yetki_turu === 'YONETICI' ? '🔐' : 
+                                     permission.yetki_turu === 'DUZENLEYEBILIR' ? '✏️' : 
+                                     permission.yetki_turu === 'SADECE_KENDI' ? '🔒' : '👁️'}
                                   </span>
                                 </div>
                               ))}
@@ -631,7 +725,7 @@ const KullaniciYonetimPaneli: React.FC = () => {
                     disabled={!permissionForm.departman_id}
                   >
                     <option value="">Birim Seçiniz</option>
-                    {birimler.filter(b => b.kurum_id === selectedUser.kurum_id && b.departman_id === permissionForm.departman_id).map(birim => (
+                    {birimler.filter(b => b.kurum_id === selectedUser.kurum_id).map(birim => (
                       <option key={birim.id} value={birim.id}>{birim.birim_adi}</option>
                     ))}
                   </select>
@@ -641,8 +735,10 @@ const KullaniciYonetimPaneli: React.FC = () => {
                     onChange={(e) => setPermissionForm(prev => ({ ...prev, yetki_turu: e.target.value as any }))}
                     className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="GOREBILIR">Görüntüleme</option>
-                    <option value="DUZENLEYEBILIR">Düzenleme</option>
+                    <option value="GOREBILIR">👁️ Görüntüleyebilir</option>
+                    <option value="DUZENLEYEBILIR">✏️ Düzenleyebilir</option>
+                    <option value="YONETICI">🔐 Yönetici (Tam Yetki)</option>
+                    <option value="SADECE_KENDI">🔒 Sadece Kendi Kayıtları</option>
                   </select>
                 </div>
                 
@@ -672,11 +768,17 @@ const KullaniciYonetimPaneli: React.FC = () => {
                         </div>
                         <div className="flex items-center gap-2">
                           <span className={`px-2 py-1 rounded text-xs ${
-                            permission.yetki_turu === 'DUZENLEYEBILIR' 
-                              ? 'bg-orange-100 text-orange-600' 
-                              : 'bg-blue-100 text-blue-600'
+                            permission.yetki_turu === 'YONETICI' 
+                              ? 'bg-red-100 text-red-600' 
+                              : permission.yetki_turu === 'DUZENLEYEBILIR' 
+                                ? 'bg-orange-100 text-orange-600' 
+                                : permission.yetki_turu === 'SADECE_KENDI'
+                                  ? 'bg-purple-100 text-purple-600'
+                                  : 'bg-blue-100 text-blue-600'
                           }`}>
-                            {permission.yetki_turu === 'DUZENLEYEBILIR' ? '✏️ Düzenleyebilir' : '👁️ Görüntüleyebilir'}
+                            {permission.yetki_turu === 'YONETICI' ? '🔐 Yönetici' : 
+                             permission.yetki_turu === 'DUZENLEYEBILIR' ? '✏️ Düzenleyebilir' : 
+                             permission.yetki_turu === 'SADECE_KENDI' ? '🔒 Sadece Kendi' : '👁️ Görüntüleyebilir'}
                           </span>
                           <button
                             onClick={() => handleDeletePermission(permission.id)}
