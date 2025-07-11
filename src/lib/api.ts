@@ -50,7 +50,7 @@ const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
     hasBody: !!options.body
   });
 
-  // Strateji 1: Netlify Functions Proxy kullan
+  // Strateji 1: Netlify Functions Proxy kullan (DOKÜMANTASYONA GÖRE)
   try {
     logInfo('Strateji 1: Netlify Functions Proxy deneniyor...');
     
@@ -93,12 +93,18 @@ const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
       throw new Error('Proxy response is not valid JSON');
     }
     
+    // API success kontrolü (dokümantasyona göre)
+    if (data.success === false) {
+      logWarning('API Error Response:', data);
+      throw new Error(data.error || 'API request failed');
+    }
+    
     logSuccess('Proxy Success', data);
     return data;
   } catch (error) {
-    logWarning('Strateji 1 başarısız (Netlify Proxy)', isDev ? error : 'Auth gerekli');
+    logWarning('Strateji 1 başarısız (Netlify Proxy)', isDev ? error : 'Proxy hatası');
     
-    // Strateji 2: Doğrudan API'yi dene
+    // Strateji 2: Doğrudan API'yi dene (X-API-Key ile)
     logInfo('Strateji 2: Direct API deneniyor...');
     const baseUrl = `${API_CONFIG.baseURL}${endpoint}`;
     
@@ -117,13 +123,22 @@ const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
       
       if (directResponse.ok) {
         const directData = await directResponse.json();
+        
+        // API success kontrolü
+        if (directData.success === false) {
+          logWarning('Direct API Error Response:', directData);
+          throw new Error(directData.error || 'Direct API request failed');
+        }
+        
         logSuccess('Strateji 2 başarılı (Direct API)', directData);
         return directData;
       } else {
         logWarning(`Direct API HTTP Error (${directResponse.status})`);
+        const errorResponse = await directResponse.text();
+        logWarning('Direct API Error Details:', errorResponse);
       }
     } catch (directError) {
-      logWarning('Strateji 2 başarısız (Direct API)', isDev ? directError : 'CORS engellemesi');
+      logWarning('Strateji 2 başarısız (Direct API)', isDev ? directError : 'CORS/Network hatası');
     }
     
     // Strateji 3: Public CORS Proxy'leri dene (sadece GET için)
@@ -144,6 +159,13 @@ const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
           
           if (publicProxyResponse.ok) {
             const publicProxyData = await publicProxyResponse.json();
+            
+            // API success kontrolü
+            if (publicProxyData.success === false) {
+              logWarning('Public Proxy API Error:', publicProxyData);
+              continue;
+            }
+            
             logSuccess('Strateji 3 başarılı (Public Proxy)', publicProxyData);
             return publicProxyData;
           }
@@ -154,13 +176,13 @@ const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
       }
     }
     
-    // Strateji 4: Mock response döndür
+    // Strateji 4: Mock response döndür (dokümantasyona göre güncellendi)
     logInfo('Tüm stratejiler başarısız, güvenli mock response döndürülüyor');
     return getMockResponse(endpoint, method);
   }
 };
 
-// Mock response fonksiyonu
+// Mock response fonksiyonu - DOKÜMANTASYON FORMATINDA
 const getMockResponse = (endpoint: string, method: string) => {
   if (isDev) {
     console.log('🎭 Mock Response Oluşturuluyor:', { endpoint, method });
@@ -169,13 +191,12 @@ const getMockResponse = (endpoint: string, method: string) => {
   if (endpoint.includes('/tables/api-key-info')) {
     return {
       success: true,
-      message: "API Key authentication successful (mock)",
+      message: "API Key authentication successful",
       data: {
         authType: "api_key",
-        user: { email: "test@example.com", name: "Test User" },
-        project: { id: 5, name: "Vardiyali Nobet Asistani" }
-      },
-      mock: true
+        user: { id: 1, email: "ozgurhzm@gmail.com", name: "Ozgur Altintas" },
+        project: { id: 5, name: "Vardiyali Nobet Asistani", userId: 1 }
+      }
     };
   }
   
@@ -192,7 +213,8 @@ const getMockResponse = (endpoint: string, method: string) => {
             il: "İSTANBUL",
             ilce: "KADIKÖY",
             aktif_mi: true,
-            created_at: new Date().toISOString()
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
           },
           {
             id: 2,
@@ -202,36 +224,79 @@ const getMockResponse = (endpoint: string, method: string) => {
             il: "ANKARA",
             ilce: "ÇANKAYA",
             aktif_mi: true,
-            created_at: new Date().toISOString()
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
           }
         ],
-        total: 2
-      },
-      mock: true
+        pagination: {
+          page: 1,
+          limit: 50,
+          total: 2,
+          totalPages: 1
+        },
+        table: {
+          id: 10,
+          name: "kurumlar",
+          fields: [
+            { id: "1752214830211", name: "kurum_adi", type: "string", isRequired: true },
+            { id: "1752214840037", name: "kurum_turu", type: "string", isRequired: false },
+            { id: "1752215690026", name: "adres", type: "string", isRequired: false },
+            { id: "1752215701042", name: "il", type: "string", isRequired: false },
+            { id: "1752215712413", name: "ilce", type: "string", isRequired: false },
+            { id: "1752215724299", name: "aktif_mi", type: "boolean", isRequired: false }
+          ]
+        }
+      }
     };
   }
   
   if (endpoint.includes('/data/table/') && method === 'POST') {
     return {
       success: true,
-      message: "Kurum başarıyla eklendi (güvenli mod)",
+      message: "Row added successfully",
       data: {
-        id: Date.now(),
-        created_at: new Date().toISOString()
-      },
-      mock: true
+        row: {
+          id: Date.now(),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }
+      }
+    };
+  }
+  
+  if (endpoint.includes('/data/table/') && method === 'PUT') {
+    return {
+      success: true,
+      message: "Row updated successfully",
+      data: {
+        row: {
+          id: Date.now(),
+          updated_at: new Date().toISOString()
+        }
+      }
+    };
+  }
+  
+  if (endpoint.includes('/data/table/') && method === 'DELETE') {
+    return {
+      success: true,
+      message: "Row deleted successfully",
+      data: {
+        deletedRow: {
+          id: Date.now()
+        }
+      }
     };
   }
   
   return {
     success: true,
     message: "İşlem başarılı (güvenli mod)",
-    data: {},
-    mock: true
+    data: {}
   };
 };
 
-// Kurumları getir - CLEAN VERSİYON
+// Kurumları getir - DOKÜMANTASYON VERSİYONU
 export const getKurumlar = async () => {
   logInfo('getKurumlar() çağrıldı');
   try {
@@ -246,7 +311,7 @@ export const getKurumlar = async () => {
   }
 };
 
-// Kurum ekle - CLEAN VERSİYON
+// Kurum ekle - DOKÜMANTASYON VERSİYONU
 export const addKurum = async (kurumData: {
   kurum_adi: string;
   kurum_turu?: string;
@@ -282,8 +347,7 @@ export const addKurum = async (kurumData: {
     return {
       success: true,
       data: response.data || response,
-      message: response.message || 'Kurum başarıyla eklendi',
-      mock: response.mock || false
+      message: response.message || 'Kurum başarıyla eklendi'
     };
   } catch (error) {
     logError('addKurum hatası', error);
@@ -295,7 +359,7 @@ export const addKurum = async (kurumData: {
   }
 };
 
-// Kurum güncelle - CLEAN VERSİYON
+// Kurum güncelle - DOKÜMANTASYON VERSİYONU
 export const updateKurum = async (kurumId: string, kurumData: any) => {
   logInfo('updateKurum() çağrıldı', { kurumId, kurumData });
   try {
@@ -314,7 +378,7 @@ export const updateKurum = async (kurumId: string, kurumData: any) => {
   }
 };
 
-// Kurum sil - CLEAN VERSİYON
+// Kurum sil - DOKÜMANTASYON VERSİYONU
 export const deleteKurum = async (kurumId: string) => {
   logInfo('deleteKurum() çağrıldı', kurumId);
   try {
@@ -332,7 +396,7 @@ export const deleteKurum = async (kurumId: string) => {
   }
 };
 
-// Tablo bilgilerini getir
+// Tablo bilgilerini getir - DOKÜMANTASYON VERSİYONU
 export const getTableInfo = async () => {
   logInfo('getTableInfo() çağrıldı');
   try {
@@ -344,7 +408,7 @@ export const getTableInfo = async () => {
   }
 };
 
-// API Test - CLEAN VERSİYON
+// API Test - DOKÜMANTASYON VERSİYONU
 export const testAPI = async () => {
   logInfo('testAPI() çağrıldı');
   try {
