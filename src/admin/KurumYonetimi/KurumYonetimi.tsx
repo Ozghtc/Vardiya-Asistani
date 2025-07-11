@@ -427,6 +427,16 @@ const KurumYonetimi = () => {
           >
             {dbUpdateLoading ? 'Güncelleniyor...' : '🔄 DB Güncelle'}
           </button>
+          <button
+            onClick={() => {
+              localStorage.clear();
+              window.location.reload();
+            }}
+            className="px-4 py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
+            title="LocalStorage'ı temizle ve sayfayı yenile"
+          >
+            🗑️ Cache Temizle
+          </button>
           <div className="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
             Toplam: {kurumlar.length} kurum
           </div>

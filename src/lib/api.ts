@@ -204,39 +204,12 @@ const getMockResponse = (endpoint: string, method: string) => {
     return {
       success: true,
       data: {
-        rows: [
-          {
-            id: 1,
-            kurum_adi: "ÖRNEK HASTANESİ",
-            kurum_turu: "HASTANE", 
-            adres: "ÖRNEK ADRES",
-            il: "İSTANBUL",
-            ilce: "KADIKÖY",
-            aktif_mi: true,
-            departmanlar: "ACİL SERVİS, YOĞUN BAKIM, DAHİLİYE",
-            birimler: "POLİKLİNİK, YATAN HASTA, AMELİYATHANE",
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          },
-          {
-            id: 2,
-            kurum_adi: "TEST KLİNİĞİ",
-            kurum_turu: "KLİNİK",
-            adres: "TEST ADRES",
-            il: "ANKARA",
-            ilce: "ÇANKAYA",
-            aktif_mi: true,
-            departmanlar: "MUAYENE, TETKIK",
-            birimler: "POLİKLİNİK, LABORATUVAR",
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          }
-        ],
+        rows: [],
         pagination: {
           page: 1,
           limit: 50,
-          total: 2,
-          totalPages: 1
+          total: 0,
+          totalPages: 0
         },
         table: {
           id: 10,
@@ -448,7 +421,7 @@ export const getTableInfo = async () => {
 export const addTableColumn = async (columnName: string, columnType: string = 'string') => {
   logInfo('addTableColumn() çağrıldı', { columnName, columnType });
   try {
-    const response = await apiRequest(`/api/v1/tables/project/${API_CONFIG.projectId}/${API_CONFIG.tableId}/fields`, {
+    const response = await apiRequest(`/api/v1/tables/${API_CONFIG.tableId}/fields`, {
       method: 'POST',
       body: JSON.stringify({
         name: columnName,
