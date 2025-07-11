@@ -421,7 +421,7 @@ export const getTableInfo = async () => {
 export const addTableColumn = async (columnName: string, columnType: string = 'string') => {
   logInfo('addTableColumn() çağrıldı', { columnName, columnType });
   try {
-    const response = await apiRequest(`/api/v1/tables/${API_CONFIG.tableId}/fields`, {
+    const response = await apiRequest(`/api/v1/tables/project/${API_CONFIG.projectId}/${API_CONFIG.tableId}/fields`, {
       method: 'POST',
       body: JSON.stringify({
         name: columnName,
