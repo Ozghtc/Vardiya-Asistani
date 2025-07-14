@@ -619,7 +619,14 @@ const KullaniciYonetimPaneli: React.FC = () => {
                       <div className="mt-3 p-2 bg-gray-50 rounded-lg">
                         <div className="text-xs text-gray-500 mb-1">Kurum Bilgileri</div>
                         <div className="text-sm">
-                          🏥 {kurumlar.find(k => k.id === user.kurum_id)?.kurum_adi || 'Bilinmeyen'}
+                          🏥 {(() => {
+                            console.log('🔍 KURUM DEBUG:');
+                            console.log('user.kurum_id:', user.kurum_id, 'type:', typeof user.kurum_id);
+                            console.log('kurumlar:', kurumlar.map(k => ({id: k.id, name: k.kurum_adi, type: typeof k.id})));
+                            const foundKurum = kurumlar.find(k => String(k.id) === String(user.kurum_id));
+                            console.log('foundKurum:', foundKurum);
+                            return foundKurum?.kurum_adi || 'Bilinmeyen';
+                          })()}
                         </div>
                         <div className="text-xs text-gray-500">
                           {departmanlar.find(d => d.id === user.departman_id)?.departman_adi || 'Bilinmeyen'} › {birimler.find(b => b.id === user.birim_id)?.birim_adi || 'Bilinmeyen'}
