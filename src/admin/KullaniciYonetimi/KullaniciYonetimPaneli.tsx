@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocalStorage } from '../../hooks/useLocalStorage';
-import { getKurumlar, createUsersTable } from '../../lib/api';
+import { getKurumlar, createUsersTable, getUsers, addUser, updateUser, deleteUser } from '../../lib/api';
 
 // Types
 interface BaseUser {
@@ -56,7 +56,7 @@ interface Permission {
 
 const KullaniciYonetimPaneli: React.FC = () => {
   // States - Tüm veriler API'den
-  const [users, setUsers] = useLocalStorage<User[]>('users', []);
+  const [users, setUsers] = useState<User[]>([]);
   const [kurumlar, setKurumlar] = useState<Kurum[]>([]);
   const [departmanlar, setDepartmanlar] = useState<Departman[]>([]);
   const [birimler, setBirimler] = useState<Birim[]>([]);
@@ -64,6 +64,7 @@ const KullaniciYonetimPaneli: React.FC = () => {
   const [loading, setLoading] = useState(true); // Başlangıçta loading true
   const [error, setError] = useState<string | null>(null);
   const [tableCreating, setTableCreating] = useState(false);
+  const [usersTableId, setUsersTableId] = useState<number | null>(null);
   
   // Form states
   const [formData, setFormData] = useState({
@@ -145,6 +146,25 @@ const KullaniciYonetimPaneli: React.FC = () => {
     loadKurumlar();
   }, []);
 
+  // Load users from API
+  const loadUsers = async () => {
+    if (!usersTableId) return;
+    
+    try {
+      const apiUsers = await getUsers(usersTableId);
+      setUsers(apiUsers);
+    } catch (error) {
+      console.error('❌ Kullanıcılar yüklenirken hata:', error);
+    }
+  };
+
+  // Kullanıcı tablosu ID'si değiştiğinde kullanıcıları yükle
+  useEffect(() => {
+    if (usersTableId) {
+      loadUsers();
+    }
+  }, [usersTableId]);
+
   // Filtered data
   const filteredUsers = users.filter(user => {
     const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -157,7 +177,7 @@ const KullaniciYonetimPaneli: React.FC = () => {
   const filteredBirimler = birimler.filter(b => String(b.kurum_id) === String(formData.kurum_id));
 
   // Handlers
-  const handleFormSubmit = (e: React.FormEvent) => {
+  const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.name || !formData.email || !formData.password || !formData.phone) {
@@ -171,43 +191,74 @@ const KullaniciYonetimPaneli: React.FC = () => {
       return;
     }
 
-    const newUser: User = {
-      id: Date.now().toString(),
-      ...formData,
-      aktif_mi: true,
-      created_at: new Date().toISOString()
-    };
+    if (!usersTableId) {
+      alert('❌ Kullanıcı tablosu bulunamadı! Önce "Kullanıcı Tablosu Oluştur" butonuna basın.');
+      return;
+    }
 
-    setUsers(prev => [...prev, newUser]);
-    setFormData({
-      rol: 'admin',
-      name: '',
-      email: '',
-      password: '',
-      phone: '',
-      kurum_id: '',
-      departman_id: '',
-      birim_id: ''
-    });
+    try {
+      const result = await addUser(usersTableId, formData);
+      if (result.success) {
+        alert('✅ Kullanıcı başarıyla eklendi!');
+        // Kullanıcı listesini yenile
+        loadUsers();
+        setFormData({
+          rol: 'admin',
+          name: '',
+          email: '',
+          password: '',
+          phone: '',
+          kurum_id: '',
+          departman_id: '',
+          birim_id: ''
+        });
+      } else {
+        alert('❌ Kullanıcı eklenemedi: ' + result.message);
+      }
+    } catch (error) {
+      console.error('❌ Kullanıcı ekleme hatası:', error);
+      alert('❌ Kullanıcı eklenemedi!');
+    }
   };
 
   const handleDeleteUser = (user: User) => {
     setShowDeleteModal({ user, confirmText: '' });
   };
 
-  const confirmDelete = () => {
-    if (showDeleteModal && showDeleteModal.confirmText === showDeleteModal.user.name) {
-      setUsers(prev => prev.filter(u => u.id !== showDeleteModal.user.id));
-      setPermissions(prev => prev.filter(p => p.kullanici_id !== showDeleteModal.user.id));
-      setShowDeleteModal(null);
-      setSelectedUser(null);
+  const confirmDelete = async () => {
+    if (showDeleteModal && showDeleteModal.confirmText === showDeleteModal.user.name && usersTableId) {
+      try {
+        const result = await deleteUser(usersTableId, showDeleteModal.user.id);
+        if (result.success) {
+          alert('✅ Kullanıcı başarıyla silindi!');
+          loadUsers();
+          setPermissions(prev => prev.filter(p => p.kullanici_id !== showDeleteModal.user.id));
+          setShowDeleteModal(null);
+          setSelectedUser(null);
+        } else {
+          alert('❌ Kullanıcı silinemedi');
+        }
+      } catch (error) {
+        console.error('❌ Kullanıcı silme hatası:', error);
+        alert('❌ Kullanıcı silinemedi!');
+      }
     }
   };
 
-  const handleToggleActive = (user: User) => {
-    setUsers(prev => prev.map(u => 
-      u.id === user.id ? { ...u, aktif_mi: !u.aktif_mi } : u
-    ));
+  const handleToggleActive = async (user: User) => {
+    if (!usersTableId) return;
+    
+    try {
+      const result = await updateUser(usersTableId, user.id, { aktif_mi: !user.aktif_mi });
+      if (result.success) {
+        loadUsers();
+      } else {
+        alert('❌ Kullanıcı durumu güncellenemedi');
+      }
+    } catch (error) {
+      console.error('❌ Kullanıcı güncelleme hatası:', error);
+      alert('❌ Kullanıcı durumu güncellenemedi!');
+    }
   };
 
   const handleEditUser = (user: User) => {
@@ -224,28 +275,34 @@ const KullaniciYonetimPaneli: React.FC = () => {
     });
   };
 
-  const handleUpdateUser = (e: React.FormEvent) => {
+  const handleUpdateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!editingUser) return;
+    if (!editingUser || !usersTableId) return;
 
-    const updatedUser: User = {
-      ...editingUser,
-      ...formData
-    };
-
-    setUsers(prev => prev.map(u => u.id === editingUser.id ? updatedUser : u));
-    setEditingUser(null);
-    setFormData({
-      rol: 'admin',
-      name: '',
-      email: '',
-      password: '',
-      phone: '',
-      kurum_id: '',
-      departman_id: '',
-      birim_id: ''
-    });
+    try {
+      const result = await updateUser(usersTableId, editingUser.id, formData);
+      if (result.success) {
+        alert('✅ Kullanıcı başarıyla güncellendi!');
+        loadUsers();
+        setEditingUser(null);
+        setFormData({
+          rol: 'admin',
+          name: '',
+          email: '',
+          password: '',
+          phone: '',
+          kurum_id: '',
+          departman_id: '',
+          birim_id: ''
+        });
+      } else {
+        alert('❌ Kullanıcı güncellenemedi');
+      }
+    } catch (error) {
+      console.error('❌ Kullanıcı güncelleme hatası:', error);
+      alert('❌ Kullanıcı güncellenemedi!');
+    }
   };
 
   const handleAddPermission = () => {
@@ -301,8 +358,14 @@ const KullaniciYonetimPaneli: React.FC = () => {
       const result = await createUsersTable();
       
       if (result.success) {
-        alert('✅ Kullanıcı tablosu başarıyla oluşturuldu!');
-        console.log('🎯 Tablo oluşturma sonucu:', result);
+        const tableId = result.data?.table?.id;
+        if (tableId) {
+          setUsersTableId(tableId);
+          alert('✅ Kullanıcı tablosu başarıyla oluşturuldu! ID: ' + tableId);
+          console.log('🎯 Tablo oluşturma sonucu:', result);
+        } else {
+          alert('❌ Tablo oluşturuldu ama ID alınamadı');
+        }
       } else {
         alert('❌ Hata: ' + result.message);
         console.error('❌ Tablo oluşturma hatası:', result);
@@ -340,14 +403,19 @@ const KullaniciYonetimPaneli: React.FC = () => {
             Kurumlar: {kurumlar.length}
           </div>
           
-          {/* TEST BUTONU - GEÇİCİ */}
-          <button
-            onClick={handleCreateUsersTable}
-            disabled={tableCreating}
-            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            {tableCreating ? '⏳ Oluşturuluyor...' : '🏗️ Kullanıcı Tablosu Oluştur'}
-          </button>
+          {usersTableId ? (
+            <div className="text-sm text-green-600 bg-green-100 px-3 py-1 rounded-full">
+              ✅ Kullanıcı Tablosu: {usersTableId}
+            </div>
+          ) : (
+            <button
+              onClick={handleCreateUsersTable}
+              disabled={tableCreating}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {tableCreating ? '⏳ Oluşturuluyor...' : '🏗️ Kullanıcı Tablosu Oluştur'}
+            </button>
+          )}
         </div>
       </div>
 
@@ -357,6 +425,18 @@ const KullaniciYonetimPaneli: React.FC = () => {
           <span className="text-blue-600">➕</span>
           {editingUser ? 'Kullanıcı Güncelle' : 'Yeni Kullanıcı Ekle'}
         </h2>
+        
+        {!usersTableId && (
+          <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <div className="flex items-center gap-2 text-yellow-800">
+              <span>⚠️</span>
+              <span className="font-medium">Kullanıcı tablosu bulunamadı!</span>
+            </div>
+            <p className="text-sm text-yellow-700 mt-1">
+              Kullanıcı eklemek için önce yukarıdaki "🏗️ Kullanıcı Tablosu Oluştur" butonuna basın.
+            </p>
+          </div>
+        )}
         
         <form onSubmit={editingUser ? handleUpdateUser : handleFormSubmit} className="space-y-4">
           {/* Rol Seçimi */}
@@ -491,7 +571,8 @@ const KullaniciYonetimPaneli: React.FC = () => {
           <div className="flex gap-4 pt-4">
             <button
               type="submit"
-              className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-lg font-medium hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+              disabled={!usersTableId}
+              className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-lg font-medium hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {editingUser ? '✅ Güncelle' : '➕ Kullanıcı Ekle'}
             </button>
@@ -619,14 +700,7 @@ const KullaniciYonetimPaneli: React.FC = () => {
                       <div className="mt-3 p-2 bg-gray-50 rounded-lg">
                         <div className="text-xs text-gray-500 mb-1">Kurum Bilgileri</div>
                         <div className="text-sm">
-                          🏥 {(() => {
-                            console.log('🔍 KURUM DEBUG:');
-                            console.log('user.kurum_id:', user.kurum_id, 'type:', typeof user.kurum_id);
-                            console.log('kurumlar:', kurumlar.map(k => ({id: k.id, name: k.kurum_adi, type: typeof k.id})));
-                            const foundKurum = kurumlar.find(k => String(k.id) === String(user.kurum_id));
-                            console.log('foundKurum:', foundKurum);
-                            return foundKurum?.kurum_adi || 'Bilinmeyen';
-                          })()}
+                          🏥 {kurumlar.find(k => String(k.id) === String(user.kurum_id))?.kurum_adi || 'Bilinmeyen'}
                         </div>
                         <div className="text-xs text-gray-500">
                           {departmanlar.find(d => d.id === user.departman_id)?.departman_adi || 'Bilinmeyen'} › {birimler.find(b => b.id === user.birim_id)?.birim_adi || 'Bilinmeyen'}
