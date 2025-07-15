@@ -1,0 +1,539 @@
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Clock, Users, Calendar, Shield, CheckCircle, Star, ArrowRight, Mail, Lock, User, Building2, Phone } from 'lucide-react';
+
+const LandingPage: React.FC = () => {
+  const navigate = useNavigate();
+  const [showLogin, setShowLogin] = useState(false);
+  const [showRegister, setShowRegister] = useState(false);
+  const [loginData, setLoginData] = useState({ email: '', password: '' });
+  const [registerData, setRegisterData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    organization: '',
+    phone: '',
+    title: ''
+  });
+
+  const features = [
+    {
+      icon: <Clock className="w-8 h-8 text-blue-600" />,
+      title: "Akıllı Vardiya Planlama",
+      description: "Yapay zeka destekli otomatik vardiya oluşturma ve optimizasyon"
+    },
+    {
+      icon: <Users className="w-8 h-8 text-green-600" />,
+      title: "Personel Yönetimi",
+      description: "Kapsamlı personel takibi, izin yönetimi ve performans analizi"
+    },
+    {
+      icon: <Calendar className="w-8 h-8 text-purple-600" />,
+      title: "Esnek Takvim",
+      description: "Özelleştirilebilir takvim görünümleri ve mobil erişim"
+    },
+    {
+      icon: <Shield className="w-8 h-8 text-red-600" />,
+      title: "Güvenli Altyapı",
+      description: "256-bit SSL şifreleme ve KVKK uyumlu veri koruma"
+    }
+  ];
+
+  const testimonials = [
+    {
+      name: "Dr. Mehmet Yılmaz",
+      title: "Başhekim",
+      organization: "Ankara Şehir Hastanesi",
+      content: "Vardiya planlaması artık çok daha kolay. Personelimizin memnuniyeti %40 arttı.",
+      rating: 5
+    },
+    {
+      name: "Ayşe Demir",
+      title: "İnsan Kaynakları Müdürü",
+      organization: "İstanbul Üniversitesi Hastanesi",
+      content: "Manuel planlamadan kurtulduk. Zaman tasarrufu inanılmaz.",
+      rating: 5
+    },
+    {
+      name: "Fatma Kaya",
+      title: "Hemşire Başı",
+      organization: "İzmir Katip Çelebi Üniversitesi",
+      content: "Personel isteklerini kolayca yönetebiliyoruz. Harika bir sistem!",
+      rating: 5
+    }
+  ];
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Burada giriş işlemi yapılacak
+    console.log('Login:', loginData);
+    // Geçici olarak admin sayfasına yönlendir
+    navigate('/admin');
+  };
+
+  const handleRegister = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (registerData.password !== registerData.confirmPassword) {
+      alert('Şifreler eşleşmiyor!');
+      return;
+    }
+    // Burada kayıt işlemi yapılacak
+    console.log('Register:', registerData);
+    alert('Kayıt başarılı! Giriş yapabilirsiniz.');
+    setShowRegister(false);
+    setShowLogin(true);
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      {/* Header */}
+      <header className="bg-white shadow-sm sticky top-0 z-40">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
+                <Clock className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-gray-900">VardiyaPro</h1>
+                <p className="text-xs text-gray-500">Akıllı Mesai Yönetimi</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setShowLogin(true)}
+                className="px-4 py-2 text-blue-600 hover:text-blue-700 font-medium"
+              >
+                Giriş Yap
+              </button>
+              <button
+                onClick={() => setShowRegister(true)}
+                className="px-6 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 font-medium"
+              >
+                Ücretsiz Başla
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Hero Section */}
+      <section className="py-20 px-4">
+        <div className="container mx-auto text-center">
+          <div className="max-w-4xl mx-auto">
+            <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">
+              Türkiye'nin En Gelişmiş
+              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"> Vardiya Yönetim </span>
+              Platformu
+            </h1>
+            <p className="text-xl text-gray-600 mb-8 leading-relaxed">
+              Hastaneler, güvenlik şirketleri, fabrikalar ve tüm mesai tabanlı işletmeler için 
+              yapay zeka destekli akıllı vardiya planlama çözümü
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <button
+                onClick={() => setShowRegister(true)}
+                className="px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-300 font-semibold text-lg flex items-center justify-center gap-2"
+              >
+                Ücretsiz Dene
+                <ArrowRight className="w-5 h-5" />
+              </button>
+              <button className="px-8 py-4 border-2 border-gray-300 text-gray-700 rounded-xl hover:border-blue-600 hover:text-blue-600 transition-all duration-300 font-semibold text-lg">
+                Demo İzle
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section className="py-20 px-4 bg-white">
+        <div className="container mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+              Neden VardiyaPro?
+            </h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              Modern işletmelerin ihtiyaçlarına özel tasarlanmış kapsamlı özellikler
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {features.map((feature, index) => (
+              <div key={index} className="text-center p-6 rounded-2xl hover:shadow-lg transition-all duration-300 border border-gray-100">
+                <div className="flex justify-center mb-4">
+                  {feature.icon}
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                  {feature.title}
+                </h3>
+                <p className="text-gray-600">
+                  {feature.description}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Stats Section */}
+      <section className="py-20 px-4 bg-gradient-to-r from-blue-600 to-purple-600">
+        <div className="container mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-center text-white">
+            <div>
+              <div className="text-4xl font-bold mb-2">500+</div>
+              <div className="text-blue-100">Aktif Kurum</div>
+            </div>
+            <div>
+              <div className="text-4xl font-bold mb-2">50K+</div>
+              <div className="text-blue-100">Personel</div>
+            </div>
+            <div>
+              <div className="text-4xl font-bold mb-2">1M+</div>
+              <div className="text-blue-100">Aylık Vardiya</div>
+            </div>
+            <div>
+              <div className="text-4xl font-bold mb-2">99.9%</div>
+              <div className="text-blue-100">Uptime</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials */}
+      <section className="py-20 px-4 bg-gray-50">
+        <div className="container mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+              Müşterilerimiz Ne Diyor?
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {testimonials.map((testimonial, index) => (
+              <div key={index} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                <div className="flex items-center mb-4">
+                  {[...Array(testimonial.rating)].map((_, i) => (
+                    <Star key={i} className="w-5 h-5 text-yellow-400 fill-current" />
+                  ))}
+                </div>
+                <p className="text-gray-600 mb-4 italic">
+                  "{testimonial.content}"
+                </p>
+                <div>
+                  <div className="font-semibold text-gray-900">{testimonial.name}</div>
+                  <div className="text-sm text-gray-500">{testimonial.title}</div>
+                  <div className="text-sm text-blue-600">{testimonial.organization}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-20 px-4 bg-white">
+        <div className="container mx-auto text-center">
+          <h2 className="text-4xl font-bold text-gray-900 mb-4">
+            Hemen Başlayın
+          </h2>
+          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+            30 gün ücretsiz deneme ile VardiyaPro'nun gücünü keşfedin. 
+            Kredi kartı bilgisi gerektirmez.
+          </p>
+          <button
+            onClick={() => setShowRegister(true)}
+            className="px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-300 font-semibold text-lg"
+          >
+            Ücretsiz Hesap Oluştur
+          </button>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-gray-900 text-white py-12 px-4">
+        <div className="container mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+                  <Clock className="w-5 h-5 text-white" />
+                </div>
+                <span className="text-xl font-bold">VardiyaPro</span>
+              </div>
+              <p className="text-gray-400">
+                Türkiye'nin en gelişmiş vardiya yönetim platformu
+              </p>
+            </div>
+            <div>
+              <h3 className="font-semibold mb-4">Ürün</h3>
+              <ul className="space-y-2 text-gray-400">
+                <li>Özellikler</li>
+                <li>Fiyatlandırma</li>
+                <li>Demo</li>
+                <li>API</li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-semibold mb-4">Destek</h3>
+              <ul className="space-y-2 text-gray-400">
+                <li>Yardım Merkezi</li>
+                <li>İletişim</li>
+                <li>Eğitimler</li>
+                <li>Durum</li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-semibold mb-4">Şirket</h3>
+              <ul className="space-y-2 text-gray-400">
+                <li>Hakkımızda</li>
+                <li>Blog</li>
+                <li>Kariyer</li>
+                <li>Gizlilik</li>
+              </ul>
+            </div>
+          </div>
+          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
+            <p>&copy; 2025 VardiyaPro. Tüm hakları saklıdır.</p>
+          </div>
+        </div>
+      </footer>
+
+      {/* Login Modal */}
+      {showLogin && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-8 max-w-md w-full">
+            <div className="text-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Giriş Yap</h2>
+              <p className="text-gray-600">Hesabınıza erişim sağlayın</p>
+            </div>
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  E-posta
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="email"
+                    value={loginData.email}
+                    onChange={(e) => setLoginData({...loginData, email: e.target.value})}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="ornek@email.com"
+                    required
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Şifre
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="password"
+                    value={loginData.password}
+                    onChange={(e) => setLoginData({...loginData, password: e.target.value})}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="••••••••"
+                    required
+                  />
+                </div>
+              </div>
+              <button
+                type="submit"
+                className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 font-medium"
+              >
+                Giriş Yap
+              </button>
+            </form>
+            <div className="mt-6 text-center">
+              <p className="text-gray-600">
+                Hesabınız yok mu?{' '}
+                <button
+                  onClick={() => {
+                    setShowLogin(false);
+                    setShowRegister(true);
+                  }}
+                  className="text-blue-600 hover:text-blue-700 font-medium"
+                >
+                  Kayıt Ol
+                </button>
+              </p>
+            </div>
+            <button
+              onClick={() => setShowLogin(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Register Modal */}
+      {showRegister && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-8 max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div className="text-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Kayıt Ol</h2>
+              <p className="text-gray-600">Ücretsiz hesabınızı oluşturun</p>
+            </div>
+            <form onSubmit={handleRegister} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Ad
+                  </label>
+                  <input
+                    type="text"
+                    value={registerData.firstName}
+                    onChange={(e) => setRegisterData({...registerData, firstName: e.target.value})}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Soyad
+                  </label>
+                  <input
+                    type="text"
+                    value={registerData.lastName}
+                    onChange={(e) => setRegisterData({...registerData, lastName: e.target.value})}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  E-posta
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="email"
+                    value={registerData.email}
+                    onChange={(e) => setRegisterData({...registerData, email: e.target.value})}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="ornek@email.com"
+                    required
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Kurum/Şirket
+                </label>
+                <div className="relative">
+                  <Building2 className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="text"
+                    value={registerData.organization}
+                    onChange={(e) => setRegisterData({...registerData, organization: e.target.value})}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Şirket adı"
+                    required
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Telefon
+                </label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="tel"
+                    value={registerData.phone}
+                    onChange={(e) => setRegisterData({...registerData, phone: e.target.value})}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="0555 123 45 67"
+                    required
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Ünvan
+                </label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="text"
+                    value={registerData.title}
+                    onChange={(e) => setRegisterData({...registerData, title: e.target.value})}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="İnsan Kaynakları Müdürü"
+                    required
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Şifre
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="password"
+                    value={registerData.password}
+                    onChange={(e) => setRegisterData({...registerData, password: e.target.value})}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="••••••••"
+                    required
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Şifre Tekrar
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="password"
+                    value={registerData.confirmPassword}
+                    onChange={(e) => setRegisterData({...registerData, confirmPassword: e.target.value})}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="••••••••"
+                    required
+                  />
+                </div>
+              </div>
+              <button
+                type="submit"
+                className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 font-medium"
+              >
+                Hesap Oluştur
+              </button>
+            </form>
+            <div className="mt-6 text-center">
+              <p className="text-gray-600">
+                Zaten hesabınız var mı?{' '}
+                <button
+                  onClick={() => {
+                    setShowRegister(false);
+                    setShowLogin(true);
+                  }}
+                  className="text-blue-600 hover:text-blue-700 font-medium"
+                >
+                  Giriş Yap
+                </button>
+              </p>
+            </div>
+            <button
+              onClick={() => setShowRegister(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default LandingPage; 

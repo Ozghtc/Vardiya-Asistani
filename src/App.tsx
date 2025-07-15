@@ -6,6 +6,9 @@ import { DepartmanBirimProvider } from './admin/VardiyaliNobetSistemi/Tanimlamal
 import Layout from './components/layout/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 
+// Landing Page
+import LandingPage from './landing/LandingPage';
+
 // Pages
 import AdminPage from './admin/AdminPage';
 import VardiyaPlanla from './admin/VardiyaliNobetSistemi/NobetIslemleri/VardiyaPlanla';
@@ -28,6 +31,7 @@ function App() {
   return (
     <Router>
       <Routes>
+        <Route path="/" element={<LandingPage />} />
         <Route path="/admin" element={
           <ProtectedRoute allowedRoles={['admin']}>
             <Layout><AdminPage /></Layout>
@@ -111,7 +115,7 @@ function App() {
           </ProtectedRoute>
         } />
         <Route path="/login" element={<Login />} />
-        <Route path="*" element={<Navigate to="/admin" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
   );
