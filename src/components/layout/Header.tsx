@@ -69,7 +69,7 @@ const Header: React.FC = () => {
   const handleLogout = () => {
     localStorage.removeItem('currentUser');
     setShowMenu(false);
-    navigate('/login');
+    navigate('/');
   };
 
   const handleLogoClick = () => {

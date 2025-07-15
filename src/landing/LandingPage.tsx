@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Clock, Users, Calendar, Shield, CheckCircle, Star, ArrowRight, Mail, Lock, User, Building2, Phone } from 'lucide-react';
-import { addUser, addKurum } from '../lib/api';
+import { addUser, addKurum, getUsers, getKurumlar } from '../lib/api';
 
 const LandingPage: React.FC = () => {
   const navigate = useNavigate();
@@ -9,6 +9,8 @@ const LandingPage: React.FC = () => {
   const [showRegister, setShowRegister] = useState(false);
   const [registerLoading, setRegisterLoading] = useState(false);
   const [registerError, setRegisterError] = useState('');
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [loginError, setLoginError] = useState('');
   const [loginData, setLoginData] = useState({ email: '', password: '' });
   const [registerData, setRegisterData] = useState({
     firstName: '',
@@ -68,12 +70,108 @@ const LandingPage: React.FC = () => {
     }
   ];
 
-  const handleLogin = (e: React.FormEvent) => {
+  // HZM API'den kullanıcı doğrulaması
+  const authenticateUser = async (email: string, password: string) => {
+    try {
+      const users = await getUsers(13); // HZM kullanıcı tablosu ID: 13
+      
+      if (!users || users.length === 0) {
+        throw new Error('Kullanıcı verisi alınamadı');
+      }
+
+      // Email ve şifre ile kullanıcı bul
+      const user = users.find((u: any) => 
+        u.email?.toLowerCase() === email.toLowerCase() && 
+        u.password === password &&
+        u.aktif_mi !== false
+      );
+
+      if (!user) {
+        throw new Error('Geçersiz email veya şifre');
+      }
+
+      return user;
+    } catch (error) {
+      console.error('Kullanıcı doğrulama hatası:', error);
+      throw error;
+    }
+  };
+
+  // Kullanıcıya kurum, departman, birim adlarını ekle
+  const enrichUserWithNames = async (user: any) => {
+    if (!user || user.rol === 'admin') return user;
+    
+    let kurum_adi = '-';
+    let departman_adi = '-';
+    let birim_adi = '-';
+
+    try {
+      // HZM'den kurumları al
+      const kurumlar = await getKurumlar();
+      
+      if (user.kurum_id && kurumlar.length > 0) {
+        const kurum = kurumlar.find((k: any) => k.id === user.kurum_id);
+        kurum_adi = kurum?.kurum_adi || '-';
+        
+        // Departman ve birim bilgilerini kurum verisinden al
+        if (kurum?.departmanlar && user.departman_id) {
+          try {
+            const departmanlar = JSON.parse(kurum.departmanlar);
+            const departman = departmanlar.find((d: any) => d.id === user.departman_id);
+            departman_adi = departman?.departman_adi || '-';
+          } catch (e) {
+            console.warn('Departman verisi parse edilemedi:', e);
+          }
+        }
+        
+        if (kurum?.birimler && user.birim_id) {
+          try {
+            const birimler = JSON.parse(kurum.birimler);
+            const birim = birimler.find((b: any) => b.id === user.birim_id);
+            birim_adi = birim?.birim_adi || '-';
+          } catch (e) {
+            console.warn('Birim verisi parse edilemedi:', e);
+          }
+        }
+      }
+    } catch (error) {
+      console.warn('Kurum bilgileri alınamadı:', error);
+    }
+    
+    return { ...user, kurum_adi, departman_adi, birim_adi };
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Burada giriş işlemi yapılacak
-    console.log('Login:', loginData);
-    // Login sayfasına yönlendir
-    navigate('/login');
+    setLoginLoading(true);
+    setLoginError('');
+
+    try {
+      // HZM API'den kullanıcı doğrulaması
+      const user = await authenticateUser(loginData.email, loginData.password);
+      
+      // Kullanıcı bilgilerini zenginleştir
+      const enrichedUser = await enrichUserWithNames(user);
+      
+      // Kullanıcıyı localStorage'a kaydet (session için)
+      localStorage.setItem('currentUser', JSON.stringify(enrichedUser));
+      
+      // Popup'u kapat
+      setShowLogin(false);
+      
+      // Rol bazlı yönlendirme
+      if (enrichedUser.rol === 'admin') {
+        navigate('/admin');
+      } else if (enrichedUser.rol === 'yonetici') {
+        navigate('/vardiyali-nobet');
+      } else {
+        navigate('/personel');
+      }
+    } catch (err) {
+      setLoginError(err instanceof Error ? err.message : 'Bir hata oluştu. Lütfen tekrar deneyin.');
+    } finally {
+      setLoginLoading(false);
+    }
   };
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -456,6 +554,13 @@ const LandingPage: React.FC = () => {
               <h2 className="text-2xl font-bold text-gray-900 mb-2">Giriş Yap</h2>
               <p className="text-gray-600">Hesabınıza erişim sağlayın</p>
             </div>
+            
+            {loginError && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-red-600 text-sm">{loginError}</p>
+              </div>
+            )}
+            
             <form onSubmit={handleLogin} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -466,10 +571,11 @@ const LandingPage: React.FC = () => {
                   <input
                     type="email"
                     value={loginData.email}
-                    onChange={(e) => setLoginData({...loginData, email: e.target.value})}
+                    onChange={(e) => setLoginData({...loginData, email: e.target.value || ''})}
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="ornek@email.com"
                     required
+                    disabled={loginLoading}
                   />
                 </div>
               </div>
@@ -482,37 +588,41 @@ const LandingPage: React.FC = () => {
                   <input
                     type="password"
                     value={loginData.password}
-                    onChange={(e) => setLoginData({...loginData, password: e.target.value})}
+                    onChange={(e) => setLoginData({...loginData, password: e.target.value || ''})}
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="••••••••"
                     required
+                    disabled={loginLoading}
                   />
                 </div>
               </div>
               <button
                 type="submit"
-                className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 font-medium"
+                disabled={loginLoading}
+                className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 font-medium disabled:opacity-50"
               >
-                Giriş Yap
+                {loginLoading ? 'Giriş yapılıyor...' : 'Giriş Yap'}
               </button>
             </form>
             <div className="mt-6 text-center">
               <p className="text-gray-600">
                 Hesabınız yok mu?{' '}
-                <button
-                  onClick={() => {
-                    setShowLogin(false);
-                    setShowRegister(true);
-                  }}
-                  className="text-blue-600 hover:text-blue-700 font-medium"
-                >
-                  Kayıt Ol
-                </button>
+                                  <button
+                    onClick={() => {
+                      setShowLogin(false);
+                      setShowRegister(true);
+                    }}
+                    className="text-blue-600 hover:text-blue-700 font-medium"
+                    disabled={loginLoading}
+                  >
+                    Kayıt Ol
+                  </button>
               </p>
             </div>
             <button
               onClick={() => setShowLogin(false)}
               className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+              disabled={loginLoading}
             >
               ✕
             </button>

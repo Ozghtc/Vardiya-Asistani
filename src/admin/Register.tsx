@@ -385,7 +385,7 @@ const Register: React.FC = () => {
               Zaten hesabınız var mı?{' '}
               <button
                 type="button"
-                onClick={() => navigate('/login')}
+                onClick={() => navigate('/')}
                 className="font-medium text-blue-600 hover:text-blue-500"
               >
                 Giriş Yap

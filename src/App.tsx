@@ -25,7 +25,6 @@ import NobetEkrani from './admin/VardiyaliNobetSistemi/NobetIslemleri/NobetEkran
 import NobetKurallari from './admin/VardiyaliNobetSistemi/NobetIslemleri/NobetKurallari';
 import NobetOlustur from './admin/VardiyaliNobetSistemi/NobetIslemleri/NobetOlustur';
 import Raporlar from './admin/VardiyaliNobetSistemi/NobetIslemleri/Raporlar';
-import Login from './admin/Login';
 import Register from './admin/Register';
 
 function App() {
@@ -115,7 +114,6 @@ function App() {
             <Layout><KullaniciYonetimPaneli /></Layout>
           </ProtectedRoute>
         } />
-        <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

@@ -19,7 +19,7 @@ const VardiyaliNobet: React.FC = () => {
     const checkUser = async () => {
       const userStr = localStorage.getItem('currentUser');
       if (!userStr) {
-        navigate('/login');
+        navigate('/');
         return;
       }
       const user = JSON.parse(userStr);
