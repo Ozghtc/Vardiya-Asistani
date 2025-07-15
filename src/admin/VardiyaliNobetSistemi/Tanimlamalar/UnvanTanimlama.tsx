@@ -3,6 +3,7 @@ import { Plus, Trash2, UserPlus } from 'lucide-react';
 import { useCapitalization } from '../../../hooks/useCapitalization';
 import { SuccessNotification } from '../../../components/ui/Notification';
 import { useDepartmanBirim } from './DepartmanBirimContext';
+import { apiRequest } from '../../../lib/api';
 
 interface Unvan {
   id: string;
@@ -20,16 +21,29 @@ const UnvanTanimlama: React.FC = () => {
   const { kurum_id, departman_id, birim_id } = useDepartmanBirim();
 
   useEffect(() => {
-    // Load unvanlar from localStorage
-    const savedUnvanlar = JSON.parse(localStorage.getItem('unvanlar') || '[]');
-    if (kurum_id && departman_id && birim_id) {
-      const filteredUnvanlar = savedUnvanlar.filter((u: Unvan) => 
-        u.kurum_id === kurum_id && 
-        u.departman_id === departman_id && 
-        u.birim_id === birim_id
-      );
-      setUnvanlar(filteredUnvanlar);
-    }
+    // Load unvanlar from HZM API
+    const loadUnvanlar = async () => {
+      if (kurum_id && departman_id && birim_id) {
+        try {
+          const response = await apiRequest('/api/v1/data/table/15', {
+            method: 'GET'
+          });
+          
+          if (response.success) {
+            const filteredUnvanlar = response.data.rows.filter((u: any) => 
+              u.kurum_id === kurum_id && 
+              u.departman_id === departman_id && 
+              u.birim_id === birim_id
+            );
+            setUnvanlar(filteredUnvanlar);
+          }
+        } catch (error) {
+          console.error('Ünvanlar yüklenemedi:', error);
+        }
+      }
+    };
+    
+    loadUnvanlar();
   }, [kurum_id, departman_id, birim_id]);
 
   const handleUnvanEkle = async () => {
@@ -42,33 +56,53 @@ const UnvanTanimlama: React.FC = () => {
       return;
     }
 
-    const newUnvan = {
-      id: Date.now().toString(),
-      unvan_adi: unvanAdi.trim(),
-      kurum_id,
-      departman_id,
-      birim_id
-    };
+    try {
+      const newUnvan = {
+        unvan_adi: unvanAdi.trim(),
+        kurum_id,
+        departman_id,
+        birim_id,
+        aktif_mi: true
+      };
 
-    const updatedUnvanlar = [...unvanlar, newUnvan];
-    setUnvanlar(updatedUnvanlar);
-    
-    // Update localStorage
-    const allUnvanlar = JSON.parse(localStorage.getItem('unvanlar') || '[]');
-    localStorage.setItem('unvanlar', JSON.stringify([...allUnvanlar, newUnvan]));
+      const response = await apiRequest('/api/v1/data/table/15/rows', {
+        method: 'POST',
+        body: JSON.stringify(newUnvan)
+      });
 
-    setShowSuccess(true);
-    setTimeout(() => setShowSuccess(false), 2000);
-    handleUnvanChange({ target: { value: '' } } as React.ChangeEvent<HTMLInputElement>);
+      if (response.success) {
+        const updatedUnvanlar = [...unvanlar, response.data.row];
+        setUnvanlar(updatedUnvanlar);
+        
+        setShowSuccess(true);
+        setTimeout(() => setShowSuccess(false), 2000);
+        handleUnvanChange({ target: { value: '' } } as React.ChangeEvent<HTMLInputElement>);
+        setErrorMsg(null);
+      } else {
+        setErrorMsg('Ünvan eklenemedi: ' + response.error);
+      }
+    } catch (error) {
+      console.error('Ünvan ekleme hatası:', error);
+      setErrorMsg('Ünvan eklenemedi. Lütfen tekrar deneyin.');
+    }
   };
 
   const handleUnvanSil = async (unvanId: string) => {
-    const updatedUnvanlar = unvanlar.filter(unvan => unvan.id !== unvanId);
-    setUnvanlar(updatedUnvanlar);
-    
-    // Update localStorage
-    const allUnvanlar = JSON.parse(localStorage.getItem('unvanlar') || '[]');
-    localStorage.setItem('unvanlar', JSON.stringify(allUnvanlar.filter((u: Unvan) => u.id !== unvanId)));
+    try {
+      const response = await apiRequest(`/api/v1/data/table/15/rows/${unvanId}`, {
+        method: 'DELETE'
+      });
+
+      if (response.success) {
+        const updatedUnvanlar = unvanlar.filter(unvan => unvan.id !== unvanId);
+        setUnvanlar(updatedUnvanlar);
+      } else {
+        setErrorMsg('Ünvan silinemedi: ' + response.error);
+      }
+    } catch (error) {
+      console.error('Ünvan silme hatası:', error);
+      setErrorMsg('Ünvan silinemedi. Lütfen tekrar deneyin.');
+    }
   };
 
   if (!kurum_id || !departman_id || !birim_id) {

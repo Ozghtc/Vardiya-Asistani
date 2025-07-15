@@ -86,7 +86,7 @@ export const handler = async (event, context) => {
       method,
       headers: {
         'Content-Type': 'application/json',
-        'X-API-Key': apiKey || 'hzm_b446ef9e20064af09190e85f415a2a0c',
+        'X-API-Key': apiKey || 'hzm_1ce98c92189d4a109cd604b22bfd86b7',
       },
     };
 

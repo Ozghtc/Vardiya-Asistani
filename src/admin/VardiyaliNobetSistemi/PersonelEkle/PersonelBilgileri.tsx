@@ -21,10 +21,33 @@ export default function PersonelBilgileri({ data, onChange }: Props) {
   const [titles, setTitles] = useState<string[]>([]);
 
   useEffect(() => {
-    const savedTitles = localStorage.getItem('unvanlar');
-    if (savedTitles) {
-      setTitles(JSON.parse(savedTitles));
-    }
+    // HZM API'den ünvanları al
+    const loadTitles = async () => {
+      try {
+        const response = await fetch('/.netlify/functions/api-proxy', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            path: '/api/v1/data/table/15',
+            method: 'GET'
+          })
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.data && data.data.rows) {
+            const uniqueTitles = [...new Set(data.data.rows.map((row: any) => row.unvan_adi))].filter(Boolean) as string[];
+            setTitles(uniqueTitles);
+          }
+        }
+      } catch (error) {
+        console.error('Ünvanlar yüklenemedi:', error);
+      }
+    };
+    
+    loadTitles();
   }, []);
 
   const handleChange = (field: keyof FormData, value: string) => {

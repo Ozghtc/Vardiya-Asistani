@@ -1,6 +1,6 @@
 const API_CONFIG = {
   baseURL: import.meta.env.VITE_API_BASE_URL || 'https://hzmbackandveritabani-production-c660.up.railway.app',
-  apiKey: import.meta.env.VITE_API_KEY || 'hzm_b446ef9e20064af09190e85f415a2a0c',
+  apiKey: import.meta.env.VITE_API_KEY || 'hzm_1ce98c92189d4a109cd604b22bfd86b7',
   projectId: import.meta.env.VITE_PROJECT_ID || '5',
   tableId: import.meta.env.VITE_TABLE_ID || '10',
   // Netlify Functions proxy (.mjs for ES modules)
@@ -781,4 +781,5 @@ export const testAPI = async () => {
   }
 };
 
+export { apiRequest };
 export default API_CONFIG; 

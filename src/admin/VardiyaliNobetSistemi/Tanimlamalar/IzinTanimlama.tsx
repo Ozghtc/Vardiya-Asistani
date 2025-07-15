@@ -3,10 +3,11 @@ import { Plus, Trash2, Calendar } from 'lucide-react';
 import { useCapitalization } from '../../../hooks/useCapitalization';
 import { SuccessNotification } from '../../../components/ui/Notification';
 import { useDepartmanBirim } from './DepartmanBirimContext';
+import { apiRequest } from '../../../lib/api';
 
 interface IzinIstek {
   id: string;
-  durum: string;
+  izin_turu: string;
   kurum_id: string;
   departman_id: string;
   birim_id: string;
@@ -20,16 +21,29 @@ const IzinTanimlama: React.FC = () => {
   const { kurum_id, departman_id, birim_id } = useDepartmanBirim();
 
   useEffect(() => {
-    // Load izin istekleri from localStorage
-    const savedIzinIstekleri = JSON.parse(localStorage.getItem('izin_istekleri') || '[]');
-    if (kurum_id && departman_id && birim_id) {
-      const filteredIzinIstekleri = savedIzinIstekleri.filter((i: IzinIstek) => 
-        i.kurum_id === kurum_id && 
-        i.departman_id === departman_id && 
-        i.birim_id === birim_id
-      );
-      setPersonnelRequests(filteredIzinIstekleri);
-    }
+    // Load izin istekleri from HZM API
+    const loadIzinIstekleri = async () => {
+      if (kurum_id && departman_id && birim_id) {
+        try {
+          const response = await apiRequest('/api/v1/data/table/16', {
+            method: 'GET'
+          });
+          
+          if (response.success) {
+            const filteredIzinIstekleri = response.data.rows.filter((i: any) => 
+              i.kurum_id === kurum_id && 
+              i.departman_id === departman_id && 
+              i.birim_id === birim_id
+            );
+            setPersonnelRequests(filteredIzinIstekleri);
+          }
+        } catch (error) {
+          console.error('İzin istekleri yüklenemedi:', error);
+        }
+      }
+    };
+    
+    loadIzinIstekleri();
   }, [kurum_id, departman_id, birim_id]);
 
   const handleAddRequest = async () => {
@@ -40,33 +54,52 @@ const IzinTanimlama: React.FC = () => {
       return;
     }
 
-    const newIzinIstek = {
-      id: Date.now().toString(),
-      durum: personnelRequest.trim(),
-      kurum_id,
-      departman_id,
-      birim_id
-    };
+    try {
+      const newIzinIstek = {
+        izin_turu: personnelRequest.trim(),
+        kurum_id,
+        departman_id,
+        birim_id,
+        aktif_mi: true
+      };
 
-    const updatedIzinIstekleri = [...personnelRequests, newIzinIstek];
-    setPersonnelRequests(updatedIzinIstekleri);
-    
-    // Update localStorage
-    const allIzinIstekleri = JSON.parse(localStorage.getItem('izin_istekleri') || '[]');
-    localStorage.setItem('izin_istekleri', JSON.stringify([...allIzinIstekleri, newIzinIstek]));
+      const response = await apiRequest('/api/v1/data/table/16/rows', {
+        method: 'POST',
+        body: JSON.stringify(newIzinIstek)
+      });
 
-    setShowSuccess(true);
-    setTimeout(() => setShowSuccess(false), 2000);
-    handlePersonnelRequestChange({ target: { value: '' } } as React.ChangeEvent<HTMLInputElement>);
+      if (response.success) {
+        const updatedIzinIstekleri = [...personnelRequests, response.data.row];
+        setPersonnelRequests(updatedIzinIstekleri);
+        
+        setShowSuccess(true);
+        setTimeout(() => setShowSuccess(false), 2000);
+        handlePersonnelRequestChange({ target: { value: '' } } as React.ChangeEvent<HTMLInputElement>);
+      } else {
+        setErrorMsg('İzin türü eklenemedi: ' + response.error);
+      }
+    } catch (error) {
+      console.error('İzin türü ekleme hatası:', error);
+      setErrorMsg('İzin türü eklenemedi. Lütfen tekrar deneyin.');
+    }
   };
 
   const handleRemoveRequest = async (id: string) => {
-    const updatedIzinIstekleri = personnelRequests.filter(r => r.id !== id);
-    setPersonnelRequests(updatedIzinIstekleri);
-    
-    // Update localStorage
-    const allIzinIstekleri = JSON.parse(localStorage.getItem('izin_istekleri') || '[]');
-    localStorage.setItem('izin_istekleri', JSON.stringify(allIzinIstekleri.filter((i: IzinIstek) => i.id !== id)));
+    try {
+      const response = await apiRequest(`/api/v1/data/table/16/rows/${id}`, {
+        method: 'DELETE'
+      });
+
+      if (response.success) {
+        const updatedIzinIstekleri = personnelRequests.filter(r => r.id !== id);
+        setPersonnelRequests(updatedIzinIstekleri);
+      } else {
+        setErrorMsg('İzin türü silinemedi: ' + response.error);
+      }
+    } catch (error) {
+      console.error('İzin türü silme hatası:', error);
+      setErrorMsg('İzin türü silinemedi. Lütfen tekrar deneyin.');
+    }
   };
 
   if (!kurum_id || !departman_id || !birim_id) {
@@ -98,7 +131,7 @@ const IzinTanimlama: React.FC = () => {
         <div className="space-y-2">
           {personnelRequests.map((item) => (
             <div key={item.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-              <span className="font-medium">{item.durum}</span>
+              <span className="font-medium">{item.izin_turu}</span>
               <button
                 onClick={() => handleRemoveRequest(item.id)}
                 className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"
