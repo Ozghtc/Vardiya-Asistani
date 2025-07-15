@@ -111,9 +111,14 @@ const LandingPage: React.FC = () => {
     }
   };
 
-  // Kullanıcıya kurum, departman, birim adlarını ekle
+  // Kullanıcıya kurum, departman, birim adlarını ekle - HZM field'larına göre
   const enrichUserWithNames = async (user: any) => {
-    if (!user || user.rol === 'admin') return user;
+    console.log('🔴 ENRICHING USER - GİRİŞ VERİSİ:', user);
+    
+    if (!user || user.rol === 'admin') {
+      console.log('🔴 ADMIN KULLANICI - ENRİCH ATLANILIYOR');
+      return user;
+    }
     
     let kurum_adi = '-';
     let departman_adi = '-';
@@ -122,16 +127,22 @@ const LandingPage: React.FC = () => {
     try {
       // HZM'den kurumları al
       const kurumlar = await getKurumlar();
+      console.log('🔴 KURUMLAR LİSTESİ:', kurumlar);
       
       if (user.kurum_id && kurumlar.length > 0) {
+        console.log('🔴 KURUM ARANACAK ID:', user.kurum_id);
         const kurum = kurumlar.find((k: any) => k.id === user.kurum_id);
+        console.log('🔴 BULUNAN KURUM:', kurum);
+        
         kurum_adi = kurum?.kurum_adi || '-';
         
         // Departman ve birim bilgilerini kurum verisinden al
         if (kurum?.departmanlar && user.departman_id) {
           try {
             const departmanlar = JSON.parse(kurum.departmanlar);
+            console.log('🔴 DEPARTMANLAR:', departmanlar);
             const departman = departmanlar.find((d: any) => d.id === user.departman_id);
+            console.log('🔴 BULUNAN DEPARTMAN:', departman);
             departman_adi = departman?.departman_adi || '-';
           } catch (e) {
             console.warn('Departman verisi parse edilemedi:', e);
@@ -141,18 +152,25 @@ const LandingPage: React.FC = () => {
         if (kurum?.birimler && user.birim_id) {
           try {
             const birimler = JSON.parse(kurum.birimler);
+            console.log('🔴 BİRİMLER:', birimler);
             const birim = birimler.find((b: any) => b.id === user.birim_id);
+            console.log('🔴 BULUNAN BİRİM:', birim);
             birim_adi = birim?.birim_adi || '-';
           } catch (e) {
             console.warn('Birim verisi parse edilemedi:', e);
           }
         }
+      } else {
+        console.log('🔴 KURUM ID YOK VEYA KURUMLAR BOŞ:', { kurum_id: user.kurum_id, kurumlar_count: kurumlar.length });
       }
     } catch (error) {
       console.warn('Kurum bilgileri alınamadı:', error);
     }
     
-    return { ...user, kurum_adi, departman_adi, birim_adi };
+    const enrichedUser = { ...user, kurum_adi, departman_adi, birim_adi };
+    console.log('🔴 ENRİCHED USER - SON HAL:', enrichedUser);
+    
+    return enrichedUser;
   };
 
   const handleLogin = async (e: React.FormEvent) => {

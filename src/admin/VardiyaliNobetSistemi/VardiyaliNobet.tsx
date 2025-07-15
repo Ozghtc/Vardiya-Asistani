@@ -89,7 +89,7 @@ const VardiyaliNobet: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   <UserCircle className="w-4 h-4 text-purple-600" />
-                  <span>{currentUser.role || 'Rol Belirtilmemiş'} - {currentUser.departman_adi || 'Departman'}</span>
+                  <span>{(currentUser.rol || currentUser.role || 'Rol Belirtilmemiş')} - {currentUser.departman_adi || 'Departman'}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <MapPin className="w-4 h-4 text-green-600" />
