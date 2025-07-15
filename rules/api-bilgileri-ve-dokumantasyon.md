@@ -4,7 +4,7 @@
 - **Base URL:** `https://hzmbackandveritabani-production-c660.up.railway.app`
 - **Proje ID:** `5`
 - **Tablo ID:** `10` (kurumlar tablosu)
-- **API Key:** `hzm_1ce98c92189d4a109cd604b22bfd86b7`
+- **API Key:** `hzm_b446ef9e20064af09190e85f415a2a0c`
 
 ## 📋 HTTP Headers
 ```
