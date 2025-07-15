@@ -531,7 +531,16 @@ export const setupUserTableFieldsManual = async () => {
     { name: 'kurum_id', type: 'string', description: 'Bağlı kurum ID' },
     { name: 'departman_id', type: 'string', description: 'Bağlı departman ID' },
     { name: 'birim_id', type: 'string', description: 'Bağlı birim ID' },
-    { name: 'aktif_mi', type: 'boolean', description: 'Kullanıcı aktif mi?' }
+    { name: 'aktif_mi', type: 'boolean', description: 'Kullanıcı aktif mi?' },
+    // Landing page kayıt formu için ek field'lar
+    { name: 'title', type: 'string', description: 'Kullanıcı ünvanı/pozisyonu' },
+    { name: 'organization', type: 'string', description: 'Kurum/şirket adı (landing page)' },
+    { name: 'firstName', type: 'string', description: 'Ad (landing page)' },
+    { name: 'lastName', type: 'string', description: 'Soyad (landing page)' },
+    { name: 'registration_type', type: 'string', description: 'Kayıt türü (landing/register)' },
+    { name: 'created_at', type: 'string', description: 'Kayıt tarihi' },
+    { name: 'updated_at', type: 'string', description: 'Güncelleme tarihi' },
+    { name: 'last_login', type: 'string', description: 'Son giriş tarihi' }
   ];
   
   const results = [];
@@ -570,6 +579,36 @@ export const setupUserTableFieldsManual = async () => {
   return results;
 };
 
+// Kullanıcı tablosunu genişlet - YENİ FONKSIYON
+export const expandUserTable = async () => {
+  logInfo('expandUserTable() çağrıldı - Kullanıcı tablosu genişletiliyor');
+  try {
+    const results = await setupUserTableFieldsManual();
+    
+    const successCount = results.filter(r => r.success).length;
+    const failCount = results.filter(r => !r.success).length;
+    
+    logInfo(`Kullanıcı tablosu genişletildi: ${successCount} başarılı, ${failCount} başarısız`);
+    
+    return {
+      success: true,
+      message: `Kullanıcı tablosu başarıyla genişletildi. ${successCount} field eklendi.`,
+      data: {
+        results,
+        successCount,
+        failCount
+      }
+    };
+  } catch (error) {
+    logError('expandUserTable hatası', error);
+    return {
+      success: false,
+      message: 'Kullanıcı tablosu genişletilemedi',
+      error: error
+    };
+  }
+};
+
 // Kullanıcıları getir - YENİ FONKSIYON
 export const getUsers = async (usersTableId: number) => {
   logInfo('getUsers() çağrıldı');
@@ -596,6 +635,15 @@ export const addUser = async (usersTableId: number, userData: {
   departman_id?: string;
   birim_id?: string;
   aktif_mi?: boolean;
+  // Yeni field'lar
+  firstName?: string;
+  lastName?: string;
+  organization?: string;
+  title?: string;
+  registration_type?: string;
+  created_at?: string;
+  updated_at?: string;
+  last_login?: string;
 }) => {
   logInfo('addUser() çağrıldı', userData);
   try {
@@ -613,7 +661,16 @@ export const addUser = async (usersTableId: number, userData: {
       kurum_id: userData.kurum_id?.trim() || null,
       departman_id: userData.departman_id?.trim() || null,
       birim_id: userData.birim_id?.trim() || null,
-      aktif_mi: userData.aktif_mi !== false
+      aktif_mi: userData.aktif_mi !== false,
+      // Yeni field'lar
+      firstName: userData.firstName?.trim() || '',
+      lastName: userData.lastName?.trim() || '',
+      organization: userData.organization?.trim() || '',
+      title: userData.title?.trim() || '',
+      registration_type: userData.registration_type || 'manual',
+      created_at: userData.created_at || new Date().toISOString(),
+      updated_at: userData.updated_at || new Date().toISOString(),
+      last_login: userData.last_login || null
     };
     
     if (isDev) {

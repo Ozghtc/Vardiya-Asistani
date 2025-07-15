@@ -4,7 +4,18 @@ import { useCapitalization } from '../../hooks/useCapitalization';
 import Select from 'react-select';
 import CreatableSelect from 'react-select/creatable';
 import turkiyeIller from './il-ilceler/turkiye-il-ilce.json';
-import { addKurum, getKurumlar, updateKurum, deleteKurum, testAPI, updateKurumlarTable, createUsersTable, setupUserTableFieldsManual } from '../../lib/api';
+import { 
+  testAPI, 
+  getKurumlar, 
+  addKurum, 
+  updateKurum, 
+  deleteKurum, 
+  addTableColumn, 
+  updateKurumlarTable, 
+  createUsersTable, 
+  setupUserTableFieldsManual,
+  expandUserTable
+} from '../../lib/api';
 
 // Types
 interface Kurum {
@@ -92,7 +103,8 @@ const KurumYonetimi = () => {
   // User table states
   const [userTableCreating, setUserTableCreating] = useState(false);
   const [userTableFieldsAdding, setUserTableFieldsAdding] = useState(false);
-  const [userTableId, setUserTableId] = useState<number | null>(13); // Mevcut tablo ID'si direkt 13
+  const [expandUserTableLoading, setExpandUserTableLoading] = useState(false);
+  const [userTableId, setUserTableId] = useState<number | null>(13); // Mevcut kullanıcı tablosu ID'si
 
   const [kurumAdi, handleKurumAdiChange] = useCapitalization(kurumForm.kurum_adi);
   const [kurumTuru, handleKurumTuruChange] = useCapitalization(kurumForm.kurum_turu);
@@ -162,6 +174,25 @@ const KurumYonetimi = () => {
       setErrorMsg('❌ Field\'lar eklenemedi');
     } finally {
       setUserTableFieldsAdding(false);
+    }
+  };
+
+  // Kullanıcı tablosunu genişlet
+  const handleExpandUserTable = async () => {
+    setExpandUserTableLoading(true);
+    try {
+      const result = await expandUserTable();
+      if (result.success) {
+        setSuccessMsg(`✅ ${result.message}`);
+        console.log('Kullanıcı tablosu genişletildi:', result.data);
+      } else {
+        setErrorMsg(`❌ ${result.message}`);
+      }
+    } catch (error) {
+      setErrorMsg('❌ Kullanıcı tablosu genişletilemedi');
+      console.error('expandUserTable hatası:', error);
+    } finally {
+      setExpandUserTableLoading(false);
     }
   };
 
@@ -509,6 +540,17 @@ const KurumYonetimi = () => {
               title="Kullanıcı tablosuna field'ları ekle"
             >
               {userTableFieldsAdding ? '⏳ Ekleniyor...' : '🔧 Field\'ları Ekle'}
+            </button>
+          )}
+          
+          {userTableId && (
+            <button
+              onClick={handleExpandUserTable}
+              disabled={expandUserTableLoading}
+              className="px-4 py-2 bg-yellow-100 text-yellow-600 rounded-lg hover:bg-yellow-200 transition-colors disabled:opacity-50"
+              title="Kullanıcı tablosunu genişlet"
+            >
+              {expandUserTableLoading ? '⏳ Genişletiliyor...' : '🔄 Kullanıcı Tablosunu Genişlet'}
             </button>
           )}
           

@@ -132,7 +132,16 @@ const Register: React.FC = () => {
         kurum_id: rol === 'admin' ? undefined : kurum_id,
         departman_id: rol === 'admin' ? undefined : departman_id,
         birim_id: rol === 'admin' ? undefined : birim_id,
-        aktif_mi: true
+        aktif_mi: true,
+        // Yeni field'lar
+        firstName: name.trim().split(' ')[0] || '', // İlk kelime ad
+        lastName: name.trim().split(' ').slice(1).join(' ') || '', // Geri kalanlar soyad
+        organization: rol === 'admin' ? 'Sistem' : (kurumlar.find(k => k.id === kurum_id)?.kurum_adi || ''),
+        title: rol === 'admin' ? 'Sistem Yöneticisi' : (rol === 'yonetici' ? 'Yönetici' : 'Personel'),
+        registration_type: 'register',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        last_login: null
       };
 
       const result = await addUser(13, userData); // HZM kullanıcı tablosu ID: 13

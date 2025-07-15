@@ -128,7 +128,16 @@ const LandingPage: React.FC = () => {
         kurum_id: kurumResult.data?.row?.id || '1',
         departman_id: '1',
         birim_id: '1',
-        aktif_mi: true
+        aktif_mi: true,
+        // Yeni field'lar
+        firstName: registerData.firstName,
+        lastName: registerData.lastName,
+        organization: registerData.organization,
+        title: registerData.title,
+        registration_type: 'landing',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        last_login: null
       };
 
       const userResult = await addUser(13, userData);
