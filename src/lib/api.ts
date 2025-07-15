@@ -230,9 +230,10 @@ const getMockResponse = (endpoint: string, method: string) => {
   }
   
   if (endpoint.includes('/data/table/') && method === 'POST') {
+    console.error('⚠️  MOCK RESPONSE: Kullanıcı ekleme gerçek API\'ye gönderilemiyor!');
     return {
-      success: true,
-      message: "Row added successfully",
+      success: false,
+      message: "Kullanıcı ekleme başarısız - API bağlantısı yok",
       data: {
         row: {
           id: Date.now(),
@@ -269,18 +270,20 @@ const getMockResponse = (endpoint: string, method: string) => {
   }
   
   if (endpoint.includes('/fields') && method === 'POST') {
+    // Mock response ama gerçek API'ye de gönder
+    console.error('⚠️  MOCK RESPONSE: Field ekleme gerçek API\'ye gönderilemiyor!');
     return {
-      success: true,
-      message: "Field added successfully",
+      success: false,
+      message: "Field ekleme başarısız - API bağlantısı yok",
       data: {
         field: {
           id: Date.now().toString(),
-          name: endpoint.includes('departmanlar') ? 'departmanlar' : 'birimler',
+          name: "mock_field",
           type: "string",
           isRequired: false,
-          description: "Otomatik eklenen field"
+          description: "Mock field - gerçek API'ye eklenmedi"
         },
-        totalFields: 8
+        totalFields: 9
       }
     };
   }

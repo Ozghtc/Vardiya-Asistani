@@ -544,7 +544,7 @@ const LandingPage: React.FC = () => {
                   <input
                     type="text"
                     value={registerData.firstName}
-                    onChange={(e) => setRegisterData({...registerData, firstName: e.target.value})}
+                    onChange={(e) => setRegisterData({...registerData, firstName: e.target.value || ''})}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
                     disabled={registerLoading}
@@ -557,7 +557,7 @@ const LandingPage: React.FC = () => {
                   <input
                     type="text"
                     value={registerData.lastName}
-                    onChange={(e) => setRegisterData({...registerData, lastName: e.target.value})}
+                    onChange={(e) => setRegisterData({...registerData, lastName: e.target.value || ''})}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
                     disabled={registerLoading}
@@ -573,7 +573,7 @@ const LandingPage: React.FC = () => {
                   <input
                     type="email"
                     value={registerData.email}
-                    onChange={(e) => setRegisterData({...registerData, email: e.target.value})}
+                    onChange={(e) => setRegisterData({...registerData, email: e.target.value || ''})}
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="ornek@email.com"
                     required
@@ -590,7 +590,7 @@ const LandingPage: React.FC = () => {
                   <input
                     type="text"
                     value={registerData.organization}
-                    onChange={(e) => setRegisterData({...registerData, organization: e.target.value})}
+                    onChange={(e) => setRegisterData({...registerData, organization: e.target.value || ''})}
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Şirket adı"
                     required
@@ -607,7 +607,7 @@ const LandingPage: React.FC = () => {
                   <input
                     type="tel"
                     value={registerData.phone}
-                    onChange={(e) => setRegisterData({...registerData, phone: e.target.value})}
+                    onChange={(e) => setRegisterData({...registerData, phone: e.target.value || ''})}
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="0555 123 45 67"
                     required
@@ -624,7 +624,7 @@ const LandingPage: React.FC = () => {
                   <input
                     type="text"
                     value={registerData.title}
-                    onChange={(e) => setRegisterData({...registerData, title: e.target.value})}
+                    onChange={(e) => setRegisterData({...registerData, title: e.target.value || ''})}
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="İnsan Kaynakları Müdürü"
                     required
@@ -641,7 +641,7 @@ const LandingPage: React.FC = () => {
                   <input
                     type="password"
                     value={registerData.password}
-                    onChange={(e) => setRegisterData({...registerData, password: e.target.value})}
+                    onChange={(e) => setRegisterData({...registerData, password: e.target.value || ''})}
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="••••••••"
                     required
@@ -658,7 +658,7 @@ const LandingPage: React.FC = () => {
                   <input
                     type="password"
                     value={registerData.confirmPassword}
-                    onChange={(e) => setRegisterData({...registerData, confirmPassword: e.target.value})}
+                    onChange={(e) => setRegisterData({...registerData, confirmPassword: e.target.value || ''})}
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="••••••••"
                     required
