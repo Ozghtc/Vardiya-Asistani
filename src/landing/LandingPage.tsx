@@ -130,11 +130,20 @@ const LandingPage: React.FC = () => {
       console.log('🔴 KURUMLAR LİSTESİ:', kurumlar);
       
       if (user.kurum_id && kurumlar.length > 0) {
-        console.log('🔴 KURUM ARANACAK ID:', user.kurum_id);
-        const kurum = kurumlar.find((k: any) => k.id === user.kurum_id);
+        console.log('🔴 KURUM ARANACAK ID:', user.kurum_id, 'type:', typeof user.kurum_id);
+        console.log('🔴 MEVCUT KURUM ID\'LERİ:', kurumlar.map((k: any) => ({id: k.id, name: k.kurum_adi, type: typeof k.id})));
+        
+        // Hem number hem string olarak arama yapalım
+        const kurum = kurumlar.find((k: any) => k.id === user.kurum_id || k.id === String(user.kurum_id) || String(k.id) === String(user.kurum_id));
         console.log('🔴 BULUNAN KURUM:', kurum);
         
-        kurum_adi = kurum?.kurum_adi || '-';
+        if (kurum) {
+          kurum_adi = kurum.kurum_adi || '-';
+        } else {
+          // Kurum bulunamadığında fallback
+          kurum_adi = 'Kurum Bulunamadı (ID: ' + user.kurum_id + ')';
+          console.warn('⚠️ KURUM BULUNAMADI! Aranan ID:', user.kurum_id, 'Mevcut ID\'ler:', kurumlar.map((k: any) => k.id));
+        }
         
         // Departman ve birim bilgilerini kurum verisinden al
         if (kurum?.departmanlar && user.departman_id) {
