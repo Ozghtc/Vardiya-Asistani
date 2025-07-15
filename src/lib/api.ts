@@ -1,10 +1,10 @@
 const API_CONFIG = {
-  baseURL: 'https://hzmbackandveritabani-production-c660.up.railway.app',
-  apiKey: 'hzm_1ce98c92189d4a109cd604b22bfd86b7',
-  projectId: '5',
-  tableId: '10',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'https://hzmbackandveritabani-production-c660.up.railway.app',
+  apiKey: import.meta.env.VITE_API_KEY || 'hzm_1ce98c92189d4a109cd604b22bfd86b7',
+  projectId: import.meta.env.VITE_PROJECT_ID || '5',
+  tableId: import.meta.env.VITE_TABLE_ID || '10',
   // Netlify Functions proxy (.mjs for ES modules)
-  proxyURL: '/.netlify/functions/api-proxy'
+  proxyURL: import.meta.env.VITE_NETLIFY_FUNCTIONS_URL + '/api-proxy' || '/.netlify/functions/api-proxy'
 };
 
 // CORS Proxy için alternatif URL'ler
