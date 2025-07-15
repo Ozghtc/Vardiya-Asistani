@@ -9,7 +9,7 @@ import AlanTanimlama from './AlanTanimlama';
 import TanimliAlanlar from './TanimliAlanlar';
 import TanimliVardiyalar from './TanimliVardiyalar';
 import { useDepartmanBirim } from './DepartmanBirimContext';
-import { createPersonelUnvanTable, createIzinIstekTable } from '../../../lib/api';
+import { createPersonelUnvanTable, createIzinIstekTable, createDepartmanlarTable, createBirimlerTable } from '../../../lib/api';
 
 const SistemTanimlamalari: React.FC = () => {
   const [activeTab, setActiveTab] = useState('unvan-izin');
@@ -22,7 +22,7 @@ const SistemTanimlamalari: React.FC = () => {
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
-  // Otomatik tablo oluşturma - Kural 15 gereği
+  // Otomatik tablo oluşturma - Kural 15 gereği (TÜM EKSİK TABLOLAR)
   const initializeRequiredTables = useCallback(async () => {
     if (tablesInitialized || initializingTables) return;
     
@@ -31,20 +31,24 @@ const SistemTanimlamalari: React.FC = () => {
     try {
       console.log('🏗️ Gerekli HZM tabloları kontrol ediliyor...');
       
-      // Paralel olarak tabloları oluştur
-      const [unvanResult, izinResult] = await Promise.all([
+      // Paralel olarak TÜM tabloları oluştur
+      const [unvanResult, izinResult, departmanResult, birimResult] = await Promise.all([
         createPersonelUnvanTable(),
-        createIzinIstekTable()
+        createIzinIstekTable(),
+        createDepartmanlarTable(),
+        createBirimlerTable()
       ]);
       
-      const successCount = [unvanResult, izinResult].filter(r => r.success).length;
+      const allResults = [unvanResult, izinResult, departmanResult, birimResult];
+      const successCount = allResults.filter(r => r.success).length;
+      const totalCount = allResults.length;
       
-      if (successCount === 2) {
-        setSuccessMsg('✅ Tüm HZM tabloları başarıyla oluşturuldu!');
+      if (successCount === totalCount) {
+        setSuccessMsg('✅ Tüm HZM tabloları başarıyla oluşturuldu! (Ünvan, İzin/İstek, Departman, Birim)');
         console.log('🎯 Otomatik tablo oluşturma başarılı');
       } else if (successCount > 0) {
-        setSuccessMsg(`✅ ${successCount}/2 HZM tablosu oluşturuldu`);
-        console.log('🎯 Kısmi başarı:', { unvanResult, izinResult });
+        setSuccessMsg(`✅ ${successCount}/${totalCount} HZM tablosu oluşturuldu`);
+        console.log('🎯 Kısmi başarı:', { unvanResult, izinResult, departmanResult, birimResult });
       } else {
         console.warn('⚠️ Tablolar zaten mevcut veya oluşturulamadı');
       }
@@ -135,7 +139,7 @@ const SistemTanimlamalari: React.FC = () => {
           {initializingTables && (
             <div className="flex items-center gap-2 text-blue-600">
               <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-              <span className="text-sm">HZM tabloları kontrol ediliyor...</span>
+              <span className="text-sm">HZM tabloları oluşturuluyor... (Ünvan, İzin/İstek, Departman, Birim)</span>
             </div>
           )}
           <button

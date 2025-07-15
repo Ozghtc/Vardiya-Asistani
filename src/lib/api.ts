@@ -594,6 +594,80 @@ export const createIzinIstekTable = async () => {
   }
 };
 
+// Departmanlar tablosu oluştur - YENİ FONKSIYON
+export const createDepartmanlarTable = async () => {
+  logInfo('createDepartmanlarTable() çağrıldı');
+  try {
+    const response = await apiRequest(`/api/v1/tables/project/${API_CONFIG.projectId}`, {
+      method: 'POST',
+      body: JSON.stringify({
+        name: 'departmanlar',
+        description: 'Departman tanımlama tablosu - kurum departmanları için'
+      }),
+    });
+    
+    if (isDev) {
+      console.log('🎯 Departmanlar tablosu oluşturuldu:', response);
+    }
+    
+    // Eğer tablo başarıyla oluşturulduysa, field'ları ekle
+    if (response.data?.table?.id) {
+      const tableId = response.data.table.id;
+      await setupDepartmanlarTableFields(tableId);
+    }
+    
+    return {
+      success: true,
+      data: response.data || response,
+      message: response.message || 'Departmanlar tablosu başarıyla oluşturuldu'
+    };
+  } catch (error) {
+    logError('createDepartmanlarTable hatası', error);
+    return {
+      success: false,
+      message: 'Departmanlar tablosu oluşturulamadı',
+      error: error
+    };
+  }
+};
+
+// Birimler tablosu oluştur - YENİ FONKSIYON
+export const createBirimlerTable = async () => {
+  logInfo('createBirimlerTable() çağrıldı');
+  try {
+    const response = await apiRequest(`/api/v1/tables/project/${API_CONFIG.projectId}`, {
+      method: 'POST',
+      body: JSON.stringify({
+        name: 'birimler',
+        description: 'Birim tanımlama tablosu - departman birimleri için'
+      }),
+    });
+    
+    if (isDev) {
+      console.log('🎯 Birimler tablosu oluşturuldu:', response);
+    }
+    
+    // Eğer tablo başarıyla oluşturulduysa, field'ları ekle
+    if (response.data?.table?.id) {
+      const tableId = response.data.table.id;
+      await setupBirimlerTableFields(tableId);
+    }
+    
+    return {
+      success: true,
+      data: response.data || response,
+      message: response.message || 'Birimler tablosu başarıyla oluşturuldu'
+    };
+  } catch (error) {
+    logError('createBirimlerTable hatası', error);
+    return {
+      success: false,
+      message: 'Birimler tablosu oluşturulamadı',
+      error: error
+    };
+  }
+};
+
 // Kullanıcı tablosuna field'ları manuel ekle - DOĞRUDAN ÇALIŞTIRILABİLİR VERSIYON
 export const setupUserTableFieldsManual = async () => {
   const tableId = 13; // Mevcut kullanıcı tablosu ID
@@ -722,6 +796,107 @@ export const setupIzinIstekTableFields = async (tableId: string) => {
     { name: 'personel_id', type: 'string', description: 'İlgili personel ID', isRequired: false },
     { name: 'onaylayan_id', type: 'string', description: 'Onaylayan personel ID', isRequired: false },
     { name: 'aktif_mi', type: 'boolean', description: 'Aktif durumu', isRequired: false },
+    { name: 'olusturma_tarihi', type: 'string', description: 'Oluşturma tarihi', isRequired: false },
+    { name: 'guncelleme_tarihi', type: 'string', description: 'Güncelleme tarihi', isRequired: false }
+  ];
+  
+  const results = [];
+  
+  for (const field of requiredFields) {
+    try {
+      const response = await apiRequest(`/api/v1/tables/project/${API_CONFIG.projectId}/${tableId}/fields`, {
+        method: 'POST',
+        body: JSON.stringify({
+          name: field.name,
+          type: field.type,
+          description: field.description,
+          isRequired: field.isRequired || false
+        }),
+      });
+      
+      results.push({
+        success: true,
+        field: field.name,
+        data: response.data || response
+      });
+      
+      logSuccess(`Field eklendi: ${field.name}`);
+    } catch (error) {
+      logError(`Field ekleme hatası: ${field.name}`, error);
+      results.push({
+        success: false,
+        field: field.name,
+        error: error
+      });
+    }
+  }
+  
+  return results;
+};
+
+// Departmanlar tablosuna field'ları ekle - YENİ FONKSIYON
+export const setupDepartmanlarTableFields = async (tableId: string) => {
+  logInfo('setupDepartmanlarTableFields() çağrıldı', { tableId });
+  
+  const requiredFields = [
+    { name: 'departman_adi', type: 'string', description: 'Departman adı', isRequired: true },
+    { name: 'departman_kodu', type: 'string', description: 'Departman kodu', isRequired: true },
+    { name: 'kurum_id', type: 'string', description: 'Bağlı kurum ID', isRequired: true },
+    { name: 'aciklama', type: 'string', description: 'Departman açıklaması', isRequired: false },
+    { name: 'aktif_mi', type: 'boolean', description: 'Aktif durumu', isRequired: false },
+    { name: 'sira_no', type: 'number', description: 'Sıra numarası', isRequired: false },
+    { name: 'mudur_id', type: 'string', description: 'Departman müdürü ID', isRequired: false },
+    { name: 'olusturma_tarihi', type: 'string', description: 'Oluşturma tarihi', isRequired: false },
+    { name: 'guncelleme_tarihi', type: 'string', description: 'Güncelleme tarihi', isRequired: false }
+  ];
+  
+  const results = [];
+  
+  for (const field of requiredFields) {
+    try {
+      const response = await apiRequest(`/api/v1/tables/project/${API_CONFIG.projectId}/${tableId}/fields`, {
+        method: 'POST',
+        body: JSON.stringify({
+          name: field.name,
+          type: field.type,
+          description: field.description,
+          isRequired: field.isRequired || false
+        }),
+      });
+      
+      results.push({
+        success: true,
+        field: field.name,
+        data: response.data || response
+      });
+      
+      logSuccess(`Field eklendi: ${field.name}`);
+    } catch (error) {
+      logError(`Field ekleme hatası: ${field.name}`, error);
+      results.push({
+        success: false,
+        field: field.name,
+        error: error
+      });
+    }
+  }
+  
+  return results;
+};
+
+// Birimler tablosuna field'ları ekle - YENİ FONKSIYON
+export const setupBirimlerTableFields = async (tableId: string) => {
+  logInfo('setupBirimlerTableFields() çağrıldı', { tableId });
+  
+  const requiredFields = [
+    { name: 'birim_adi', type: 'string', description: 'Birim adı', isRequired: true },
+    { name: 'birim_kodu', type: 'string', description: 'Birim kodu', isRequired: true },
+    { name: 'departman_id', type: 'string', description: 'Bağlı departman ID', isRequired: true },
+    { name: 'kurum_id', type: 'string', description: 'Bağlı kurum ID', isRequired: true },
+    { name: 'aciklama', type: 'string', description: 'Birim açıklaması', isRequired: false },
+    { name: 'aktif_mi', type: 'boolean', description: 'Aktif durumu', isRequired: false },
+    { name: 'sira_no', type: 'number', description: 'Sıra numarası', isRequired: false },
+    { name: 'sorumlu_id', type: 'string', description: 'Birim sorumlusu ID', isRequired: false },
     { name: 'olusturma_tarihi', type: 'string', description: 'Oluşturma tarihi', isRequired: false },
     { name: 'guncelleme_tarihi', type: 'string', description: 'Güncelleme tarihi', isRequired: false }
   ];
