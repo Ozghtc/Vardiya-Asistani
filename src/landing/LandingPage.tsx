@@ -98,7 +98,13 @@ const LandingPage: React.FC = () => {
               </div>
               <div>
                 <h1 className="text-xl font-bold text-gray-900">VardiyaPro</h1>
-                <p className="text-xs text-gray-500">Akıllı Mesai Yönetimi</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-xs text-gray-500">Akıllı Mesai Yönetimi</p>
+                  <span className="text-xs text-gray-400">•</span>
+                  <span className="text-xs font-medium bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                    AltıntaşSoft
+                  </span>
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-4">
@@ -110,9 +116,12 @@ const LandingPage: React.FC = () => {
               </button>
               <button
                 onClick={() => setShowRegister(true)}
-                className="px-6 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 font-medium"
+                className="px-6 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 font-medium relative"
               >
                 Ücretsiz Başla
+                <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 text-xs text-gray-500 whitespace-nowrap">
+                  HzmSoft işbirliği ile
+                </div>
               </button>
             </div>
           </div>
@@ -261,9 +270,23 @@ const LandingPage: React.FC = () => {
                 </div>
                 <span className="text-xl font-bold">VardiyaPro</span>
               </div>
-              <p className="text-gray-400">
+              <p className="text-gray-400 mb-4">
                 Türkiye'nin en gelişmiş vardiya yönetim platformu
               </p>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 bg-gradient-to-r from-amber-500 to-orange-600 rounded flex items-center justify-center">
+                    <Building2 className="w-4 h-4 text-white" />
+                  </div>
+                  <span className="text-sm font-semibold text-amber-400">AltıntaşSoft</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 bg-gradient-to-r from-green-500 to-emerald-600 rounded flex items-center justify-center">
+                    <Users className="w-4 h-4 text-white" />
+                  </div>
+                  <span className="text-sm font-semibold text-green-400">HzmSoft İşbirliği</span>
+                </div>
+              </div>
             </div>
             <div>
               <h3 className="font-semibold mb-4">Ürün</h3>
@@ -295,6 +318,24 @@ const LandingPage: React.FC = () => {
           </div>
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
             <p>&copy; 2025 VardiyaPro. Tüm hakları saklıdır.</p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-2 text-sm mt-2">
+              <span className="text-gray-500">Bir</span>
+              <div className="flex items-center gap-2">
+                <div className="w-5 h-5 bg-gradient-to-r from-amber-500 to-orange-600 rounded flex items-center justify-center">
+                  <Building2 className="w-3 h-3 text-white" />
+                </div>
+                <span className="font-semibold text-amber-400">AltıntaşSoft</span>
+              </div>
+              <span className="text-gray-500">programıdır</span>
+              <span className="text-gray-500">•</span>
+              <div className="flex items-center gap-2">
+                <div className="w-5 h-5 bg-gradient-to-r from-green-500 to-emerald-600 rounded flex items-center justify-center">
+                  <Users className="w-3 h-3 text-white" />
+                </div>
+                <span className="font-semibold text-green-400">HzmSoft</span>
+              </div>
+              <span className="text-gray-500">işbirliği ile</span>
+            </div>
           </div>
         </div>
       </footer>
