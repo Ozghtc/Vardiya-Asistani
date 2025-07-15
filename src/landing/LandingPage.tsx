@@ -225,13 +225,16 @@ const LandingPage: React.FC = () => {
     }
 
     if (!firstName || !lastName || !email || !password || !phone || !organization || !title) {
-      setRegisterError('Tüm alanlar doldurulmalıdır!');
+      setRegisterError('Tüm alanlar doldurulmalıdır! (HZM veri tabanı için gerekli)');
       return;
     }
 
     setRegisterLoading(true);
 
     try {
+      console.log('🔴 KAYIT BAŞLATILDI - HZM Veri Tabanı İçin:', {
+        firstName, lastName, email, phone, organization, title
+      });
       // 1. Önce kurum oluştur
       const kurumResult = await addKurum({
         kurum_adi: organization,
@@ -248,27 +251,43 @@ const LandingPage: React.FC = () => {
         ])
       });
 
-      // 2. Rol belirleme (title'dan yola çıkarak)
+      // 2. Rol belirleme (title'dan yola çıkarak) - HZM ROL field'ı için
       let rol = 'yonetici'; // Landing page'den gelenler genelde yönetici
       const titleLower = (title || '').toLowerCase();
-      if (titleLower.includes('admin') || titleLower.includes('sistem')) {
+      
+      // HZM veri tabanındaki rol yapısına göre belirleme
+      if (titleLower.includes('admin') || titleLower.includes('sistem') || titleLower.includes('yönetici')) {
         rol = 'admin';
-      } else if (titleLower.includes('personel') || titleLower.includes('çalışan')) {
+      } else if (titleLower.includes('müdür') || titleLower.includes('şef') || titleLower.includes('koordinatör')) {
+        rol = 'yonetici';
+      } else if (titleLower.includes('personel') || titleLower.includes('çalışan') || titleLower.includes('memur')) {
         rol = 'personel';
+      } else {
+        // Belirsiz ünvanlar için default yönetici
+        rol = 'yonetici';
       }
+      
+      console.log('🔴 ROL BELİRLENDİ - HZM ROL Field:', {
+        title, titleLower, rol, 
+        reason: titleLower.includes('admin') ? 'admin keyword' : 
+                titleLower.includes('müdür') ? 'müdür keyword' : 
+                titleLower.includes('personel') ? 'personel keyword' : 'default'
+      });
 
-      // 3. Kullanıcı oluştur
+      // 3. Kullanıcı oluştur - HZM veri tabanı yapısına uygun
       const userData = {
-        name: `${firstName} ${lastName}`.trim(),
-        email: (email || '').toLowerCase(),
-        password: password,
-        phone: phone,
-        rol,
-        kurum_id: kurumResult.data?.row?.id || '1',
-        departman_id: '1',
-        birim_id: '1',
-        aktif_mi: true,
-        // Yeni field'lar
+        // HZM Required Fields
+        name: `${firstName} ${lastName}`.trim(),              // NAME field
+        email: (email || '').toLowerCase(),                   // EMAIL field
+        password: password,                                   // PASSWORD field
+        phone: phone,                                         // PHONE field
+        rol,                                                  // ROL field (admin/yonetici/personel)
+        kurum_id: kurumResult.data?.row?.id || '1',          // KURUM_ID field
+        departman_id: '1',                                   // DEPARTMAN_ID field (Genel Müdürlük)
+        birim_id: '1',                                       // BIRIM_ID field (Yönetim)
+        aktif_mi: true,                                      // AKTIF_MI field
+        
+        // Ek metadata field'ları
         firstName: firstName,
         lastName: lastName,
         organization: organization,
@@ -282,7 +301,15 @@ const LandingPage: React.FC = () => {
       const userResult = await addUser(13, userData);
 
       if (userResult.success) {
-              // 4. Otomatik login - kullanıcı verisini localStorage'a kaydet
+        console.log('✅ HZM VERİ TABANINA KAYIT BAŞARILI:', {
+          userId: userResult.data?.row?.id,
+          name: userData.name,
+          email: userData.email,
+          rol: userData.rol,
+          kurum_id: userData.kurum_id
+        });
+        
+        // 4. Otomatik login - kullanıcı verisini localStorage'a kaydet
       const loginUser = {
         ...userData,
         id: userResult.data?.row?.id || Date.now(),
