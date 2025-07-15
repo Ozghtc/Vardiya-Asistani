@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Clock, Shield, Settings } from 'lucide-react';
+import { apiRequest } from '../../../lib/api';
 
 interface VardiyaKurali {
   vardiya: string;
@@ -17,14 +18,11 @@ interface DinlenmeKural {
 }
 
 function addHoursToTime(time: string, hours: number): string {
-  if (!time || isNaN(Number(hours))) return '';
-  const [h, m] = time.split(":").map(Number);
-  if (isNaN(h) || isNaN(m)) return '';
-  let totalMinutes = h * 60 + m + Number(hours) * 60;
-  totalMinutes = ((totalMinutes % 1440) + 1440) % 1440;
-  const hh = Math.floor(totalMinutes / 60).toString().padStart(2, "0");
-  const mm = (totalMinutes % 60).toString().padStart(2, "0");
-  return `${hh}:${mm}`;
+  const [h, m] = time.split(':').map(Number);
+  const date = new Date();
+  date.setHours(h, m, 0, 0);
+  date.setTime(date.getTime() + (hours * 60 * 60 * 1000));
+  return date.toTimeString().slice(0, 5);
 }
 
 const NobetKurallariV2: React.FC = () => {
@@ -48,13 +46,32 @@ const NobetKurallariV2: React.FC = () => {
     maxIzin: string;
   }>>({});
   const [dinlenmeKurallari, setDinlenmeKurallari] = useState<DinlenmeKural[]>([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const savedShifts = localStorage.getItem('shifts');
-    if (savedShifts) {
-      setVardiyaSecenekleri(JSON.parse(savedShifts));
-    }
+    loadShifts();
   }, []);
+
+  const loadShifts = async () => {
+    setLoading(true);
+    try {
+      const response = await apiRequest('/api/v1/data/table/17');
+      if (response.success) {
+        const shiftData = response.data.rows.map((row: any) => ({
+          id: row.id,
+          name: row.vardiya_adi,
+          startHour: row.baslangic_saati,
+          endHour: row.bitis_saati,
+          calismaSaati: row.calisma_saati || 8
+        }));
+        setVardiyaSecenekleri(shiftData);
+      }
+    } catch (error) {
+      console.error('Vardiya yükleme hatası:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleVardiyaEkle = () => {
     if (!seciliVardiya) return;

@@ -5,6 +5,7 @@ import { tr } from "date-fns/locale/tr";
 import { startOfMonth, endOfMonth, addDays, differenceInCalendarDays } from "date-fns";
 import "react-datepicker/dist/react-datepicker.css";
 import { useNavigate } from 'react-router-dom';
+import { apiRequest } from '../../../lib/api';
 registerLocale("tr", tr);
 
 interface Personnel {
@@ -119,6 +120,24 @@ export default function NobetOlustur() {
     return `${dd}-${mm}-${yyyy} ${gun}`;
   }
 
+  const loadShifts = async () => {
+    try {
+      const response = await apiRequest('/api/v1/data/table/17');
+      if (response.success) {
+        const shiftData = response.data.rows.map((row: any) => ({
+          id: row.id,
+          name: row.vardiya_adi,
+          startHour: row.baslangic_saati,
+          endHour: row.bitis_saati,
+          calismaSaati: row.calisma_saati || 8
+        }));
+        setShifts(shiftData);
+      }
+    } catch (error) {
+      console.error('Vardiya yükleme hatası:', error);
+    }
+  };
+
   useEffect(() => {
     if (modalOpen) {
       const savedAreas = localStorage.getItem('tanimliAlanlar');
@@ -138,10 +157,7 @@ export default function NobetOlustur() {
         setModalSelectedAlan('');
         setModalNobetler([]);
       }
-      const savedShifts = localStorage.getItem('shifts');
-      if (savedShifts) {
-        try { setShifts(JSON.parse(savedShifts)); } catch { setShifts([]); }
-      } else { setShifts([]); }
+      loadShifts();
     }
   }, [modalOpen]);
 

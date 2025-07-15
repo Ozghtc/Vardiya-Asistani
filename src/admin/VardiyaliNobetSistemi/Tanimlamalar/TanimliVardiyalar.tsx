@@ -4,9 +4,14 @@ import ShiftItem from '../../../components/shifts/ShiftItem';
 
 interface Shift {
   id: number;
-  name: string;
-  startHour: string;
-  endHour: string;
+  vardiya_adi: string;
+  baslangic_saati: string;
+  bitis_saati: string;
+  calisma_saati: number;
+  aktif_mi: boolean;
+  kurum_id: string;
+  departman_id: string;
+  birim_id: string;
 }
 
 interface TanimliVardiyalarProps {

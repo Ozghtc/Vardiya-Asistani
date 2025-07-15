@@ -4,13 +4,18 @@ import { useCapitalization } from '../../../hooks/useCapitalization';
 import QuickShiftButton from '../../../components/shifts/QuickShiftButton';
 import { SuccessNotification } from '../../../components/ui/Notification';
 import TanimliVardiyalar from './TanimliVardiyalar';
+import { apiRequest } from '../../../lib/api';
 
 interface Shift {
   id: number;
-  name: string;
-  startHour: string;
-  endHour: string;
-  calismaSaati: number;
+  vardiya_adi: string;
+  baslangic_saati: string;
+  bitis_saati: string;
+  calisma_saati: number;
+  aktif_mi: boolean;
+  kurum_id: string;
+  departman_id: string;
+  birim_id: string;
 }
 
 const VardiyaTanimlama: React.FC = () => {
@@ -20,24 +25,54 @@ const VardiyaTanimlama: React.FC = () => {
   const [endHour, setEndHour] = useState<string>('');
   const [showSuccess, setShowSuccess] = useState(false);
   const [error, setError] = useState<string>('');
+  const [loading, setLoading] = useState(false);
+
+  // Kullanıcı bilgilerini localStorage'dan al
+  const getCurrentUser = () => {
+    const userStr = localStorage.getItem('currentUser');
+    return userStr ? JSON.parse(userStr) : null;
+  };
 
   useEffect(() => {
-    // Load shifts from localStorage
-    const savedShifts = JSON.parse(localStorage.getItem('shifts') || '[]');
-    setShifts(savedShifts);
+    loadShifts();
   }, []);
+
+  const loadShifts = async () => {
+    setLoading(true);
+    try {
+      const response = await apiRequest('/api/v1/data/table/17');
+      if (response.success) {
+        const shiftData = response.data.rows.map((row: any) => ({
+          id: row.id,
+          vardiya_adi: row.vardiya_adi,
+          baslangic_saati: row.baslangic_saati,
+          bitis_saati: row.bitis_saati,
+          calisma_saati: row.calisma_saati || 8,
+          aktif_mi: row.aktif_mi,
+          kurum_id: row.kurum_id,
+          departman_id: row.departman_id,
+          birim_id: row.birim_id
+        }));
+        setShifts(shiftData);
+      }
+    } catch (error) {
+      console.error('Vardiya yükleme hatası:', error);
+      setError('Vardiyalar yüklenirken hata oluştu');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Güvenli string kontrolleri
     const safeName = name || '';
     
     if (!safeName.trim()) {
       setError('Vardiya adı gereklidir');
       return;
     }
-    if (shifts.some(shift => shift.name === safeName.trim())) {
+    if (shifts.some(shift => shift.vardiya_adi === safeName.trim())) {
       setError('Bu vardiya adı zaten kullanılmış');
       return;
     }
@@ -45,64 +80,142 @@ const VardiyaTanimlama: React.FC = () => {
       setError('Başlangıç ve bitiş saati gereklidir');
       return;
     }
+
     const start = new Date(`2024-01-01 ${startHour}`);
     let end = new Date(`2024-01-01 ${endHour}`);
     if (end <= start) end = new Date(`2024-01-02 ${endHour}`);
     const toplamSaat = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
 
+    const user = getCurrentUser();
+    if (!user) {
+      setError('Kullanıcı bilgisi bulunamadı');
+      return;
+    }
+
     const newShift = {
-      id: Date.now(),
-      name: safeName.trim(),
-      startHour,
-      endHour,
-      calismaSaati: Math.round(toplamSaat)
+      vardiya_adi: safeName.trim(),
+      baslangic_saati: startHour,
+      bitis_saati: endHour,
+      calisma_saati: Math.round(toplamSaat),
+      aktif_mi: true,
+      kurum_id: user.kurum_id,
+      departman_id: user.departman_id,
+      birim_id: user.birim_id
     };
 
-    const updatedShifts = [...shifts, newShift];
-    setShifts(updatedShifts);
-    localStorage.setItem('shifts', JSON.stringify(updatedShifts));
-    
-    setError('');
-    setShowSuccess(true);
-    setTimeout(() => setShowSuccess(false), 2000);
-    handleNameChange({ target: { value: '' } } as React.ChangeEvent<HTMLInputElement>);
-    setStartHour('');
-    setEndHour('');
+    try {
+      setLoading(true);
+      const response = await apiRequest('/api/v1/data/table/17/rows', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newShift),
+      });
+      
+      if (response.success) {
+        setError('');
+        setShowSuccess(true);
+        setTimeout(() => setShowSuccess(false), 2000);
+        handleNameChange({ target: { value: '' } } as React.ChangeEvent<HTMLInputElement>);
+        setStartHour('');
+        setEndHour('');
+        loadShifts(); // Listeyi yenile
+      } else {
+        setError(response.error || 'Vardiya eklenirken hata oluştu');
+      }
+    } catch (error) {
+      console.error('Vardiya ekleme hatası:', error);
+      setError('Vardiya eklenirken hata oluştu');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleDelete = async (id: number | string) => {
-    const updatedShifts = shifts.filter(shift => shift.id !== id);
-    setShifts(updatedShifts);
-    localStorage.setItem('shifts', JSON.stringify(updatedShifts));
+    if (!confirm('Bu vardiyayı silmek istediğinizden emin misiniz?')) return;
+
+    try {
+      setLoading(true);
+      const response = await apiRequest(`/api/v1/data/table/17/rows/${id}`, {
+        method: 'DELETE',
+      });
+      
+      if (response.success) {
+        loadShifts(); // Listeyi yenile
+      } else {
+        setError(response.error || 'Vardiya silinirken hata oluştu');
+      }
+    } catch (error) {
+      console.error('Vardiya silme hatası:', error);
+      setError('Vardiya silinirken hata oluştu');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleQuickAdd = async (name: string, startHour: string, endHour: string) => {
-    if (shifts.some(shift => shift.name === name)) {
-      setError(`${name} vardiyası zaten tanımlı`);
+  const handleQuickAdd = async (shiftName: string, startHour: string, endHour: string) => {
+    if (shifts.some(shift => shift.vardiya_adi === shiftName)) {
+      setError(`${shiftName} vardiyası zaten tanımlı`);
       setTimeout(() => setError(''), 2000);
       return;
     }
+
     const start = new Date(`2024-01-01 ${startHour}`);
     let end = new Date(`2024-01-01 ${endHour}`);
     if (end <= start) end = new Date(`2024-01-02 ${endHour}`);
     const toplamSaat = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
 
+    const user = getCurrentUser();
+    if (!user) {
+      setError('Kullanıcı bilgisi bulunamadı');
+      return;
+    }
+
     const newShift = {
-      id: Date.now(),
-      name,
-      startHour,
-      endHour,
-      calismaSaati: Math.round(toplamSaat)
+      vardiya_adi: shiftName,
+      baslangic_saati: startHour,
+      bitis_saati: endHour,
+      calisma_saati: Math.round(toplamSaat),
+      aktif_mi: true,
+      kurum_id: user.kurum_id,
+      departman_id: user.departman_id,
+      birim_id: user.birim_id
     };
 
-    const updatedShifts = [...shifts, newShift];
-    setShifts(updatedShifts);
-    localStorage.setItem('shifts', JSON.stringify(updatedShifts));
-    
-    setError('');
-    setShowSuccess(true);
-    setTimeout(() => setShowSuccess(false), 2000);
+    try {
+      setLoading(true);
+      const response = await apiRequest('/api/v1/data/table/17/rows', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newShift),
+      });
+      
+      if (response.success) {
+        setError('');
+        setShowSuccess(true);
+        setTimeout(() => setShowSuccess(false), 2000);
+        loadShifts(); // Listeyi yenile
+      } else {
+        setError(response.error || 'Vardiya eklenirken hata oluştu');
+      }
+    } catch (error) {
+      console.error('Vardiya ekleme hatası:', error);
+      setError('Vardiya eklenirken hata oluştu');
+    } finally {
+      setLoading(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-lg">Yükleniyor, lütfen bekleyin...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -115,28 +228,28 @@ const VardiyaTanimlama: React.FC = () => {
               name="GÜNDÜZ"
               startHour="08:00"
               endHour="16:00"
-              isDisabled={shifts.some(s => s.name.toUpperCase() === "GÜNDÜZ")}
+              isDisabled={shifts.some(s => s.vardiya_adi.toUpperCase() === "GÜNDÜZ")}
               onAdd={handleQuickAdd}
             />
             <QuickShiftButton
               name="AKŞAM"
               startHour="16:00"
               endHour="24:00"
-              isDisabled={shifts.some(s => s.name.toUpperCase() === "AKŞAM")}
+              isDisabled={shifts.some(s => s.vardiya_adi.toUpperCase() === "AKŞAM")}
               onAdd={handleQuickAdd}
             />
             <QuickShiftButton
               name="GECE"
               startHour="00:00"
               endHour="08:00"
-              isDisabled={shifts.some(s => s.name.toUpperCase() === "GECE")}
+              isDisabled={shifts.some(s => s.vardiya_adi.toUpperCase() === "GECE")}
               onAdd={handleQuickAdd}
             />
             <QuickShiftButton
               name="24 SAAT"
               startHour="08:00"
               endHour="08:00"
-              isDisabled={shifts.some(s => s.name.toUpperCase() === "24 SAAT")}
+              isDisabled={shifts.some(s => s.vardiya_adi.toUpperCase() === "24 SAAT")}
               onAdd={handleQuickAdd}
             />
           </div>
@@ -191,15 +304,23 @@ const VardiyaTanimlama: React.FC = () => {
           )}
           <button
             type="submit"
-            className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+            disabled={loading}
+            className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
           >
-            Vardiya Ekle
+            {loading ? 'Ekleniyor...' : 'Vardiya Ekle'}
           </button>
         </form>
-        {showSuccess && <SuccessNotification message="Vardiya başarıyla eklendi" />}
-        {/* Tanımlı Vardiyalar bileşeni */}
-        <TanimliVardiyalar shifts={shifts} onDelete={handleDelete} />
       </div>
+
+      {/* Tanımlı Vardiyalar */}
+      <TanimliVardiyalar shifts={shifts} onDelete={handleDelete} />
+      
+      {showSuccess && (
+        <SuccessNotification
+          message="Vardiya başarıyla eklendi!"
+          onClose={() => setShowSuccess(false)}
+        />
+      )}
     </div>
   );
 };
