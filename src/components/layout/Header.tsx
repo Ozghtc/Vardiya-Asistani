@@ -11,6 +11,7 @@ const Header: React.FC = () => {
     ad?: string;
     name?: string;
     role?: string;
+    rol?: string;
     kurum_adi?: string;
     departman_adi?: string;
     birim_adi?: string;
@@ -74,9 +75,10 @@ const Header: React.FC = () => {
 
   const handleLogoClick = () => {
     if (!currentUser) return;
-    if (currentUser.role === 'admin') {
+    const role = (currentUser.rol || currentUser.role || '').toLowerCase();
+    if (role === 'admin') {
       navigate('/admin');
-    } else if (currentUser.role === 'yonetici') {
+    } else if (role === 'yonetici') {
       navigate('/vardiyali-nobet');
     } else {
       navigate('/personel/panel');
@@ -99,7 +101,7 @@ const Header: React.FC = () => {
           </div>
           {/* Orta: kurum adı */}
           <div className="flex flex-col items-center justify-center flex-1">
-            {currentUser && (currentUser.role || '').toLowerCase() !== 'admin' && (
+            {currentUser && (currentUser.rol || currentUser.role || '').toLowerCase() !== 'admin' && (
               <>
                 <span className="font-extrabold text-2xl md:text-3xl text-gray-800 tracking-wide uppercase text-center pt-3" style={{letterSpacing: '0.04em'}}>{currentUser.kurum_adi || '-'}</span>
                 <p className="text-gray-700 font-semibold text-sm tracking-wide mt-[-4px] mb-2">
@@ -119,18 +121,18 @@ const Header: React.FC = () => {
               {/* Yetki (Buton) */}
               <button
                 onClick={() => {
-                  const role = (currentUser?.role || '').toLowerCase();
+                  const role = (currentUser?.rol || currentUser?.role || '').toLowerCase();
                   if (role === 'admin') navigate('/admin');
                   else if (role === 'yonetici') navigate('/vardiyali-nobet');
                   else navigate('/personel/panel');
                 }}
                 className={`mt-1 text-sm font-bold px-3 py-0.5 rounded shadow-sm transition cursor-pointer focus:outline-none
-                  ${((currentUser?.role || '').toLowerCase() === 'admin') ? 'bg-red-100 text-red-700 hover:bg-red-200' :
-                    ((currentUser?.role || '').toLowerCase() === 'yonetici') ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' :
+                  ${((currentUser?.rol || currentUser?.role || '').toLowerCase() === 'admin') ? 'bg-red-100 text-red-700 hover:bg-red-200' :
+                    ((currentUser?.rol || currentUser?.role || '').toLowerCase() === 'yonetici') ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' :
                     'bg-green-100 text-green-700 hover:bg-green-200'}`}
                 title="Kendi paneline git"
               >
-                {((currentUser?.role || '').toLowerCase() === 'admin') ? 'Admin' : ((currentUser?.role || '').toLowerCase() === 'yonetici') ? 'Yönetici' : 'Personel'}
+                {((currentUser?.rol || currentUser?.role || '').toLowerCase() === 'admin') ? 'Admin' : ((currentUser?.rol || currentUser?.role || '').toLowerCase() === 'yonetici') ? 'Yönetici' : 'Personel'}
               </button>
               {/* Tarih & saat */}
               <div className="flex items-center gap-1 bg-blue-600 text-white px-3 py-[4px] rounded-xl shadow text-xs font-medium mt-[2px] min-w-[180px] max-w-[240px] justify-end">

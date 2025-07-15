@@ -25,7 +25,7 @@ export function useCapitalization(
       setValue(inputValue);
     } else {
       // Türkçe karakterler için büyük harf dönüşümü - güvenli
-      setValue(inputValue.toLocaleUpperCase('tr-TR'));
+      setValue((inputValue || '').toLocaleUpperCase('tr-TR'));
     }
   };
 

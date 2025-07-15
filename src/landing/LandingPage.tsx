@@ -91,7 +91,7 @@ const LandingPage: React.FC = () => {
       })));
       
       const user = users.find((u: any) => 
-        u.email?.toLowerCase() === email.toLowerCase() && 
+        (u.email || '').toLowerCase() === (email || '').toLowerCase() && 
         u.password === password &&
         u.aktif_mi !== false
       );
@@ -204,24 +204,25 @@ const LandingPage: React.FC = () => {
     e.preventDefault();
     setRegisterError('');
     
-    if (registerData.password !== registerData.confirmPassword) {
+    // Güvenli string validasyonu - undefined/null kontrolleri
+    const firstName = (registerData.firstName || '').trim();
+    const lastName = (registerData.lastName || '').trim();
+    const email = (registerData.email || '').trim();
+    const password = (registerData.password || '').trim();
+    const confirmPassword = (registerData.confirmPassword || '').trim();
+    const phone = (registerData.phone || '').trim();
+    const organization = (registerData.organization || '').trim();
+    const title = (registerData.title || '').trim();
+    
+    if (password !== confirmPassword) {
       setRegisterError('Şifreler eşleşmiyor!');
       return;
     }
 
-    if (registerData.password.length < 4) {
+    if (password.length < 4) {
       setRegisterError('Şifre en az 4 karakter olmalıdır!');
       return;
     }
-
-    // Form validasyonu - undefined/null kontrolleri
-    const firstName = registerData.firstName?.trim() || '';
-    const lastName = registerData.lastName?.trim() || '';
-    const email = registerData.email?.trim() || '';
-    const password = registerData.password?.trim() || '';
-    const phone = registerData.phone?.trim() || '';
-    const organization = registerData.organization?.trim() || '';
-    const title = registerData.title?.trim() || '';
 
     if (!firstName || !lastName || !email || !password || !phone || !organization || !title) {
       setRegisterError('Tüm alanlar doldurulmalıdır!');
@@ -249,7 +250,7 @@ const LandingPage: React.FC = () => {
 
       // 2. Rol belirleme (title'dan yola çıkarak)
       let rol = 'yonetici'; // Landing page'den gelenler genelde yönetici
-      const titleLower = title.toLowerCase();
+      const titleLower = (title || '').toLowerCase();
       if (titleLower.includes('admin') || titleLower.includes('sistem')) {
         rol = 'admin';
       } else if (titleLower.includes('personel') || titleLower.includes('çalışan')) {
@@ -259,7 +260,7 @@ const LandingPage: React.FC = () => {
       // 3. Kullanıcı oluştur
       const userData = {
         name: `${firstName} ${lastName}`.trim(),
-        email: email.toLowerCase(),
+        email: (email || '').toLowerCase(),
         password: password,
         phone: phone,
         rol,
@@ -281,17 +282,23 @@ const LandingPage: React.FC = () => {
       const userResult = await addUser(13, userData);
 
       if (userResult.success) {
-        // 4. Otomatik login - kullanıcı verisini localStorage'a kaydet
-        const loginUser = {
-          ...userData,
-          id: userResult.data?.row?.id || Date.now(),
-          kurum_adi: organization,
-          departman_adi: 'Genel Müdürlük',
-          birim_adi: 'Yönetim',
-          created_at: new Date().toISOString()
-        };
+              // 4. Otomatik login - kullanıcı verisini localStorage'a kaydet
+      const loginUser = {
+        ...userData,
+        id: userResult.data?.row?.id || Date.now(),
+        kurum_adi: (organization || '').trim(),
+        departman_adi: 'Genel Müdürlük',
+        birim_adi: 'Yönetim',
+        created_at: new Date().toISOString()
+      };
 
+      try {
         localStorage.setItem('currentUser', JSON.stringify(loginUser));
+        console.log('✅ LocalStorage kaydetme başarılı');
+      } catch (error) {
+        console.error('❌ LocalStorage kaydetme hatası:', error);
+        alert('Kayıt tamamlandı ancak oturum açma sırasında hata oluştu');
+      }
 
         // 5. Başarı mesajı ve yönlendirme
         alert('Kayıt başarılı! Sisteme giriş yapılıyor...');
