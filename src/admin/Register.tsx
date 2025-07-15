@@ -138,13 +138,27 @@ const Register: React.FC = () => {
       const result = await addUser(13, userData); // HZM kullanıcı tablosu ID: 13
 
       if (result.success) {
-        // Kayıt başarılı, login sayfasına yönlendir
-        navigate('/login', { 
-          state: { 
-            message: 'Kayıt başarılı! Giriş yapabilirsiniz.',
-            email: userData.email
-          } 
-        });
+        // Kullanıcı verilerini zenginleştir
+        const enrichedUser = {
+          ...userData,
+          id: result.data?.row?.id || Date.now(),
+          kurum_adi: rol === 'admin' ? 'Sistem' : (kurumlar.find(k => k.id === kurum_id)?.kurum_adi || '-'),
+          departman_adi: rol === 'admin' ? 'Yönetim' : (departmanlar.find(d => d.id === departman_id)?.departman_adi || '-'),
+          birim_adi: rol === 'admin' ? 'Sistem' : (birimler.find(b => b.id === birim_id)?.birim_adi || '-'),
+          created_at: new Date().toISOString()
+        };
+
+        // Otomatik login - localStorage'a kaydet
+        localStorage.setItem('currentUser', JSON.stringify(enrichedUser));
+
+        // Rol bazlı yönlendirme
+        if (enrichedUser.rol === 'admin') {
+          navigate('/admin');
+        } else if (enrichedUser.rol === 'yonetici') {
+          navigate('/vardiyali-nobet');
+        } else {
+          navigate('/personel');
+        }
       } else {
         setError(result.message || 'Kayıt işlemi başarısız');
       }

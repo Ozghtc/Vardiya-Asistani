@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Clock, Users, Calendar, Shield, CheckCircle, Star, ArrowRight, Mail, Lock, User, Building2, Phone } from 'lucide-react';
+import { addUser, addKurum } from '../lib/api';
 
 const LandingPage: React.FC = () => {
   const navigate = useNavigate();
   const [showLogin, setShowLogin] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
+  const [registerLoading, setRegisterLoading] = useState(false);
+  const [registerError, setRegisterError] = useState('');
   const [loginData, setLoginData] = useState({ email: '', password: '' });
   const [registerData, setRegisterData] = useState({
     firstName: '',
@@ -69,21 +72,103 @@ const LandingPage: React.FC = () => {
     e.preventDefault();
     // Burada giriş işlemi yapılacak
     console.log('Login:', loginData);
-    // Geçici olarak admin sayfasına yönlendir
-    navigate('/admin');
+    // Login sayfasına yönlendir
+    navigate('/login');
   };
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    setRegisterError('');
+    
     if (registerData.password !== registerData.confirmPassword) {
-      alert('Şifreler eşleşmiyor!');
+      setRegisterError('Şifreler eşleşmiyor!');
       return;
     }
-    // Burada kayıt işlemi yapılacak
-    console.log('Register:', registerData);
-    alert('Kayıt başarılı! Giriş yapabilirsiniz.');
-    setShowRegister(false);
-    setShowLogin(true);
+
+    if (registerData.password.length < 4) {
+      setRegisterError('Şifre en az 4 karakter olmalıdır!');
+      return;
+    }
+
+    setRegisterLoading(true);
+
+    try {
+      // 1. Önce kurum oluştur
+      const kurumResult = await addKurum({
+        kurum_adi: registerData.organization,
+        kurum_turu: 'Özel Sektör',
+        adres: '',
+        il: '',
+        ilce: '',
+        aktif_mi: true,
+        departmanlar: JSON.stringify([
+          { id: '1', departman_adi: 'Genel Müdürlük' }
+        ]),
+        birimler: JSON.stringify([
+          { id: '1', birim_adi: 'Yönetim' }
+        ])
+      });
+
+      // 2. Rol belirleme (title'dan yola çıkarak)
+      let rol = 'yonetici'; // Landing page'den gelenler genelde yönetici
+      const titleLower = registerData.title.toLowerCase();
+      if (titleLower.includes('admin') || titleLower.includes('sistem')) {
+        rol = 'admin';
+      } else if (titleLower.includes('personel') || titleLower.includes('çalışan')) {
+        rol = 'personel';
+      }
+
+      // 3. Kullanıcı oluştur
+      const userData = {
+        name: `${registerData.firstName} ${registerData.lastName}`.trim(),
+        email: registerData.email.toLowerCase(),
+        password: registerData.password,
+        phone: registerData.phone,
+        rol,
+        kurum_id: kurumResult.data?.row?.id || '1',
+        departman_id: '1',
+        birim_id: '1',
+        aktif_mi: true
+      };
+
+      const userResult = await addUser(13, userData);
+
+      if (userResult.success) {
+        // 4. Otomatik login - kullanıcı verisini localStorage'a kaydet
+        const loginUser = {
+          ...userData,
+          id: userResult.data?.row?.id || Date.now(),
+          kurum_adi: registerData.organization,
+          departman_adi: 'Genel Müdürlük',
+          birim_adi: 'Yönetim',
+          created_at: new Date().toISOString()
+        };
+
+        localStorage.setItem('currentUser', JSON.stringify(loginUser));
+
+        // 5. Başarı mesajı ve yönlendirme
+        alert('Kayıt başarılı! Sisteme giriş yapılıyor...');
+        setShowRegister(false);
+        
+        // Rol bazlı yönlendirme
+        setTimeout(() => {
+          if (rol === 'admin') {
+            navigate('/admin');
+          } else if (rol === 'yonetici') {
+            navigate('/vardiyali-nobet');
+          } else {
+            navigate('/personel');
+          }
+        }, 1000);
+      } else {
+        setRegisterError(userResult.message || 'Kayıt işlemi başarısız');
+      }
+    } catch (error) {
+      console.error('Kayıt hatası:', error);
+      setRegisterError('Kayıt işlemi sırasında bir hata oluştu');
+    } finally {
+      setRegisterLoading(false);
+    }
   };
 
   return (
@@ -420,6 +505,13 @@ const LandingPage: React.FC = () => {
               <h2 className="text-2xl font-bold text-gray-900 mb-2">Kayıt Ol</h2>
               <p className="text-gray-600">Ücretsiz hesabınızı oluşturun</p>
             </div>
+            
+            {registerError && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-red-600 text-sm">{registerError}</p>
+              </div>
+            )}
+
             <form onSubmit={handleRegister} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -432,6 +524,7 @@ const LandingPage: React.FC = () => {
                     onChange={(e) => setRegisterData({...registerData, firstName: e.target.value})}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
+                    disabled={registerLoading}
                   />
                 </div>
                 <div>
@@ -444,6 +537,7 @@ const LandingPage: React.FC = () => {
                     onChange={(e) => setRegisterData({...registerData, lastName: e.target.value})}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
+                    disabled={registerLoading}
                   />
                 </div>
               </div>
@@ -460,6 +554,7 @@ const LandingPage: React.FC = () => {
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="ornek@email.com"
                     required
+                    disabled={registerLoading}
                   />
                 </div>
               </div>
@@ -476,6 +571,7 @@ const LandingPage: React.FC = () => {
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Şirket adı"
                     required
+                    disabled={registerLoading}
                   />
                 </div>
               </div>
@@ -492,6 +588,7 @@ const LandingPage: React.FC = () => {
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="0555 123 45 67"
                     required
+                    disabled={registerLoading}
                   />
                 </div>
               </div>
@@ -508,6 +605,7 @@ const LandingPage: React.FC = () => {
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="İnsan Kaynakları Müdürü"
                     required
+                    disabled={registerLoading}
                   />
                 </div>
               </div>
@@ -524,6 +622,7 @@ const LandingPage: React.FC = () => {
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="••••••••"
                     required
+                    disabled={registerLoading}
                   />
                 </div>
               </div>
@@ -540,14 +639,16 @@ const LandingPage: React.FC = () => {
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="••••••••"
                     required
+                    disabled={registerLoading}
                   />
                 </div>
               </div>
               <button
                 type="submit"
-                className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 font-medium"
+                disabled={registerLoading}
+                className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 font-medium disabled:opacity-50"
               >
-                Hesap Oluştur
+                {registerLoading ? 'Hesap Oluşturuluyor...' : 'Hesap Oluştur'}
               </button>
             </form>
             <div className="mt-6 text-center">
@@ -559,6 +660,7 @@ const LandingPage: React.FC = () => {
                     setShowLogin(true);
                   }}
                   className="text-blue-600 hover:text-blue-700 font-medium"
+                  disabled={registerLoading}
                 >
                   Giriş Yap
                 </button>
@@ -567,6 +669,7 @@ const LandingPage: React.FC = () => {
             <button
               onClick={() => setShowRegister(false)}
               className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+              disabled={registerLoading}
             >
               ✕
             </button>
