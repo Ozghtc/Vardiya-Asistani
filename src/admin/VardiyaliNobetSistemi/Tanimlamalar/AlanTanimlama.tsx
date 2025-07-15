@@ -239,7 +239,7 @@ const AlanTanimlama: React.FC = () => {
 
     if (!hasError) {
       setDayStates(updatedDayStates);
-      setSelectedDays([]);
+      setSelectedDays(weekDays.map(day => day.value));
     }
   };
 
@@ -354,6 +354,7 @@ const AlanTanimlama: React.FC = () => {
       }
     }), {}));
     
+    setSelectedDays(weekDays.map(day => day.value));
     setShowSuccess(true);
     setTimeout(() => setShowSuccess(false), 2000);
   };
