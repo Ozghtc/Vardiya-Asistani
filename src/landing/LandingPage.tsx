@@ -159,15 +159,19 @@ const LandingPage: React.FC = () => {
               console.log('🔴 BULUNAN DEPARTMAN:', departman);
               departman_adi = departman?.departman_adi || '-';
             } else {
-              // Sadece string formatında (HZM'deki gibi: "HEMŞIRE, DR")
+              // Sadece string formatında (HZM'deki gibi: "ACİL SERVİS, YOGUN BAKIM")
               console.log('🔴 DEPARTMAN STRING FORMAT:', kurum.departmanlar);
-              departman_adi = kurum.departmanlar || '-';
+              // Virgülle ayrılmış string'den ilk değeri al
+              const departmanString = kurum.departmanlar || '';
+              departman_adi = departmanString.split(',')[0]?.trim() || '-';
+              console.log('🔴 DEPARTMAN SEÇİLEN:', departman_adi);
             }
           } catch (e) {
             console.warn('🔴 Departman verisi parse edilemedi:', e);
             console.log('🔴 Departman raw verisi:', kurum.departmanlar);
-            // Fallback: raw string'i kullan
-            departman_adi = kurum.departmanlar || '-';
+            // Fallback: raw string'den ilk değeri al
+            const departmanString = kurum.departmanlar || '';
+            departman_adi = departmanString.split(',')[0]?.trim() || '-';
           }
         }
         
@@ -186,13 +190,17 @@ const LandingPage: React.FC = () => {
             } else {
               // Sadece string formatında (HZM'deki gibi: "HEMŞIRE, DR")
               console.log('🔴 BİRİM STRING FORMAT:', kurum.birimler);
-              birim_adi = kurum.birimler || '-';
+              // Virgülle ayrılmış string'den ilk değeri al
+              const birimString = kurum.birimler || '';
+              birim_adi = birimString.split(',')[0]?.trim() || '-';
+              console.log('🔴 BİRİM SEÇİLEN:', birim_adi);
             }
           } catch (e) {
             console.warn('🔴 Birim verisi parse edilemedi:', e);
             console.log('🔴 Birim raw verisi:', kurum.birimler);
-            // Fallback: raw string'i kullan
-            birim_adi = kurum.birimler || '-';
+            // Fallback: raw string'den ilk değeri al
+            const birimString = kurum.birimler || '';
+            birim_adi = birimString.split(',')[0]?.trim() || '-';
           }
         }
       } else {
