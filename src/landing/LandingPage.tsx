@@ -145,28 +145,54 @@ const LandingPage: React.FC = () => {
           console.warn('⚠️ KURUM BULUNAMADI! Aranan ID:', user.kurum_id, 'Mevcut ID\'ler:', kurumlar.map((k: any) => k.id));
         }
         
-        // Departman ve birim bilgilerini kurum verisinden al
+        // Departman ve birim bilgilerini kurum verisinden al - HZM format kontrolü
         if (kurum?.departmanlar && user.departman_id) {
           try {
-            const departmanlar = JSON.parse(kurum.departmanlar);
-            console.log('🔴 DEPARTMANLAR:', departmanlar);
-            const departman = departmanlar.find((d: any) => d.id === user.departman_id);
-            console.log('🔴 BULUNAN DEPARTMAN:', departman);
-            departman_adi = departman?.departman_adi || '-';
+            let departmanlar;
+            
+            // JSON format kontrolü
+            if (typeof kurum.departmanlar === 'string' && kurum.departmanlar.startsWith('[')) {
+              // JSON formatında
+              departmanlar = JSON.parse(kurum.departmanlar);
+              console.log('🔴 DEPARTMANLAR (JSON):', departmanlar);
+              const departman = departmanlar.find((d: any) => d.id === user.departman_id);
+              console.log('🔴 BULUNAN DEPARTMAN:', departman);
+              departman_adi = departman?.departman_adi || '-';
+            } else {
+              // Sadece string formatında (HZM'deki gibi: "HEMŞIRE, DR")
+              console.log('🔴 DEPARTMAN STRING FORMAT:', kurum.departmanlar);
+              departman_adi = kurum.departmanlar || '-';
+            }
           } catch (e) {
-            console.warn('Departman verisi parse edilemedi:', e);
+            console.warn('🔴 Departman verisi parse edilemedi:', e);
+            console.log('🔴 Departman raw verisi:', kurum.departmanlar);
+            // Fallback: raw string'i kullan
+            departman_adi = kurum.departmanlar || '-';
           }
         }
         
         if (kurum?.birimler && user.birim_id) {
           try {
-            const birimler = JSON.parse(kurum.birimler);
-            console.log('🔴 BİRİMLER:', birimler);
-            const birim = birimler.find((b: any) => b.id === user.birim_id);
-            console.log('🔴 BULUNAN BİRİM:', birim);
-            birim_adi = birim?.birim_adi || '-';
+            let birimler;
+            
+            // JSON format kontrolü
+            if (typeof kurum.birimler === 'string' && kurum.birimler.startsWith('[')) {
+              // JSON formatında
+              birimler = JSON.parse(kurum.birimler);
+              console.log('🔴 BİRİMLER (JSON):', birimler);
+              const birim = birimler.find((b: any) => b.id === user.birim_id);
+              console.log('🔴 BULUNAN BİRİM:', birim);
+              birim_adi = birim?.birim_adi || '-';
+            } else {
+              // Sadece string formatında (HZM'deki gibi: "HEMŞIRE, DR")
+              console.log('🔴 BİRİM STRING FORMAT:', kurum.birimler);
+              birim_adi = kurum.birimler || '-';
+            }
           } catch (e) {
-            console.warn('Birim verisi parse edilemedi:', e);
+            console.warn('🔴 Birim verisi parse edilemedi:', e);
+            console.log('🔴 Birim raw verisi:', kurum.birimler);
+            // Fallback: raw string'i kullan
+            birim_adi = kurum.birimler || '-';
           }
         }
       } else {
