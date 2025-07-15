@@ -1,7 +1,7 @@
 // Dosyayı SistemTanimlamalari.tsx olarak yeniden adlandır
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Users, Clock, MapPin, UserPlus, Settings, UserCog, Database, Plus } from 'lucide-react';
+import { ArrowLeft, Users, Clock, MapPin, UserPlus, Settings, UserCog } from 'lucide-react';
 import UnvanTanimlama from './UnvanTanimlama';
 import IzinTanimlama from './IzinTanimlama';
 import VardiyaTanimlama from './VardiyaTanimlama';
@@ -16,11 +16,46 @@ const SistemTanimlamalari: React.FC = () => {
   const navigate = useNavigate();
   const { setDepartmanBirim } = useDepartmanBirim();
 
-  // HZM tablo oluşturma states
-  const [unvanTableCreating, setUnvanTableCreating] = useState(false);
-  const [izinTableCreating, setIzinTableCreating] = useState(false);
+  // Otomatik tablo oluşturma states
+  const [tablesInitialized, setTablesInitialized] = useState(false);
+  const [initializingTables, setInitializingTables] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+
+  // Otomatik tablo oluşturma - Kural 15 gereği
+  const initializeRequiredTables = useCallback(async () => {
+    if (tablesInitialized || initializingTables) return;
+    
+    setInitializingTables(true);
+    
+    try {
+      console.log('🏗️ Gerekli HZM tabloları kontrol ediliyor...');
+      
+      // Paralel olarak tabloları oluştur
+      const [unvanResult, izinResult] = await Promise.all([
+        createPersonelUnvanTable(),
+        createIzinIstekTable()
+      ]);
+      
+      const successCount = [unvanResult, izinResult].filter(r => r.success).length;
+      
+      if (successCount === 2) {
+        setSuccessMsg('✅ Tüm HZM tabloları başarıyla oluşturuldu!');
+        console.log('🎯 Otomatik tablo oluşturma başarılı');
+      } else if (successCount > 0) {
+        setSuccessMsg(`✅ ${successCount}/2 HZM tablosu oluşturuldu`);
+        console.log('🎯 Kısmi başarı:', { unvanResult, izinResult });
+      } else {
+        console.warn('⚠️ Tablolar zaten mevcut veya oluşturulamadı');
+      }
+      
+      setTablesInitialized(true);
+    } catch (error) {
+      console.error('❌ Otomatik tablo oluşturma hatası:', error);
+    } finally {
+      setInitializingTables(false);
+    }
+  }, [tablesInitialized, initializingTables]);
 
   useEffect(() => {
     const fetchAndSetContext = async () => {
@@ -41,6 +76,11 @@ const SistemTanimlamalari: React.FC = () => {
     fetchAndSetContext();
   }, [setDepartmanBirim]);
 
+  // Otomatik tablo oluşturma - Kural 15 gereği (sayfa yüklendiğinde)
+  useEffect(() => {
+    initializeRequiredTables();
+  }, [initializeRequiredTables]);
+
   // Success/Error mesajlarını otomatik kaldır
   useEffect(() => {
     if (successMsg || errorMsg) {
@@ -52,56 +92,6 @@ const SistemTanimlamalari: React.FC = () => {
       return () => clearTimeout(timer);
     }
   }, [successMsg, errorMsg]);
-
-  // HZM Personel Ünvan Tablosu Oluştur
-  const handleCreateUnvanTable = async () => {
-    setUnvanTableCreating(true);
-    setErrorMsg('');
-    setSuccessMsg('');
-    
-    try {
-      console.log('🏗️ HZM Personel Ünvan tablosu oluşturuluyor...');
-      const result = await createPersonelUnvanTable();
-      
-      if (result.success) {
-        setSuccessMsg('✅ Personel Ünvan tablosu başarıyla oluşturuldu!');
-        console.log('🎯 Ünvan tablosu oluşturma sonucu:', result);
-      } else {
-        setErrorMsg('❌ Hata: ' + result.message);
-        console.error('❌ Ünvan tablosu oluşturma hatası:', result);
-      }
-    } catch (error) {
-      console.error('❌ Ünvan tablosu oluşturma hatası:', error);
-      setErrorMsg('❌ Personel Ünvan tablosu oluşturulamadı');
-    } finally {
-      setUnvanTableCreating(false);
-    }
-  };
-
-  // HZM İzin/İstek Tablosu Oluştur
-  const handleCreateIzinTable = async () => {
-    setIzinTableCreating(true);
-    setErrorMsg('');
-    setSuccessMsg('');
-    
-    try {
-      console.log('🏗️ HZM İzin/İstek tablosu oluşturuluyor...');
-      const result = await createIzinIstekTable();
-      
-      if (result.success) {
-        setSuccessMsg('✅ İzin/İstek tablosu başarıyla oluşturuldu!');
-        console.log('🎯 İzin/İstek tablosu oluşturma sonucu:', result);
-      } else {
-        setErrorMsg('❌ Hata: ' + result.message);
-        console.error('❌ İzin/İstek tablosu oluşturma hatası:', result);
-      }
-    } catch (error) {
-      console.error('❌ İzin/İstek tablosu oluşturma hatası:', error);
-      setErrorMsg('❌ İzin/İstek tablosu oluşturulamadı');
-    } finally {
-      setIzinTableCreating(false);
-    }
-  };
 
   const tabs = [
     {
@@ -141,42 +131,13 @@ const SistemTanimlamalari: React.FC = () => {
         <h1 className="text-2xl font-bold text-gray-800">Sistem Tanımlamaları</h1>
         <div className="flex items-center gap-4">
           
-          {/* HZM Veri Tabanı Tablo Oluşturma Butonları */}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleCreateUnvanTable}
-              disabled={unvanTableCreating}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                unvanTableCreating
-                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : 'bg-blue-600 text-white hover:bg-blue-700'
-              }`}
-            >
-              {unvanTableCreating ? (
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-              ) : (
-                <Database className="w-4 h-4" />
-              )}
-              {unvanTableCreating ? 'Oluşturuluyor...' : 'Ünvan Tablosu'}
-            </button>
-            
-            <button
-              onClick={handleCreateIzinTable}
-              disabled={izinTableCreating}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                izinTableCreating
-                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : 'bg-green-600 text-white hover:bg-green-700'
-              }`}
-            >
-              {izinTableCreating ? (
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-              ) : (
-                <Plus className="w-4 h-4" />
-              )}
-              {izinTableCreating ? 'Oluşturuluyor...' : 'İzin/İstek Tablosu'}
-            </button>
-          </div>
+          {/* Otomatik tablo oluşturma durumu */}
+          {initializingTables && (
+            <div className="flex items-center gap-2 text-blue-600">
+              <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+              <span className="text-sm">HZM tabloları kontrol ediliyor...</span>
+            </div>
+          )}
           <button
             onClick={() => navigate('/personel-ekle')}
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
