@@ -73,7 +73,9 @@ const LandingPage: React.FC = () => {
   // HZM API'den kullanıcı doğrulaması
   const authenticateUser = async (email: string, password: string) => {
     try {
+      console.log('🔴 CALLING getUsers(13)...');
       const users = await getUsers(13); // HZM kullanıcı tablosu ID: 13
+      console.log('🔴 getUsers RESPONSE:', users);
       
       if (!users || users.length === 0) {
         throw new Error('Kullanıcı verisi alınamadı');
@@ -92,6 +94,7 @@ const LandingPage: React.FC = () => {
 
       return user;
     } catch (error) {
+      console.log('🔴 authenticateUser ERROR:', error);
       console.error('Kullanıcı doğrulama hatası:', error);
       throw error;
     }
@@ -143,12 +146,15 @@ const LandingPage: React.FC = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('🔴 LOGIN STARTED:', loginData);
     setLoginLoading(true);
     setLoginError('');
 
     try {
+      console.log('🔴 CALLING authenticateUser...');
       // HZM API'den kullanıcı doğrulaması
       const user = await authenticateUser(loginData.email, loginData.password);
+      console.log('🔴 authenticateUser SUCCESS:', user);
       
       // Kullanıcı bilgilerini zenginleştir
       const enrichedUser = await enrichUserWithNames(user);
@@ -168,8 +174,10 @@ const LandingPage: React.FC = () => {
         navigate('/personel');
       }
     } catch (err) {
+      console.log('🔴 LOGIN ERROR:', err);
       setLoginError(err instanceof Error ? err.message : 'Bir hata oluştu. Lütfen tekrar deneyin.');
     } finally {
+      console.log('🔴 LOGIN FINISHED');
       setLoginLoading(false);
     }
   };

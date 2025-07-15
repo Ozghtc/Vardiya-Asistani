@@ -44,6 +44,8 @@ const logError = (message: string, error?: any) => {
 const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
   const method = options.method || 'GET';
   
+  console.log('🔴 API REQUEST STARTED:', { endpoint, method, hasBody: !!options.body });
+  
   logInfo('API Request BAŞLADI', {
     endpoint,
     method,
@@ -177,6 +179,7 @@ const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
     }
     
     // Strateji 4: Mock response döndür (dokümantasyona göre güncellendi)
+    console.log('🔴 ALL STRATEGIES FAILED, RETURNING MOCK');
     logInfo('Tüm stratejiler başarısız, güvenli mock response döndürülüyor');
     return getMockResponse(endpoint, method);
   }
