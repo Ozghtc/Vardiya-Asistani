@@ -29,11 +29,15 @@ const VardiyaTanimlama: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) {
+    
+    // Güvenli string kontrolleri
+    const safeName = name || '';
+    
+    if (!safeName.trim()) {
       setError('Vardiya adı gereklidir');
       return;
     }
-    if (shifts.some(shift => shift.name === name)) {
+    if (shifts.some(shift => shift.name === safeName.trim())) {
       setError('Bu vardiya adı zaten kullanılmış');
       return;
     }
@@ -48,7 +52,7 @@ const VardiyaTanimlama: React.FC = () => {
 
     const newShift = {
       id: Date.now(),
-      name,
+      name: safeName.trim(),
       startHour,
       endHour,
       calismaSaati: Math.round(toplamSaat)

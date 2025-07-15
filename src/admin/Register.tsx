@@ -91,19 +91,24 @@ const Register: React.FC = () => {
 
   // Form validation
   const validateForm = () => {
-    if (!name.trim()) {
+    const safeName = name || '';
+    const safeEmail = email || '';
+    const safePassword = password || '';
+    const safePhone = phone || '';
+    
+    if (!safeName.trim()) {
       setError('Ad Soyad gereklidir');
       return false;
     }
-    if (!email.trim()) {
+    if (!safeEmail.trim()) {
       setError('Email gereklidir');
       return false;
     }
-    if (!password.trim() || password.length < 4) {
+    if (!safePassword.trim() || safePassword.length < 4) {
       setError('Şifre en az 4 karakter olmalıdır');
       return false;
     }
-    if (!phone.trim()) {
+    if (!safePhone.trim()) {
       setError('Telefon gereklidir');
       return false;
     }
@@ -123,19 +128,25 @@ const Register: React.FC = () => {
     setLoading(true);
 
     try {
+      // Güvenli string işleme
+      const safeName = (name || '').trim();
+      const safeEmail = (email || '').trim();
+      const safePassword = (password || '').trim();
+      const safePhone = (phone || '').trim();
+      
       const userData = {
-        name: name.trim(),
-        email: email.trim().toLowerCase(),
-        password: password.trim(),
-        phone: phone.trim(),
+        name: safeName,
+        email: safeEmail.toLowerCase(),
+        password: safePassword,
+        phone: safePhone,
         rol,
         kurum_id: rol === 'admin' ? undefined : kurum_id,
         departman_id: rol === 'admin' ? undefined : departman_id,
         birim_id: rol === 'admin' ? undefined : birim_id,
         aktif_mi: true,
         // Yeni field'lar
-        firstName: name.trim().split(' ')[0] || '', // İlk kelime ad
-        lastName: name.trim().split(' ').slice(1).join(' ') || '', // Geri kalanlar soyad
+        firstName: safeName.split(' ')[0] || '', // İlk kelime ad
+        lastName: safeName.split(' ').slice(1).join(' ') || '', // Geri kalanlar soyad
         organization: rol === 'admin' ? 'Sistem' : (kurumlar.find(k => k.id === kurum_id)?.kurum_adi || ''),
         title: rol === 'admin' ? 'Sistem Yöneticisi' : (rol === 'yonetici' ? 'Yönetici' : 'Personel'),
         registration_type: 'register',
@@ -144,7 +155,7 @@ const Register: React.FC = () => {
         last_login: undefined
       };
 
-      const result = await addUser(13, userData); // HZM kullanıcı tablosu ID: 13
+      const result = await addUser(13, userData);
 
       if (result.success) {
         // Kullanıcı verilerini zenginleştir

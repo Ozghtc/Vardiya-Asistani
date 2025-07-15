@@ -168,7 +168,7 @@ const AlanTanimlama: React.FC = () => {
   }, [dailyWorkHours]);
 
   useEffect(() => {
-    const hasName = name.trim().length > 0;
+    const hasName = (name || '').trim().length > 0;
     const hasColor = selectedColor.length > 0;
     const hasActiveDay = Object.values(dayStates).some(state => state.isActive);
     const allActiveDaysValid = Object.entries(dayStates).every(([_, state]) => 
@@ -278,7 +278,11 @@ const AlanTanimlama: React.FC = () => {
   };
 
   const handleSaveArea = () => {
-    if (!name.trim()) {
+    // Güvenli string kontrolleri
+    const safeName = name || '';
+    const safeDescription = description || '';
+    
+    if (!safeName.trim()) {
       setErrorMessage('Alan adı zorunludur!');
       setShowError(true);
       return;
@@ -318,9 +322,9 @@ const AlanTanimlama: React.FC = () => {
 
     const newArea: Area = {
       id: Date.now(),
-      name: name.trim(),
+      name: safeName.trim(),
       color: selectedColor,
-      description: description.trim(),
+      description: safeDescription.trim(),
       dailyWorkHours,
       shifts: dayStates,
       nobetler

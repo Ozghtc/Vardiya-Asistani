@@ -74,12 +74,19 @@ const PersonelEkle: React.FC = () => {
 
   useEffect(() => {
     const { name, surname, title, tcno } = formData;
+    
+    // Güvenli string kontrolleri
+    const safeName = name || '';
+    const safeSurname = surname || '';
+    const safeTitle = title || '';
+    const safeTcno = tcno || '';
+    
     const isValid = Boolean(
-      name.trim() && 
-      surname.trim() && 
-      title.trim() && 
-      tcno.trim() && 
-      tcno.length === 11
+      safeName.trim() && 
+      safeSurname.trim() && 
+      safeTitle.trim() && 
+      safeTcno.trim() && 
+      safeTcno.length === 11
     );
     setIsFormValid(isValid);
 

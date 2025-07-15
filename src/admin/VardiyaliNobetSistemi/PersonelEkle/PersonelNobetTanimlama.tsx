@@ -259,7 +259,7 @@ export default function PersonelNobetTanimlama() {
         if (!saatler) return;
         
         saatler.split(', ').forEach(saat => {
-          const saatKey = saat.trim();
+          const saatKey = (saat || '').trim();
           const existingSaat = grouped[alanAdi].saatler.find(s => s.saat === saatKey);
           
           if (existingSaat) {
@@ -540,7 +540,7 @@ export default function PersonelNobetTanimlama() {
                         {detaylar.split(' | ').map((parca, i) => {
                           const [gun, saatler] = parca.split(':');
                           return (
-                            <span key={i} className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-blue-100 text-blue-800 font-semibold text-xs border border-blue-200">{typeof gun === 'object' ? ((gun as any).ad || (gun as any).id || JSON.stringify(gun)) : gun.trim()} <span className="font-normal">{saatler?.trim()}</span></span>
+                            <span key={i} className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-blue-100 text-blue-800 font-semibold text-xs border border-blue-200">{typeof gun === 'object' ? ((gun as any).ad || (gun as any).id || JSON.stringify(gun)) : (gun || '').trim()} <span className="font-normal">{(saatler || '').trim()}</span></span>
                           );
                         })}
                       </div>
