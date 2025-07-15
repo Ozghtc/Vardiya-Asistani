@@ -119,16 +119,21 @@ Toast.displayName = 'Toast';
 const AlanTanimlama: React.FC = () => {
   const [areas, setAreas] = useState<Area[]>([]);
   const [name, handleNameChange] = useCapitalization('');
-  const [description, handleDescriptionChange] = useCapitalization('');
+  const [description, setDescription] = useState('');
   const [selectedColor, setSelectedColor] = useState('');
   const [dailyWorkHours, setDailyWorkHours] = useState(40);
-  const [selectedDays, setSelectedDays] = useState<string[]>([]);
+  const [selectedDays, setSelectedDays] = useState<string[]>(weekDays.map(day => day.value));
   const [selectedShift, setSelectedShift] = useState(vardiyalar[0].name);
   const [errorMessage, setErrorMessage] = useState('');
   const [showError, setShowError] = useState(false);
   const [isFormValid, setIsFormValid] = useState(false);
   const [usedColors, setUsedColors] = useState<string[]>([]);
   const [showSuccess, setShowSuccess] = useState(false);
+
+  // Textarea için ayrı handler
+  const handleDescriptionTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setDescription(e.target.value.toUpperCase());
+  };
   
   const [dayStates, setDayStates] = useState<Record<string, DayState>>(
     weekDays.reduce((acc, day) => ({
@@ -335,7 +340,7 @@ const AlanTanimlama: React.FC = () => {
     localStorage.setItem('tanimliAlanlar', JSON.stringify(updatedAreas));
     
     handleNameChange({ target: { value: '' } } as React.ChangeEvent<HTMLInputElement>);
-    handleDescriptionChange({ target: { value: '' } } as React.ChangeEvent<HTMLTextAreaElement>);
+    setDescription('');
     setSelectedColor('');
     setDailyWorkHours(40);
     setDayStates(weekDays.reduce((acc, day) => ({
@@ -446,7 +451,7 @@ const AlanTanimlama: React.FC = () => {
               <label className="block text-gray-700 mb-2 text-sm sm:text-base">Açıklama</label>
               <textarea
                 value={description}
-                onChange={handleDescriptionChange}
+                onChange={handleDescriptionTextareaChange}
                 placeholder="ALAN HAKKINDA KISA BİR AÇIKLAMA"
                 rows={4}
                 className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200"
@@ -661,7 +666,7 @@ const AlanTanimlama: React.FC = () => {
 
       {/* Tanımlı Alanlar */}
       <div className="mt-8">
-        <TanimliAlanlar areas={areas} onDelete={handleRemoveArea} />
+        <TanimliAlanlar />
       </div>
 
       {showSuccess && <SuccessNotification message="Alan başarıyla eklendi" />}
