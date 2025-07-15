@@ -26,6 +26,7 @@ import NobetKurallari from './admin/VardiyaliNobetSistemi/NobetIslemleri/NobetKu
 import NobetOlustur from './admin/VardiyaliNobetSistemi/NobetIslemleri/NobetOlustur';
 import Raporlar from './admin/VardiyaliNobetSistemi/NobetIslemleri/Raporlar';
 import Login from './admin/Login';
+import Register from './admin/Register';
 
 function App() {
   return (
@@ -115,6 +116,7 @@ function App() {
           </ProtectedRoute>
         } />
         <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
