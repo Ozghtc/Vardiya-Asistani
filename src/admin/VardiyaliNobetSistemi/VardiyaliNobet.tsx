@@ -4,73 +4,22 @@ import { Settings, Users, UserPlus, FileText, Clock } from 'lucide-react';
 
 const VardiyaliNobet: React.FC = () => {
   const navigate = useNavigate();
-  const [showNoAuthModal, setShowNoAuthModal] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
-  const [yetkiTablo, setYetkiTablo] = useState<any[]>([]);
-  const [departmanlar, setDepartmanlar] = useState<any[]>([]);
-  const [birimler, setBirimler] = useState<any[]>([]);
+  const [currentUser, setCurrentUser] = useState<any>(null);
 
   useEffect(() => {
-    const checkYoneticiYetki = async () => {
+    const checkUser = async () => {
       const userStr = localStorage.getItem('currentUser');
       if (!userStr) {
         navigate('/login');
         return;
       }
       const user = JSON.parse(userStr);
-      if (user.role === 'admin' || user.role === 'personel') {
-        setCheckingAuth(false);
-        return;
-      }
-      // Departman ve birim adlarını çek
-      const [depRes, birimRes] = await Promise.all([
-        supabase.from('admin_kurumlar_departmanlar').select('*'),
-        supabase.from('admin_kurumlar_birimler').select('*')
-      ]);
-      setDepartmanlar(depRes.data || []);
-      setBirimler(birimRes.data || []);
-      // Yetkileri çek
-      const { data: yetkiler, error } = await supabase
-        .from('admin_kullanici_yonetici_yetkilendirme')
-        .select('*')
-        .eq('kullanici_id', user.id);
-      if (error) {
-        setCheckingAuth(false);
-        return;
-      }
-      // Tabloya hazırla
-      if (yetkiler && yetkiler.length > 0) {
-        const tablo = yetkiler.map((y: any) => {
-          const dep = depRes.data?.find((d: any) => d.id === y.departman_id);
-          const birim = birimRes.data?.find((b: any) => b.id === y.birim_id);
-          return {
-            departman: dep?.departman_adi || y.departman_id,
-            birim: birim?.birim_adi || y.birim_id,
-            gorev: y.gorev
-          };
-        });
-        setYetkiTablo(tablo);
-      } else {
-        setYetkiTablo([]);
-      }
-      const kendiYetkisiVar = yetkiler && yetkiler.some(
-        (y: any) =>
-          y.departman_id === user.departman_id &&
-          y.birim_id === user.birim_id &&
-          (y.gorev === 'GÖREBİLİR' || y.gorev === 'DÜZENLEYEBİLİR')
-      );
-      if (!kendiYetkisiVar) {
-        setShowNoAuthModal(true);
-      }
+      setCurrentUser(user);
       setCheckingAuth(false);
     };
-    checkYoneticiYetki();
+    checkUser();
   }, [navigate]);
-
-  const handleLogout = () => {
-    localStorage.removeItem('currentUser');
-    navigate('/login');
-  };
 
   const mainCards = [
     {
@@ -107,25 +56,40 @@ const VardiyaliNobet: React.FC = () => {
     }
   ];
 
+  if (checkingAuth) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
   return (
     <div>
-      {/* Yetki yoksa modal */}
-      {showNoAuthModal && !checkingAuth && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full text-center">
-            <h2 className="text-xl font-bold text-red-700 mb-4">Yetkiniz Bulunmamaktadır</h2>
-            <p className="mb-4">Kendi departman veya biriminiz için hiçbir görüntüleme/düzenleme yetkiniz yok.<br/>Lütfen sistem yöneticinizden yetki tanımlanmasını isteyin.</p>
-            <button
-              onClick={handleLogout}
-              className="bg-blue-600 text-white px-6 py-2 rounded font-semibold hover:bg-blue-700 transition"
-            >Tamam</button>
+      {/* Yönetici Bilgi Kartı - Basit Versiyon */}
+      {currentUser && (
+        <div className="mb-6 bg-blue-50 rounded-lg p-4 border border-blue-200">
+          <div className="text-center">
+            <p className="text-sm text-gray-600 mb-1">Hoşgeldin,</p>
+            <p className="text-lg font-semibold text-blue-800">
+              {currentUser.name || currentUser.email?.split('@')[0]?.toUpperCase() || 'YÖNETİCİ'}
+            </p>
+            {currentUser.kurum_adi && (
+              <p className="text-sm text-gray-600 mt-2">
+                📍 {currentUser.kurum_adi}
+              </p>
+            )}
           </div>
         </div>
       )}
+
+      {/* Sayfa Başlığı */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-800">Vardiyalı Nöbet Sistemi</h1>
         <p className="text-gray-600 mt-2">Vardiya sistemi yönetimi ve planlaması</p>
       </div>
+
+      {/* Ana Kartlar */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {mainCards.map((card, index) => (
           <div 
@@ -145,30 +109,6 @@ const VardiyaliNobet: React.FC = () => {
           </div>
         ))}
       </div>
-      {/* Yetki Tablosu */}
-      {yetkiTablo.length > 0 && (
-        <div className="fixed bottom-4 right-4 z-40 bg-white border border-blue-200 shadow-lg rounded-lg px-4 py-3 text-xs max-w-xs min-w-[220px] animate-fade-in">
-          <div className="font-bold text-blue-900 mb-1 text-sm">Yetkileriniz</div>
-          <table className="w-full text-xs">
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="py-1 px-2 text-left font-semibold">Departman</th>
-                <th className="py-1 px-2 text-left font-semibold">Birim</th>
-                <th className="py-1 px-2 text-left font-semibold">Görev</th>
-              </tr>
-            </thead>
-            <tbody>
-              {yetkiTablo.map((y, i) => (
-                <tr key={i} className="border-t">
-                  <td className="py-1 px-2">{y.departman}</td>
-                  <td className="py-1 px-2">{y.birim}</td>
-                  <td className="py-1 px-2">{y.gorev}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
     </div>
   );
 };
