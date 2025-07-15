@@ -496,6 +496,12 @@ export const createUsersTable = async () => {
       console.log('🎯 Kullanıcı tablosu oluşturuldu:', response);
     }
     
+    // Eğer tablo başarıyla oluşturulduysa, field'ları ekle
+    if (response.data?.table?.id) {
+      const tableId = response.data.table.id;
+      await setupUserTableFieldsManual();
+    }
+    
     return {
       success: true,
       data: response.data || response,
@@ -509,6 +515,59 @@ export const createUsersTable = async () => {
       error: error
     };
   }
+};
+
+// Kullanıcı tablosuna field'ları manuel ekle - DOĞRUDAN ÇALIŞTIRILABİLİR VERSIYON
+export const setupUserTableFieldsManual = async () => {
+  const tableId = 13; // Mevcut kullanıcı tablosu ID
+  logInfo('setupUserTableFieldsManual() çağrıldı', { tableId });
+  
+  const requiredFields = [
+    { name: 'name', type: 'string', description: 'Kullanıcı adı soyadı' },
+    { name: 'email', type: 'string', description: 'E-posta adresi' },
+    { name: 'password', type: 'string', description: 'Şifre' },
+    { name: 'phone', type: 'string', description: 'Telefon numarası' },
+    { name: 'rol', type: 'string', description: 'Kullanıcı rolü (admin/yonetici/personel)' },
+    { name: 'kurum_id', type: 'string', description: 'Bağlı kurum ID' },
+    { name: 'departman_id', type: 'string', description: 'Bağlı departman ID' },
+    { name: 'birim_id', type: 'string', description: 'Bağlı birim ID' },
+    { name: 'aktif_mi', type: 'boolean', description: 'Kullanıcı aktif mi?' }
+  ];
+  
+  const results = [];
+  
+  for (const field of requiredFields) {
+    try {
+      console.log(`🔧 Field ekleniyor: ${field.name} (${field.type})`);
+      
+      const response = await apiRequest(`/api/v1/tables/project/${API_CONFIG.projectId}/${tableId}/fields`, {
+        method: 'POST',
+        body: JSON.stringify({
+          name: field.name,
+          type: field.type,
+          isRequired: field.name === 'name' || field.name === 'email' || field.name === 'password' || field.name === 'phone' || field.name === 'rol',
+          description: field.description
+        }),
+      });
+      
+      results.push({
+        field: field.name,
+        success: true,
+        data: response
+      });
+      
+      logInfo(`✅ Field ${field.name} eklendi`);
+    } catch (error) {
+      logWarning(`❌ Field ${field.name} eklenemedi`, error);
+      results.push({
+        field: field.name,
+        success: false,
+        error: error
+      });
+    }
+  }
+  
+  return results;
 };
 
 // Kullanıcıları getir - YENİ FONKSIYON
@@ -540,15 +599,20 @@ export const addUser = async (usersTableId: number, userData: {
 }) => {
   logInfo('addUser() çağrıldı', userData);
   try {
+    // Veri validasyonu
+    if (!userData.name || !userData.email || !userData.password || !userData.phone || !userData.rol) {
+      throw new Error('Gerekli alanlar eksik');
+    }
+    
     const requestBody = {
-      name: userData.name,
-      email: userData.email,
-      password: userData.password,
-      phone: userData.phone,
-      rol: userData.rol,
-      kurum_id: userData.kurum_id || '',
-      departman_id: userData.departman_id || '',
-      birim_id: userData.birim_id || '',
+      name: userData.name.trim(),
+      email: userData.email.trim().toLowerCase(),
+      password: userData.password.trim(),
+      phone: userData.phone.trim(),
+      rol: userData.rol.trim(),
+      kurum_id: userData.kurum_id?.trim() || null,
+      departman_id: userData.departman_id?.trim() || null,
+      birim_id: userData.birim_id?.trim() || null,
       aktif_mi: userData.aktif_mi !== false
     };
     
@@ -565,6 +629,11 @@ export const addUser = async (usersTableId: number, userData: {
       console.log('👤 addUser response:', response);
     }
     
+    // API'den gelen response'u kontrol et
+    if (response.success === false) {
+      throw new Error(response.message || 'API hatası');
+    }
+    
     return {
       success: true,
       data: response.data || response,
@@ -573,9 +642,9 @@ export const addUser = async (usersTableId: number, userData: {
   } catch (error) {
     logError('addUser hatası', error);
     return {
-      success: true,
-      message: 'Kullanıcı eklendi (Güvenli mod)',
-      fallback: true
+      success: false,
+      message: error instanceof Error ? error.message : 'Kullanıcı eklenemedi',
+      error: error
     };
   }
 };

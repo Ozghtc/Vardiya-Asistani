@@ -4,7 +4,7 @@ import { useCapitalization } from '../../hooks/useCapitalization';
 import Select from 'react-select';
 import CreatableSelect from 'react-select/creatable';
 import turkiyeIller from './il-ilceler/turkiye-il-ilce.json';
-import { addKurum, getKurumlar, updateKurum, deleteKurum, testAPI, updateKurumlarTable } from '../../lib/api';
+import { addKurum, getKurumlar, updateKurum, deleteKurum, testAPI, updateKurumlarTable, createUsersTable, setupUserTableFieldsManual } from '../../lib/api';
 
 // Types
 interface Kurum {
@@ -88,6 +88,11 @@ const KurumYonetimi = () => {
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [dbUpdateLoading, setDbUpdateLoading] = useState(false);
+  
+  // User table states
+  const [userTableCreating, setUserTableCreating] = useState(false);
+  const [userTableFieldsAdding, setUserTableFieldsAdding] = useState(false);
+  const [userTableId, setUserTableId] = useState<number | null>(13); // Mevcut tablo ID'si direkt 13
 
   const [kurumAdi, handleKurumAdiChange] = useCapitalization(kurumForm.kurum_adi);
   const [kurumTuru, handleKurumTuruChange] = useCapitalization(kurumForm.kurum_turu);
@@ -109,6 +114,54 @@ const KurumYonetimi = () => {
       setErrorMsg('Kurumlar yüklenirken hata oluştu: ' + error.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Kullanıcı tablosu oluştur
+  const handleCreateUsersTable = async () => {
+    setUserTableCreating(true);
+    try {
+      console.log('🏗️ Kullanıcı tablosu oluşturuluyor...');
+      const result = await createUsersTable();
+      
+      if (result.success) {
+        const tableId = result.data?.table?.id;
+        if (tableId) {
+          setUserTableId(tableId);
+          setSuccessMsg('✅ Kullanıcı tablosu başarıyla oluşturuldu! ID: ' + tableId);
+          console.log('🎯 Tablo oluşturma sonucu:', result);
+        } else {
+          setErrorMsg('❌ Tablo oluşturuldu ama ID alınamadı');
+        }
+      } else {
+        setErrorMsg('❌ Hata: ' + result.message);
+        console.error('❌ Tablo oluşturma hatası:', result);
+      }
+    } catch (error) {
+      console.error('❌ Tablo oluşturma hatası:', error);
+      setErrorMsg('❌ Kullanıcı tablosu oluşturulamadı');
+    } finally {
+      setUserTableCreating(false);
+    }
+  };
+
+  // Kullanıcı tablosuna field'ları ekle
+  const handleSetupUserTableFields = async () => {
+    setUserTableFieldsAdding(true);
+    try {
+      console.log('🔧 Kullanıcı tablosuna field\'lar ekleniyor...');
+      const results = await setupUserTableFieldsManual();
+      
+      const successCount = results.filter((r: any) => r.success).length;
+      const totalCount = results.length;
+      
+      setSuccessMsg(`✅ ${successCount}/${totalCount} field başarıyla eklendi!`);
+      console.log('🎯 Field ekleme sonuçları:', results);
+    } catch (error) {
+      console.error('❌ Field ekleme hatası:', error);
+      setErrorMsg('❌ Field\'lar eklenemedi');
+    } finally {
+      setUserTableFieldsAdding(false);
     }
   };
 
@@ -437,6 +490,33 @@ const KurumYonetimi = () => {
           >
             🗑️ Cache Temizle
           </button>
+          
+          {/* Kullanıcı Tablosu Butonları */}
+          <button
+            onClick={handleCreateUsersTable}
+            disabled={userTableCreating}
+            className="px-4 py-2 bg-purple-100 text-purple-600 rounded-lg hover:bg-purple-200 transition-colors disabled:opacity-50"
+            title="Kullanıcı tablosu oluştur"
+          >
+            {userTableCreating ? '⏳ Oluşturuluyor...' : '🏗️ Kullanıcı Tablosu Oluştur'}
+          </button>
+          
+          {userTableId && (
+            <button
+              onClick={handleSetupUserTableFields}
+              disabled={userTableFieldsAdding}
+              className="px-4 py-2 bg-orange-100 text-orange-600 rounded-lg hover:bg-orange-200 transition-colors disabled:opacity-50"
+              title="Kullanıcı tablosuna field'ları ekle"
+            >
+              {userTableFieldsAdding ? '⏳ Ekleniyor...' : '🔧 Field\'ları Ekle'}
+            </button>
+          )}
+          
+          {userTableId && (
+            <div className="text-sm text-purple-600 bg-purple-100 px-3 py-1 rounded-full">
+              ✅ Kullanıcı Tablosu: {userTableId}
+            </div>
+          )}
           <div className="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
             Toplam: {kurumlar.length} kurum
           </div>
@@ -1045,8 +1125,8 @@ const KurumYonetimi = () => {
                       </div>
                     )}
                   </div>
-                );
-              })}
+          );
+        })}
             </div>
           )}
         </div>

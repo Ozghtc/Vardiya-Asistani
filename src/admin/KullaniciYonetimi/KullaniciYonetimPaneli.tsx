@@ -64,7 +64,7 @@ const KullaniciYonetimPaneli: React.FC = () => {
   const [loading, setLoading] = useState(true); // Başlangıçta loading true
   const [error, setError] = useState<string | null>(null);
   const [tableCreating, setTableCreating] = useState(false);
-  const [usersTableId, setUsersTableId] = useState<number | null>(null);
+  const [usersTableId, setUsersTableId] = useState<number | null>(13); // Mevcut tablo ID'si direkt 13
   
   // Form states
   const [formData, setFormData] = useState({
@@ -195,6 +195,8 @@ const KullaniciYonetimPaneli: React.FC = () => {
       alert('❌ Kullanıcı tablosu bulunamadı! Önce "Kullanıcı Tablosu Oluştur" butonuna basın.');
       return;
     }
+    
+    console.log('📤 Kullanıcı ekleme isteği gönderiliyor:', { usersTableId, formData });
 
     try {
       const result = await addUser(usersTableId, formData);
@@ -233,7 +235,7 @@ const KullaniciYonetimPaneli: React.FC = () => {
           alert('✅ Kullanıcı başarıyla silindi!');
           loadUsers();
           setPermissions(prev => prev.filter(p => p.kullanici_id !== showDeleteModal.user.id));
-          setShowDeleteModal(null);
+    setShowDeleteModal(null);
           setSelectedUser(null);
         } else {
           alert('❌ Kullanıcı silinemedi');
@@ -403,18 +405,10 @@ const KullaniciYonetimPaneli: React.FC = () => {
             Kurumlar: {kurumlar.length}
           </div>
           
-          {usersTableId ? (
+          {usersTableId && (
             <div className="text-sm text-green-600 bg-green-100 px-3 py-1 rounded-full">
               ✅ Kullanıcı Tablosu: {usersTableId}
             </div>
-          ) : (
-            <button
-              onClick={handleCreateUsersTable}
-              disabled={tableCreating}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {tableCreating ? '⏳ Oluşturuluyor...' : '🏗️ Kullanıcı Tablosu Oluştur'}
-            </button>
           )}
         </div>
       </div>
@@ -433,7 +427,7 @@ const KullaniciYonetimPaneli: React.FC = () => {
               <span className="font-medium">Kullanıcı tablosu bulunamadı!</span>
             </div>
             <p className="text-sm text-yellow-700 mt-1">
-              Kullanıcı eklemek için önce yukarıdaki "🏗️ Kullanıcı Tablosu Oluştur" butonuna basın.
+              Kullanıcı eklemek için önce admin sayfasından (Kurum Yönetimi) kullanıcı tablosunu oluşturun.
             </p>
           </div>
         )}
@@ -500,7 +494,7 @@ const KullaniciYonetimPaneli: React.FC = () => {
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Telefon</label>
-                <input
+            <input
                   type="tel"
                   value={formData.phone}
                   onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}

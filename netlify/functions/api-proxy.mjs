@@ -1,10 +1,24 @@
 // Netlify Functions - API Proxy (ES MODULES)
 export const handler = async (event, context) => {
+  // İzin verilen domain'ler
+  const allowedOrigins = [
+    'https://vardiyaasistani.netlify.app',
+    'https://vardiyaasistani.netlify.app/',
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'http://localhost:8888',
+    'https://localhost:8888'
+  ];
+  
+  const origin = event.headers?.origin || event.headers?.Origin;
+  const allowedOrigin = allowedOrigins.includes(origin) ? origin : '*';
+  
   // CORS headers
   const headers = {
-    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Origin': allowedOrigin,
     'Access-Control-Allow-Headers': 'Content-Type, X-API-Key, Authorization',
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Credentials': 'true',
     'Content-Type': 'application/json',
   };
 
@@ -20,7 +34,10 @@ export const handler = async (event, context) => {
   try {
     console.log('📡 Netlify Function başlatıldı');
     console.log('Event method:', event.httpMethod);
+    console.log('Event headers:', event.headers);
     console.log('Event body:', event.body);
+    console.log('🌐 Origin:', origin);
+    console.log('✅ Allowed Origin:', allowedOrigin);
     
     // Body parsing
     let requestData = {};

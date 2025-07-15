@@ -29,4 +29,10 @@ npm install
 
 ## Notlar
 - Kod ve terminal işlemleri otomatik olarak yapılır.
-- Sadece dış arayüzle ilgili yardım isteyebilirsiniz. 
+- Sadece dış arayüzle ilgili yardım isteyebilirsiniz.
+
+## Veritabanı Tablosu Oluşturma
+- Kullanıcı tablosu oluşturma butonu **sadece admin sayfasında** (KurumYonetimi.tsx) bulunur.
+- Diğer kullanıcı yönetim panellerinde bu buton bulunmaz.
+- Tablo oluşturulduktan sonra kullanıcı işlemleri yapılabilir.
+- Kullanıcı ekleme/güncelleme için önce veritabanı tablosunun oluşturulmuş olması gerekir. 
