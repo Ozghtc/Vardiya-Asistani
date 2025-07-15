@@ -5,15 +5,7 @@ import { Settings, Users, UserPlus, FileText, Clock, Building2, MapPin, UserCirc
 const VardiyaliNobet: React.FC = () => {
   const navigate = useNavigate();
   const [checkingAuth, setCheckingAuth] = useState(true);
-
-  // Simulated user data - in real app this would come from auth context
-  const currentUser = {
-    name: 'Dr. Mehmet Yılmaz',
-    title: 'Başhekim',
-    organization: 'Ankara Şehir Hastanesi',
-    department: 'Acil Tıp Kliniği',
-    lastLogin: '15 Ocak 2025, 09:30'
-  };
+  const [currentUser, setCurrentUser] = useState<any>(null);
 
   // Simulated stats
   const stats = {
@@ -30,6 +22,8 @@ const VardiyaliNobet: React.FC = () => {
         navigate('/login');
         return;
       }
+      const user = JSON.parse(userStr);
+      setCurrentUser(user);
       setCheckingAuth(false);
     };
     checkUser();
@@ -81,34 +75,36 @@ const VardiyaliNobet: React.FC = () => {
   return (
     <div>
       {/* Welcome Section */}
-      <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 mb-8 border border-blue-100">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-800 mb-2">
-              Hoş Geldiniz, {currentUser.name}
-            </h1>
-            <div className="flex items-center gap-6 text-sm text-gray-600">
-              <div className="flex items-center gap-2">
-                <Building2 className="w-4 h-4 text-blue-600" />
-                <span className="font-medium">{currentUser.organization}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <UserCircle className="w-4 h-4 text-purple-600" />
-                <span>{currentUser.title} - {currentUser.department}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-green-600" />
-                <span>Son giriş: {currentUser.lastLogin}</span>
+      {currentUser && (
+        <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 mb-8 border border-blue-100">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-800 mb-2">
+                Hoş Geldiniz, {currentUser.name || currentUser.ad || 'Kullanıcı'}
+              </h1>
+              <div className="flex items-center gap-6 text-sm text-gray-600">
+                <div className="flex items-center gap-2">
+                  <Building2 className="w-4 h-4 text-blue-600" />
+                  <span className="font-medium">{currentUser.kurum_adi || 'Kurum Belirtilmemiş'}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <UserCircle className="w-4 h-4 text-purple-600" />
+                  <span>{currentUser.role || 'Rol Belirtilmemiş'} - {currentUser.departman_adi || 'Departman'}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-green-600" />
+                  <span>{currentUser.birim_adi || 'Birim Belirtilmemiş'}</span>
+                </div>
               </div>
             </div>
-          </div>
-          <div className="hidden md:block">
-            <div className="w-20 h-20 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center">
-              <UserCircle className="w-12 h-12 text-white" />
+            <div className="hidden md:block">
+              <div className="w-20 h-20 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center">
+                <UserCircle className="w-12 h-12 text-white" />
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
