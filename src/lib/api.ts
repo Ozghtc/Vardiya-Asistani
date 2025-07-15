@@ -520,6 +520,80 @@ export const createUsersTable = async () => {
   }
 };
 
+// Personel Ünvan Tanımlama tablosu oluştur - YENİ FONKSIYON
+export const createPersonelUnvanTable = async () => {
+  logInfo('createPersonelUnvanTable() çağrıldı');
+  try {
+    const response = await apiRequest(`/api/v1/tables/project/${API_CONFIG.projectId}`, {
+      method: 'POST',
+      body: JSON.stringify({
+        name: 'personel_unvan_tanimlama',
+        description: 'Personel ünvan tanımlama tablosu - vardiya sistemi için'
+      }),
+    });
+    
+    if (isDev) {
+      console.log('🎯 Personel ünvan tablosu oluşturuldu:', response);
+    }
+    
+    // Eğer tablo başarıyla oluşturulduysa, field'ları ekle
+    if (response.data?.table?.id) {
+      const tableId = response.data.table.id;
+      await setupPersonelUnvanTableFields(tableId);
+    }
+    
+    return {
+      success: true,
+      data: response.data || response,
+      message: response.message || 'Personel ünvan tablosu başarıyla oluşturuldu'
+    };
+  } catch (error) {
+    logError('createPersonelUnvanTable hatası', error);
+    return {
+      success: false,
+      message: 'Personel ünvan tablosu oluşturulamadı',
+      error: error
+    };
+  }
+};
+
+// İzin/İstek Tanımlama tablosu oluştur - YENİ FONKSIYON
+export const createIzinIstekTable = async () => {
+  logInfo('createIzinIstekTable() çağrıldı');
+  try {
+    const response = await apiRequest(`/api/v1/tables/project/${API_CONFIG.projectId}`, {
+      method: 'POST',
+      body: JSON.stringify({
+        name: 'izin_istek_tanimlama',
+        description: 'İzin ve istek tanımlama tablosu - vardiya sistemi için'
+      }),
+    });
+    
+    if (isDev) {
+      console.log('🎯 İzin/İstek tablosu oluşturuldu:', response);
+    }
+    
+    // Eğer tablo başarıyla oluşturulduysa, field'ları ekle
+    if (response.data?.table?.id) {
+      const tableId = response.data.table.id;
+      await setupIzinIstekTableFields(tableId);
+    }
+    
+    return {
+      success: true,
+      data: response.data || response,
+      message: response.message || 'İzin/İstek tablosu başarıyla oluşturuldu'
+    };
+  } catch (error) {
+    logError('createIzinIstekTable hatası', error);
+    return {
+      success: false,
+      message: 'İzin/İstek tablosu oluşturulamadı',
+      error: error
+    };
+  }
+};
+
 // Kullanıcı tablosuna field'ları manuel ekle - DOĞRUDAN ÇALIŞTIRILABİLİR VERSIYON
 export const setupUserTableFieldsManual = async () => {
   const tableId = 13; // Mevcut kullanıcı tablosu ID
@@ -574,6 +648,110 @@ export const setupUserTableFieldsManual = async () => {
       results.push({
         field: field.name,
         success: false,
+        error: error
+      });
+    }
+  }
+  
+  return results;
+};
+
+// Personel Ünvan Tanımlama tablosuna field'ları ekle - YENİ FONKSIYON
+export const setupPersonelUnvanTableFields = async (tableId: string) => {
+  logInfo('setupPersonelUnvanTableFields() çağrıldı', { tableId });
+  
+  const requiredFields = [
+    { name: 'unvan_adi', type: 'string', description: 'Ünvan adı', isRequired: true },
+    { name: 'unvan_kodu', type: 'string', description: 'Ünvan kodu', isRequired: true },
+    { name: 'departman_id', type: 'string', description: 'Bağlı departman ID', isRequired: false },
+    { name: 'birim_id', type: 'string', description: 'Bağlı birim ID', isRequired: false },
+    { name: 'aciklama', type: 'string', description: 'Ünvan açıklaması', isRequired: false },
+    { name: 'aktif_mi', type: 'boolean', description: 'Aktif durumu', isRequired: false },
+    { name: 'sira_no', type: 'number', description: 'Sıra numarası', isRequired: false },
+    { name: 'olusturma_tarihi', type: 'string', description: 'Oluşturma tarihi', isRequired: false },
+    { name: 'guncelleme_tarihi', type: 'string', description: 'Güncelleme tarihi', isRequired: false }
+  ];
+  
+  const results = [];
+  
+  for (const field of requiredFields) {
+    try {
+      const response = await apiRequest(`/api/v1/tables/project/${API_CONFIG.projectId}/${tableId}/fields`, {
+        method: 'POST',
+        body: JSON.stringify({
+          name: field.name,
+          type: field.type,
+          description: field.description,
+          isRequired: field.isRequired || false
+        }),
+      });
+      
+      results.push({
+        success: true,
+        field: field.name,
+        data: response.data || response
+      });
+      
+      logSuccess(`Field eklendi: ${field.name}`);
+    } catch (error) {
+      logError(`Field ekleme hatası: ${field.name}`, error);
+      results.push({
+        success: false,
+        field: field.name,
+        error: error
+      });
+    }
+  }
+  
+  return results;
+};
+
+// İzin/İstek Tanımlama tablosuna field'ları ekle - YENİ FONKSIYON
+export const setupIzinIstekTableFields = async (tableId: string) => {
+  logInfo('setupIzinIstekTableFields() çağrıldı', { tableId });
+  
+  const requiredFields = [
+    { name: 'istek_adi', type: 'string', description: 'İstek/İzin adı', isRequired: true },
+    { name: 'istek_kodu', type: 'string', description: 'İstek/İzin kodu', isRequired: true },
+    { name: 'istek_turu', type: 'string', description: 'İstek türü (izin/istek/rapor)', isRequired: true },
+    { name: 'baslangic_tarihi', type: 'string', description: 'Başlangıç tarihi', isRequired: false },
+    { name: 'bitis_tarihi', type: 'string', description: 'Bitiş tarihi', isRequired: false },
+    { name: 'gun_sayisi', type: 'number', description: 'Gün sayısı', isRequired: false },
+    { name: 'aciklama', type: 'string', description: 'İstek açıklaması', isRequired: false },
+    { name: 'onay_durumu', type: 'string', description: 'Onay durumu (beklemede/onaylandi/reddedildi)', isRequired: false },
+    { name: 'personel_id', type: 'string', description: 'İlgili personel ID', isRequired: false },
+    { name: 'onaylayan_id', type: 'string', description: 'Onaylayan personel ID', isRequired: false },
+    { name: 'aktif_mi', type: 'boolean', description: 'Aktif durumu', isRequired: false },
+    { name: 'olusturma_tarihi', type: 'string', description: 'Oluşturma tarihi', isRequired: false },
+    { name: 'guncelleme_tarihi', type: 'string', description: 'Güncelleme tarihi', isRequired: false }
+  ];
+  
+  const results = [];
+  
+  for (const field of requiredFields) {
+    try {
+      const response = await apiRequest(`/api/v1/tables/project/${API_CONFIG.projectId}/${tableId}/fields`, {
+        method: 'POST',
+        body: JSON.stringify({
+          name: field.name,
+          type: field.type,
+          description: field.description,
+          isRequired: field.isRequired || false
+        }),
+      });
+      
+      results.push({
+        success: true,
+        field: field.name,
+        data: response.data || response
+      });
+      
+      logSuccess(`Field eklendi: ${field.name}`);
+    } catch (error) {
+      logError(`Field ekleme hatası: ${field.name}`, error);
+      results.push({
+        success: false,
+        field: field.name,
         error: error
       });
     }
