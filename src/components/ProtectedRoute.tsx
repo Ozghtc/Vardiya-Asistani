@@ -15,10 +15,13 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles 
     localStorage.setItem('currentUser', JSON.stringify(user));
     userStr = JSON.stringify(user);
   }
-  const role = (user?.role || '').toLowerCase();
+  const role = (user?.rol || user?.role || '').toLowerCase();
+  console.log('🔴 PROTECTEDROUTE DEBUG:', { user, role, allowedRoles });
   if (!allowedRoles.includes(role)) {
+    console.log('🔴 PROTECTEDROUTE ACCESS DENIED:', { role, allowedRoles });
     return <Navigate to="/" replace />;
   }
+  console.log('🔴 PROTECTEDROUTE ACCESS GRANTED:', { role, allowedRoles });
   return <>{children}</>;
 };
 
