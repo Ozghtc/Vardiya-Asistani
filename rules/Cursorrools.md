@@ -134,25 +134,33 @@
 
 ---
 
-## 15. Otomatik Tablo Ekleme ve API Yönetim Kuralı (HZM Veri Tabanı)
+## 15. Direkt Tablo Oluşturma Kuralı (HZM Veri Tabanı)
 
-* Netlify veya Railway gibi uzak sistemlerde barındırılan backend projelerinde tablo işlemleri tamamen **Cursor tarafından yapılmalıdır.**
-* Kullanıcıya manuel tablo ekleme yetkisi verilmemelidir.
+* Kullanıcı **"tablo oluşturmamız gerekiyor"** dediğinde, Cursor **frontend'de kod yazmaz**.
+* Cursor **doğrudan terminal'den HZM API'ye istek atarak** tabloyu oluşturur.
+* **Hiçbir otomatik sistem, useEffect, veya frontend kodu yazılmaz.**
 
-### Tablolama Kuralları:
+### Direkt Oluşturma Süreci:
 
-* Yeni modül açıldığında, otomatik tablo ve alan tanımları backend'e API ile yapılmalı.
-* Aynı tablo tekrar eklenmemeli, varsa eksik alanlar kontrol edilerek sadece eksik kısımlar tamamlanmalı.
+* Kullanıcı tablo ihtiyacı belirttiğinde:
+  1. Cursor **terminal'den curl komutu** ile HZM API'ye bağlanır
+  2. **Doğrudan tablo oluşturur** (POST /api/v1/tables/project/5)
+  3. **Field'ları ekler** (POST /api/v1/tables/.../fields)
+  4. **Sonucu doğrular** (GET /api/v1/tables/project/5)
 
-### İlişkisel Yapı:
+### Yasak Yaklaşımlar:
 
-* Tablolar arındırılmalı ve şu ilişkiler desteklenmelidir:
+* ❌ Frontend'de otomatik tablo oluşturma kodu yazma
+* ❌ useEffect ile sayfa yüklendiğinde kontrol etme
+* ❌ createTable fonksiyonları yazma
+* ❌ Mock response'lar yazma
 
-  * one-to-many
-  * many-to-one
-  * many-to-many
-  * one-to-one
-* `foreign key` alanları uygun tablo ve alanlara bağlanmalı, `onDelete`, `cascade` gibi parametreler API üzerinden doğru iletilmelidir.
+### Doğru Yaklaşım:
+
+* ✅ Terminal'den direkt API çağrısı
+* ✅ Curl komutu ile tablo oluşturma
+* ✅ Gerçek sonuç doğrulama
+* ✅ Kullanıcıya net bilgi verme
 
 ### Hata Durumları:
 
@@ -161,6 +169,6 @@
 ```
 ❌ Tablo eklenemedi
 📍 Hata Türü: Yetkilendirme Hatası (401)
-🔍 Açıklama: Supabase bağlantı anahtarı eksik
-✅ Çözüm: config.ts dosyasına VT_API_KEY girilmeli
+🔍 Açıklama: HZM API anahtarı yetersiz
+✅ Çözüm: Direkt HZM panelinden kontrol edilmeli
 ```
