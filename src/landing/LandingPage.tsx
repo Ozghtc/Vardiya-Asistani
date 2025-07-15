@@ -90,12 +90,26 @@ const LandingPage: React.FC = () => {
       return;
     }
 
+    // Form validasyonu - undefined/null kontrolleri
+    const firstName = registerData.firstName?.trim() || '';
+    const lastName = registerData.lastName?.trim() || '';
+    const email = registerData.email?.trim() || '';
+    const password = registerData.password?.trim() || '';
+    const phone = registerData.phone?.trim() || '';
+    const organization = registerData.organization?.trim() || '';
+    const title = registerData.title?.trim() || '';
+
+    if (!firstName || !lastName || !email || !password || !phone || !organization || !title) {
+      setRegisterError('Tüm alanlar doldurulmalıdır!');
+      return;
+    }
+
     setRegisterLoading(true);
 
     try {
       // 1. Önce kurum oluştur
       const kurumResult = await addKurum({
-        kurum_adi: registerData.organization,
+        kurum_adi: organization,
         kurum_turu: 'Özel Sektör',
         adres: '',
         il: '',
@@ -111,7 +125,7 @@ const LandingPage: React.FC = () => {
 
       // 2. Rol belirleme (title'dan yola çıkarak)
       let rol = 'yonetici'; // Landing page'den gelenler genelde yönetici
-      const titleLower = registerData.title.toLowerCase();
+      const titleLower = title.toLowerCase();
       if (titleLower.includes('admin') || titleLower.includes('sistem')) {
         rol = 'admin';
       } else if (titleLower.includes('personel') || titleLower.includes('çalışan')) {
@@ -120,24 +134,24 @@ const LandingPage: React.FC = () => {
 
       // 3. Kullanıcı oluştur
       const userData = {
-        name: `${registerData.firstName} ${registerData.lastName}`.trim(),
-        email: registerData.email.toLowerCase(),
-        password: registerData.password,
-        phone: registerData.phone,
+        name: `${firstName} ${lastName}`.trim(),
+        email: email.toLowerCase(),
+        password: password,
+        phone: phone,
         rol,
         kurum_id: kurumResult.data?.row?.id || '1',
         departman_id: '1',
         birim_id: '1',
         aktif_mi: true,
         // Yeni field'lar
-        firstName: registerData.firstName,
-        lastName: registerData.lastName,
-        organization: registerData.organization,
-        title: registerData.title,
+        firstName: firstName,
+        lastName: lastName,
+        organization: organization,
+        title: title,
         registration_type: 'landing',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        last_login: null
+        last_login: undefined
       };
 
       const userResult = await addUser(13, userData);
@@ -147,7 +161,7 @@ const LandingPage: React.FC = () => {
         const loginUser = {
           ...userData,
           id: userResult.data?.row?.id || Date.now(),
-          kurum_adi: registerData.organization,
+          kurum_adi: organization,
           departman_adi: 'Genel Müdürlük',
           birim_adi: 'Yönetim',
           created_at: new Date().toISOString()

@@ -670,7 +670,7 @@ export const addUser = async (usersTableId: number, userData: {
       registration_type: userData.registration_type || 'manual',
       created_at: userData.created_at || new Date().toISOString(),
       updated_at: userData.updated_at || new Date().toISOString(),
-      last_login: userData.last_login || null
+      last_login: userData.last_login || undefined
     };
     
     if (isDev) {

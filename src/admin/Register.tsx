@@ -141,7 +141,7 @@ const Register: React.FC = () => {
         registration_type: 'register',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        last_login: null
+        last_login: undefined
       };
 
       const result = await addUser(13, userData); // HZM kullanıcı tablosu ID: 13
