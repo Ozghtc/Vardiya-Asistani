@@ -82,13 +82,24 @@ const LandingPage: React.FC = () => {
       }
 
       // Email ve şifre ile kullanıcı bul
+      console.log('🔴 SEARCHING FOR USER:', { email, password });
+      console.log('🔴 AVAILABLE USERS:', users.map((u: any) => ({ 
+        email: u.email, 
+        password: u.password,
+        rol: u.rol,
+        aktif_mi: u.aktif_mi 
+      })));
+      
       const user = users.find((u: any) => 
         u.email?.toLowerCase() === email.toLowerCase() && 
         u.password === password &&
         u.aktif_mi !== false
       );
 
+      console.log('🔴 FOUND USER:', user);
+      
       if (!user) {
+        console.log('🔴 USER NOT FOUND - AVAILABLE EMAILS:', users.map((u: any) => u.email));
         throw new Error('Geçersiz email veya şifre');
       }
 
@@ -157,20 +168,27 @@ const LandingPage: React.FC = () => {
       console.log('🔴 authenticateUser SUCCESS:', user);
       
       // Kullanıcı bilgilerini zenginleştir
+      console.log('🔴 ENRICHING USER:', user);
       const enrichedUser = await enrichUserWithNames(user);
+      console.log('🔴 ENRICHED USER:', enrichedUser);
       
       // Kullanıcıyı localStorage'a kaydet (session için)
       localStorage.setItem('currentUser', JSON.stringify(enrichedUser));
+      console.log('🔴 SAVED TO LOCALSTORAGE:', enrichedUser);
       
       // Popup'u kapat
       setShowLogin(false);
       
       // Rol bazlı yönlendirme
+      console.log('🔴 ROLE-BASED NAVIGATION:', enrichedUser.rol);
       if (enrichedUser.rol === 'admin') {
+        console.log('🔴 NAVIGATING TO: /admin');
         navigate('/admin');
       } else if (enrichedUser.rol === 'yonetici') {
+        console.log('🔴 NAVIGATING TO: /vardiyali-nobet');
         navigate('/vardiyali-nobet');
       } else {
+        console.log('🔴 NAVIGATING TO: /personel');
         navigate('/personel');
       }
     } catch (err) {
