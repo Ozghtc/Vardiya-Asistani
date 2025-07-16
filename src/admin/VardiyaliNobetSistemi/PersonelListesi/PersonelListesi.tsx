@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { Plus, Pencil, Trash2, MoreVertical, Mail, Phone, Building2, ArrowRight, Clock, Calendar, User2, Users, FileText } from 'lucide-react';
 import DeleteConfirmDialog from '../../../components/ui/DeleteConfirmDialog';
 import { useAuthContext } from '../../../contexts/AuthContext';
-import PersonelNobetTanimlama from '../PersonelEkle/PersonelNobetTanimlama';
 import PersonelIstek from '../PersonelEkle/PersonelIstek';
 
 interface Personnel {
@@ -124,7 +123,7 @@ const PersonelListesi: React.FC = () => {
       id: 'nobet', 
       name: 'Nöbet Tanımlama', 
       icon: <Calendar className="w-5 h-5" />,
-      description: 'Vardiya ve nöbet programı ayarları'
+      description: 'Personel nöbet tanımlamaları'
     },
     { 
       id: 'istek', 
@@ -308,12 +307,104 @@ const PersonelListesi: React.FC = () => {
     );
   };
 
+  const renderNobetTanimlama = () => {
+    if (loading) {
+      return (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-3"></div>
+          <p className="text-gray-500">Personel listesi yükleniyor...</p>
+        </div>
+      );
+    }
+
+    if (error) {
+      return (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center">
+          <div className="text-red-500 text-6xl mb-4">⚠️</div>
+          <p className="text-gray-500 mb-4">{error}</p>
+          <button
+            onClick={loadPersonnel}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+          >
+            Yeniden Dene
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+            <Calendar className="w-5 h-5 text-blue-600" />
+            Nöbet Tanımlama - Personel Listesi
+          </h3>
+          <p className="text-sm text-gray-600 mt-1">Nöbet tanımlaması yapılacak personellerin listesi</p>
+        </div>
+        
+        <div className="overflow-hidden">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-gray-50 border-b border-gray-100">
+                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-600">Ad Soyad</th>
+                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-600">TC Kimlik No</th>
+                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-600">Ünvan</th>
+                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-600">Durum</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {personnel.map((person) => (
+                <tr 
+                  key={person.id} 
+                  className="hover:bg-gray-50 transition-colors"
+                >
+                  <td className="px-6 py-4">
+                    <div className="font-medium text-gray-900">{person.ad} {person.soyad}</div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="text-sm text-gray-600">{person.tcno}</div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="text-sm text-blue-600">{person.unvan}</div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      person.aktif_mi 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-red-100 text-red-800'
+                    }`}>
+                      {person.aktif_mi ? 'Aktif' : 'Pasif'}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {personnel.length === 0 && (
+            <div className="text-center py-12">
+              <User2 className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+              <p className="text-gray-500">Henüz personel kaydı bulunmuyor</p>
+              <button
+                onClick={() => navigate('/personel-ekle')}
+                className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
+              >
+                <Plus className="w-5 h-5" />
+                <span>İlk Personeli Ekle</span>
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   const renderContent = () => {
     switch (activeTab) {
       case 'liste':
         return renderPersonelListesi();
       case 'nobet':
-        return <PersonelNobetTanimlama />;
+        return renderNobetTanimlama();
       case 'istek':
         return (
           <PersonelIstek 
