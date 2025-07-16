@@ -62,7 +62,7 @@ const getJWTToken = async (): Promise<string> => {
         method: 'POST',
         body: {
           email: 'ozgurhzm@gmail.com',
-          apiKey: HZM_API_KEY
+          password: '135427'  // Doğru şifre
         },
         apiKey: HZM_API_KEY
       })
