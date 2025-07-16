@@ -283,7 +283,7 @@ Bunlar sistemden kaldırıldı ve canlı bağlantılarla değiştirildi.
 * Yerel ortamlar artık **referans kabul edilmemelidir**.
 * Production URL'leri:
   * Frontend: `https://vardiyaasistani.netlify.app`
-  * Backend: `https://rare-courage-production.up.railway.app`
+  * Backend: `https://hzmbackandveritabani-production-c660.up.railway.app`
 
 ### 🚨 Kritik Uyarı:
 

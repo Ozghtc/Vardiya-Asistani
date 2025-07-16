@@ -19,7 +19,7 @@ curl -X GET \
 
 ```bash
 curl -X POST \
-  "https://rare-courage-production.up.railway.app/api/v1/tables/project/5" \
+  "https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/tables/project/5" \
   -H "X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7" \
   -H "Content-Type: application/json" \
   -d '{
@@ -57,12 +57,12 @@ X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7
 ```bash
 # Proje tablolarını listele
 curl -X GET \
-  "https://rare-courage-production.up.railway.app/api/v1/tables/project/5" \
+  "https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/tables/project/5" \
   -H "X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7"
 
 # Yeni tablo oluştur
 curl -X POST \
-  "https://rare-courage-production.up.railway.app/api/v1/tables/project/5" \
+  "https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/tables/project/5" \
   -H "Content-Type: application/json" \
   -H "X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7" \
   -d '{"name": "test_tablosu", "description": "Test için tablo"}'
@@ -89,7 +89,7 @@ Tüm API isteklerinde `X-API-Key` header'ı kullanın:
 ⚠️ **Önemli:** API Key ile sadece **kendi projenize** erişebilirsiniz (Proje ID: 5)
 
 ## 📋 Temel Bilgiler
-- **Base URL:** `https://rare-courage-production.up.railway.app`
+- **Base URL:** `https://hzmbackandveritabani-production-c660.up.railway.app`
 - **Proje ID:** `5`
 - **Rate Limit:** 300 istek/15 dakika (admin kullanıcılar için bypass)
 - **API Key Kısıtı:** Bu key sadece "Vardiyali Nobet Asistani" projesine erişim sağlar
@@ -301,7 +301,7 @@ X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7
 ```javascript
 // Veri okuma
 const response = await fetch(
-  'https://rare-courage-production.up.railway.app/api/v1/data/table/10',
+  'https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/data/table/10',
   {
     method: 'GET',
     headers: {
@@ -320,7 +320,7 @@ console.log(data.data.rows);
 
 // Veri ekleme
 const addResponse = await fetch(
-  'https://rare-courage-production.up.railway.app/api/v1/data/table/10/rows',
+  'https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/data/table/10/rows',
   {
     method: 'POST',
     headers: {
@@ -401,7 +401,7 @@ if (result.success) {
 - **Proje:** Vardiyali Nobet Asistani
 - **Proje ID:** 5
 - **API Key:** hzm_1ce98c92189d4a10...
-- **Base URL:** https://rare-courage-production.up.railway.app
+- **Base URL:** https://hzmbackandveritabani-production-c660.up.railway.app
 
 ## 🚀 Versiyonlama
 - **Mevcut Versiyon:** v1
