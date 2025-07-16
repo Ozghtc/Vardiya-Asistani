@@ -181,11 +181,23 @@ const TanimliAlanlar: React.FC = () => {
     return uniqueDays.size;
   };
 
+  const getActiveDays = (alan: Alan) => {
+    const uniqueDays = new Set<string>();
+    if (alan.nobetler && alan.nobetler.length > 0) {
+      alan.nobetler.forEach(nobet => {
+        if (nobet.gunler && Array.isArray(nobet.gunler)) {
+          nobet.gunler.forEach(gun => uniqueDays.add(gun));
+        }
+      });
+    }
+    return uniqueDays.size;
+  };
+
   const genelToplam = alanlar.reduce((acc, alan) => ({
-    haftalikSaat: acc.haftalikSaat + alan.totalHours,
-    haftalikVardiya: acc.haftalikVardiya + alan.totalVardiya,
-    aylikSaat: acc.aylikSaat + (alan.totalHours * 30/7),
-    aylikVardiya: acc.aylikVardiya + (alan.totalVardiya * 30/7)
+    haftalikSaat: acc.haftalikSaat + (alan.totalHours || 0),
+    haftalikVardiya: acc.haftalikVardiya + (alan.totalVardiya || 0),
+    aylikSaat: acc.aylikSaat + ((alan.totalHours || 0) * 30/7),
+    aylikVardiya: acc.aylikVardiya + ((alan.totalVardiya || 0) * 30/7)
   }), {
     haftalikSaat: 0,
     haftalikVardiya: 0,
@@ -223,10 +235,6 @@ const TanimliAlanlar: React.FC = () => {
     return Math.round(num * 100) / 100;
   };
 
-  const migrateToAPI = async () => {
-    alert('Production ortamında migration sistemi aktif değil.');
-  };
-
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -240,12 +248,6 @@ const TanimliAlanlar: React.FC = () => {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Tanımlı Alanlar</h1>
         <div className="flex items-center gap-3">
-          <button
-            onClick={migrateToAPI}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
-          >
-            localStorage → HZM API
-          </button>
           <Link
             to="/tanimlamalar"
             className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
@@ -278,24 +280,25 @@ const TanimliAlanlar: React.FC = () => {
       <div className="space-y-4">
         {alanlar.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
-            Henüz alan tanımlanmamış. Yeni alan eklemek için yukarıdaki formu kullanın.
+            <p>Henüz tanımlı alan bulunmamaktadır.</p>
           </div>
         ) : (
           alanlar.map((alan) => (
-            <div key={alan.id} className="bg-white rounded-lg shadow-sm border border-gray-100">
-              <div 
-                className="p-4 flex items-center justify-between cursor-pointer hover:bg-gray-50"
-                onClick={() => toggleExpand(alan.id)}
-              >
+            <div
+              key={alan.id}
+              className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
+              onClick={() => toggleExpand(alan.id)}
+            >
+              <div className="p-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div 
-                    className="w-4 h-4 rounded-full" 
+                  <div
+                    className="w-4 h-4 rounded-full"
                     style={{ backgroundColor: alan.renk }}
                   />
                   <div>
-                    <h3 className="font-semibold text-gray-900">{alan.alan_adi}</h3>
+                    <h3 className="font-medium text-gray-900">{alan.alan_adi}</h3>
                     <p className="text-sm text-gray-500">
-                      {alan.totalHours} Saat • {alan.totalVardiya} Vardiya • {alan.activeDays} Aktif Gün
+                      {(alan.totalHours || 0)} Saat • {(alan.totalVardiya || 0)} Vardiya • {getActiveDays(alan)} Aktif Gün
                     </p>
                   </div>
                 </div>

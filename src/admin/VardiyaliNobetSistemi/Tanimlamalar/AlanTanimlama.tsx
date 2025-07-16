@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, MapPin, ArrowLeft, Check, Clock, Trash2, Save, AlertTriangle, X } from 'lucide-react';
+import { Plus, MapPin, ArrowLeft, Check, Clock, Save, AlertTriangle, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useCapitalization } from '../../../hooks/useCapitalization';
 import { SuccessNotification } from '../../../components/ui/Notification';
@@ -162,11 +162,6 @@ const AlanTanimlama: React.FC = () => {
   useEffect(() => {
     loadAreas();
   }, []);
-
-  // KURAL 16: Production ortamında localStorage yasak - temizleme disabled
-  const clearLocalStorage = () => {
-    alert('Production ortamında localStorage temizleme devre dışı');
-  };
 
   const loadAreas = async () => {
     setLoading(true);
@@ -479,14 +474,6 @@ const AlanTanimlama: React.FC = () => {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-xl sm:text-2xl font-bold">Alan Tanımla</h1>
         <div className="flex items-center gap-2">
-          <button
-            onClick={clearLocalStorage}
-            className="flex items-center gap-2 px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-sm"
-            title="localStorage'ı temizle"
-          >
-            <Trash2 className="w-4 h-4" />
-            <span className="hidden sm:inline">Temizle</span>
-          </button>
           <Link
             to="/programlar/vardiyali-nobet/alan-yonetimi"
             className="flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm sm:text-base"
@@ -736,7 +723,7 @@ const AlanTanimlama: React.FC = () => {
                                     onClick={() => removeShift(day.value, index)}
                                     className="p-1 hover:text-red-600 transition-colors"
                                   >
-                                    <Trash2 className="w-4 h-4" />
+                                    <X className="w-4 h-4" />
                                   </button>
                                 )}
                               </div>
