@@ -65,12 +65,12 @@ const getJWTToken = async (): Promise<string> => {
     
     if (response.ok) {
       const data = await response.json();
-      if (data.token) {
-        jwtToken = data.token;
-        tokenExpiry = Date.now() + (24 * 60 * 60 * 1000); // 24 saat
-        console.log('✅ JWT Token alındı');
-        return jwtToken;
-      }
+              if (data.token) {
+          jwtToken = data.token;
+          tokenExpiry = Date.now() + (24 * 60 * 60 * 1000); // 24 saat
+          console.log('✅ JWT Token alındı');
+          return data.token;
+        }
     }
     
     throw new Error('JWT Token alınamadı');
