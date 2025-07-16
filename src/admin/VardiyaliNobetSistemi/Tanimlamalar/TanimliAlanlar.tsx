@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft, ChevronDown, ChevronUp, Trash2, FileText, BarChart } from 'lucide-react';
 import DeleteConfirmDialog from '../../../components/ui/DeleteConfirmDialog';
 import { apiRequest } from '../../../lib/api';
+import { useAuthContext } from '../../../contexts/AuthContext';
 
 interface NobetGrubu {
   saat: number;
@@ -35,10 +36,18 @@ const TanimliAlanlar: React.FC = () => {
     isOpen: false
   });
   const [loading, setLoading] = useState(false);
+  const { user } = useAuthContext();
 
-  // KURAL 16: Production ortamında localStorage yasak - user bilgisi disabled
+  // AuthContext'ten gerçek kullanıcı bilgilerini al
   const getCurrentUser = () => {
-    return { kurum_id: 'disabled', departman_id: 'disabled', birim_id: 'disabled' };
+    if (user && user.kurum_id && user.departman_id && user.birim_id) {
+      return { 
+        kurum_id: user.kurum_id, 
+        departman_id: user.departman_id, 
+        birim_id: user.birim_id 
+      };
+    }
+    return null;
   };
 
   useEffect(() => {
@@ -48,17 +57,26 @@ const TanimliAlanlar: React.FC = () => {
   const loadAlanlar = async () => {
     setLoading(true);
     try {
-      const user = getCurrentUser();
+      const currentUser = getCurrentUser();
+      if (!currentUser) {
+        console.error('Kullanıcı bilgileri yüklenemedi');
+        return;
+      }
+
       let alanData: Alan[] = [];
       
-      console.log('🚀 loadAlanlar başladı, user:', user);
+      console.log('🚀 loadAlanlar başladı, user:', currentUser);
       
       // 1. HZM API'den veri oku
       try {
         const response = await apiRequest('/api/v1/data/table/18');
         if (response.success && response.data.rows) {
           const apiData = response.data.rows
-            .filter((row: any) => user && row.kurum_id === user.kurum_id && row.departman_id === user.departman_id && row.birim_id === user.birim_id)
+            .filter((row: any) => 
+              row.kurum_id === currentUser.kurum_id && 
+              row.departman_id === currentUser.departman_id && 
+              row.birim_id === currentUser.birim_id
+            )
             .map((row: any) => {
               let parsedVardiyaBilgileri = { nobetler: [] };
               try {
@@ -89,22 +107,22 @@ const TanimliAlanlar: React.FC = () => {
       }
       
       // 2. Kalıcı çözüm: Eğer hiç alan yoksa otomatik kırmızı alan oluştur
-      if (alanData.length === 0 && user) {
-                 const otomatikKirmiziAlan: Alan = {
-           id: Date.now(),
-           alan_adi: 'KIRMIZI ALAN',
-           aciklama: 'Kırmızı Gözlem Alanı - Otomatik Oluşturuldu',
-           renk: '#dc2626',
-           gunluk_mesai_saati: 40,
-           vardiya_bilgileri: '{}',
-           aktif_mi: true,
-           kurum_id: user.kurum_id,
-           departman_id: user.departman_id,
-           birim_id: user.birim_id,
-           totalHours: 0,
-           totalVardiya: 0,
-           activeDays: 0
-         };
+      if (alanData.length === 0 && currentUser) {
+        const otomatikKirmiziAlan: Alan = {
+          id: Date.now(),
+          alan_adi: 'KIRMIZI ALAN',
+          aciklama: 'Kırmızı Gözlem Alanı - Otomatik Oluşturuldu',
+          renk: '#dc2626',
+          gunluk_mesai_saati: 40,
+          vardiya_bilgileri: '{}',
+          aktif_mi: true,
+          kurum_id: currentUser.kurum_id,
+          departman_id: currentUser.departman_id,
+          birim_id: currentUser.birim_id,
+          totalHours: 0,
+          totalVardiya: 0,
+          activeDays: 0
+        };
         
         alanData.push(otomatikKirmiziAlan);
         console.log('✅ Otomatik kırmızı alan oluşturuldu');
@@ -118,7 +136,7 @@ const TanimliAlanlar: React.FC = () => {
               aciklama: otomatikKirmiziAlan.aciklama,
               renk: otomatikKirmiziAlan.renk,
               gunluk_mesai_saati: otomatikKirmiziAlan.gunluk_mesai_saati,
-                             vardiya_bilgileri: otomatikKirmiziAlan.vardiya_bilgileri,
+              vardiya_bilgileri: otomatikKirmiziAlan.vardiya_bilgileri,
               aktif_mi: otomatikKirmiziAlan.aktif_mi,
               kurum_id: otomatikKirmiziAlan.kurum_id,
               departman_id: otomatikKirmiziAlan.departman_id,

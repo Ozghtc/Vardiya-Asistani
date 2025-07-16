@@ -5,6 +5,7 @@ import QuickShiftButton from '../../../components/shifts/QuickShiftButton';
 import { SuccessNotification } from '../../../components/ui/Notification';
 import TanimliVardiyalar from './TanimliVardiyalar';
 import { apiRequest } from '../../../lib/api';
+import { useAuthContext } from '../../../contexts/AuthContext';
 
 interface Shift {
   id: number;
@@ -26,10 +27,18 @@ const VardiyaTanimlama: React.FC = () => {
   const [showSuccess, setShowSuccess] = useState(false);
   const [error, setError] = useState<string>('');
   const [loading, setLoading] = useState(false);
+  const { user } = useAuthContext();
 
-  // KURAL 16: Production ortamında localStorage yasak - user bilgisi disabled
+  // AuthContext'ten gerçek kullanıcı bilgilerini al
   const getCurrentUser = () => {
-    return { kurum_id: 'disabled', departman_id: 'disabled', birim_id: 'disabled' };
+    if (user && user.kurum_id && user.departman_id && user.birim_id) {
+      return { 
+        kurum_id: user.kurum_id, 
+        departman_id: user.departman_id, 
+        birim_id: user.birim_id 
+      };
+    }
+    return null;
   };
 
   useEffect(() => {
@@ -39,19 +48,31 @@ const VardiyaTanimlama: React.FC = () => {
   const loadShifts = async () => {
     setLoading(true);
     try {
+      const currentUser = getCurrentUser();
+      if (!currentUser) {
+        setError('Kullanıcı bilgileri yüklenemedi');
+        return;
+      }
+
       const response = await apiRequest('/api/v1/data/table/17');
       if (response.success) {
-        const shiftData = response.data.rows.map((row: any) => ({
-          id: row.id,
-          vardiya_adi: row.vardiya_adi,
-          baslangic_saati: row.baslangic_saati,
-          bitis_saati: row.bitis_saati,
-          calisma_saati: row.calisma_saati || 8,
-          aktif_mi: row.aktif_mi,
-          kurum_id: row.kurum_id,
-          departman_id: row.departman_id,
-          birim_id: row.birim_id
-        }));
+        const shiftData = response.data.rows
+          .filter((row: any) => 
+            row.kurum_id === currentUser.kurum_id && 
+            row.departman_id === currentUser.departman_id && 
+            row.birim_id === currentUser.birim_id
+          )
+          .map((row: any) => ({
+            id: row.id,
+            vardiya_adi: row.vardiya_adi,
+            baslangic_saati: row.baslangic_saati,
+            bitis_saati: row.bitis_saati,
+            calisma_saati: row.calisma_saati || 8,
+            aktif_mi: row.aktif_mi,
+            kurum_id: row.kurum_id,
+            departman_id: row.departman_id,
+            birim_id: row.birim_id
+          }));
         setShifts(shiftData);
       }
     } catch (error) {

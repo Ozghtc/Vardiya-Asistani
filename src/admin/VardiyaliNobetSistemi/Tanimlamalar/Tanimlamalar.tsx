@@ -9,26 +9,30 @@ import AlanTanimlama from './AlanTanimlama';
 import TanimliAlanlar from './TanimliAlanlar';
 import TanimliVardiyalar from './TanimliVardiyalar';
 import { useDepartmanBirim } from './DepartmanBirimContext';
+import { useAuthContext } from '../../../contexts/AuthContext';
 // Otomatik tablo oluşturma kaldırıldı - Kural 15 gereği
 
 const SistemTanimlamalari: React.FC = () => {
   const [activeTab, setActiveTab] = useState('unvan-izin');
   const navigate = useNavigate();
   const { setDepartmanBirim } = useDepartmanBirim();
+  const { user } = useAuthContext();
 
   // Otomatik tablo oluşturma kaldırıldı - Kural 15 gereği
 
   useEffect(() => {
     const fetchAndSetContext = async () => {
-      // KURAL 16: Production ortamında localStorage yasak - context disabled
-      setDepartmanBirim({ 
-        kurum_id: 'disabled', 
-        departman_id: 'disabled', 
-        birim_id: 'disabled' 
-      });
+      // AuthContext'ten gerçek kullanıcı bilgilerini al
+      if (user && user.kurum_id && user.departman_id && user.birim_id) {
+        setDepartmanBirim({ 
+          kurum_id: user.kurum_id, 
+          departman_id: user.departman_id, 
+          birim_id: user.birim_id 
+        });
+      }
     };
     fetchAndSetContext();
-  }, [setDepartmanBirim]);
+  }, [setDepartmanBirim, user]);
 
   // Otomatik useEffect'ler kaldırıldı - Kural 15 gereği
 

@@ -5,6 +5,7 @@ import { useCapitalization } from '../../../hooks/useCapitalization';
 import { SuccessNotification } from '../../../components/ui/Notification';
 import TanimliAlanlar from './TanimliAlanlar';
 import { apiRequest } from '../../../lib/api';
+import { useAuthContext } from '../../../contexts/AuthContext';
 
 const colorMap = {
   '#DC2626': 'Kırmızı',
@@ -126,10 +127,18 @@ const AlanTanimlama: React.FC = () => {
   const [usedColors, setUsedColors] = useState<string[]>([]);
   const [showSuccess, setShowSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { user } = useAuthContext();
 
-  // KURAL 16: Production ortamında localStorage yasak - user bilgisi disabled
+  // AuthContext'ten gerçek kullanıcı bilgilerini al
   const getCurrentUser = () => {
-    return { kurum_id: 'disabled', departman_id: 'disabled', birim_id: 'disabled' };
+    if (user && user.kurum_id && user.departman_id && user.birim_id) {
+      return { 
+        kurum_id: user.kurum_id, 
+        departman_id: user.departman_id, 
+        birim_id: user.birim_id 
+      };
+    }
+    return null;
   };
 
   // Textarea için ayrı handler
@@ -162,20 +171,33 @@ const AlanTanimlama: React.FC = () => {
   const loadAreas = async () => {
     setLoading(true);
     try {
+      const currentUser = getCurrentUser();
+      if (!currentUser) {
+        setErrorMessage('Kullanıcı bilgileri yüklenemedi');
+        setShowError(true);
+        return;
+      }
+
       const response = await apiRequest('/api/v1/data/table/18');
       if (response.success) {
-        const areaData = response.data.rows.map((row: any) => ({
-          id: row.id,
-          alan_adi: row.alan_adi,
-          aciklama: row.aciklama || '',
-          renk: row.renk,
-          gunluk_mesai_saati: row.gunluk_mesai_saati || 40,
-          vardiya_bilgileri: row.vardiya_bilgileri || '{}',
-          aktif_mi: row.aktif_mi !== false,
-          kurum_id: row.kurum_id,
-          departman_id: row.departman_id,
-          birim_id: row.birim_id
-        }));
+        const areaData = response.data.rows
+          .filter((row: any) => 
+            row.kurum_id === currentUser.kurum_id && 
+            row.departman_id === currentUser.departman_id && 
+            row.birim_id === currentUser.birim_id
+          )
+          .map((row: any) => ({
+            id: row.id,
+            alan_adi: row.alan_adi,
+            aciklama: row.aciklama || '',
+            renk: row.renk,
+            gunluk_mesai_saati: row.gunluk_mesai_saati || 40,
+            vardiya_bilgileri: row.vardiya_bilgileri || '{}',
+            aktif_mi: row.aktif_mi !== false,
+            kurum_id: row.kurum_id,
+            departman_id: row.departman_id,
+            birim_id: row.birim_id
+          }));
         setAreas(areaData);
         const colors = areaData.map((area: Area) => area.renk);
         setUsedColors(colors);
@@ -375,6 +397,13 @@ const AlanTanimlama: React.FC = () => {
       nobetler: nobetler
     };
 
+    const currentUser = getCurrentUser();
+    if (!currentUser) {
+      setErrorMessage('Kullanıcı bilgileri yüklenemedi');
+      setShowError(true);
+      return;
+    }
+
     const newArea = {
       alan_adi: safeName.trim(),
       aciklama: safeDescription.trim(),
@@ -382,9 +411,9 @@ const AlanTanimlama: React.FC = () => {
       gunluk_mesai_saati: dailyWorkHours,
       vardiya_bilgileri: JSON.stringify(vardiyaBilgileri),
       aktif_mi: true,
-      kurum_id: user.kurum_id,
-      departman_id: user.departman_id,
-      birim_id: user.birim_id
+      kurum_id: currentUser.kurum_id,
+      departman_id: currentUser.departman_id,
+      birim_id: currentUser.birim_id
     };
 
     try {
