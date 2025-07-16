@@ -39,15 +39,9 @@ const isDev = false; // Production ortamında her zaman false
 
 const apiRequest = async (path: string, options: RequestInit = {}) => {
   try {
-    // KURAL 13: Railway API bozulmuş - GEÇİCİ MOCK RESPONSE AKTİF
-    console.log('⚠️ Railway API authentication bozulmuş - Mock response kullanılıyor');
-    console.log('🎭 Mock API Request:', { path, method: options.method || 'GET' });
-    
-    const mockResponse = getMockResponse(path, options.method || 'GET');
-    if (mockResponse) {
-      console.log('✅ Mock response döndürülüyor');
-      return mockResponse;
-    }
+    // KURAL 13: Railway API bozulmuş - ÖNCE GERÇEKNİ DENE, SONRA MOCK
+    console.log('⚠️ Railway API authentication bozulmuş - Önce gerçek API denenecek');
+    console.log('🔄 Gerçek API Request:', { path, method: options.method || 'GET' });
     
     // KURAL 16: Production ortamında çalışıyoruz - her zaman Netlify proxy kullan
     const url = '/.netlify/functions/api-proxy';
@@ -142,12 +136,38 @@ const getMockResponse = (endpoint: string, method: string) => {
             birim_id: '1',
             aktif_mi: true,
             created_at: '2024-01-01T00:00:00Z'
+          },
+          {
+            id: 3,
+            name: 'Hatice User',
+            email: 'hatice@gmail.com',
+            password: 'hatice123',
+            phone: '555-0003',
+            rol: 'admin',
+            kurum_id: '1',
+            departman_id: '1',
+            birim_id: '1',
+            aktif_mi: true,
+            created_at: '2024-01-01T00:00:00Z'
+          },
+          {
+            id: 4,
+            name: 'Test User',
+            email: 'test@test.com',
+            password: '123456',
+            phone: '555-0004',
+            rol: 'personel',
+            kurum_id: '1',
+            departman_id: '1',
+            birim_id: '1',
+            aktif_mi: true,
+            created_at: '2024-01-01T00:00:00Z'
           }
         ],
         pagination: {
           page: 1,
           limit: 50,
-          total: 2,
+          total: 4,
                       totalPages: 1
           },
         table: {
