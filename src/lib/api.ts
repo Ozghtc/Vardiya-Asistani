@@ -13,32 +13,21 @@ const CORS_PROXIES = [
   'https://corsproxy.io/?',
 ];
 
-// Development mode kontrolü
-const isDev = import.meta.env.DEV;
-
-// Temiz logging sistemi
+// KURAL 16: Production ortamında çalışıyoruz - logging sistemi
 const logInfo = (message: string, data?: any) => {
-  if (isDev) {
-    console.log(`🔄 ${message}`, data || '');
-  }
+  console.log(`🔄 ${message}`, data || '');
 };
 
 const logSuccess = (message: string, data?: any) => {
-  if (isDev) {
-    console.log(`✅ ${message}`, data || '');
-  }
+  console.log(`✅ ${message}`, data || '');
 };
 
 const logWarning = (message: string, error?: any) => {
-  if (isDev) {
-    console.warn(`⚠️ ${message}`, error || '');
-  }
+  console.warn(`⚠️ ${message}`, error || '');
 };
 
 const logError = (message: string, error?: any) => {
-  if (isDev) {
-    console.error(`❌ ${message}`, error || '');
-  }
+  console.error(`❌ ${message}`, error || '');
 };
 
 const API_BASE_URL = import.meta.env.PROD 
@@ -49,65 +38,39 @@ const HZM_API_KEY = 'hzm_1ce98c92189d4a109cd604b22bfd86b7';
 
 const apiRequest = async (path: string, options: RequestInit = {}) => {
   try {
-    const isDev = import.meta.env.DEV;
+    // KURAL 16: Production ortamında çalışıyoruz - her zaman Netlify proxy kullan
+    const url = '/.netlify/functions/api-proxy';
+    const requestOptions: RequestInit = {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        path,
+        method: options.method || 'GET',
+        body: options.body ? JSON.parse(options.body as string) : undefined,
+      }),
+    };
+
+    console.log('🚀 Production API Request (via Netlify proxy):', { url, path });
     
-    if (isDev) {
-      // Development: Direct HZM API connection
-      const url = `${API_BASE_URL}${path}`;
-      const requestOptions: RequestInit = {
-        ...options,
-        headers: {
-          'Content-Type': 'application/json',
-          'X-API-Key': HZM_API_KEY,
-          ...options.headers,
-        },
-      };
+    const response = await fetch(url, requestOptions);
+    const data = await response.json();
 
-      console.log('🚀 Direct API Request:', { url, method: requestOptions.method });
-      
-      const response = await fetch(url, requestOptions);
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || `HTTP error! status: ${response.status}`);
-      }
-
-      return data;
-    } else {
-      // Production: Netlify proxy
-      const url = '/.netlify/functions/api-proxy';
-      const requestOptions: RequestInit = {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          path,
-          method: options.method || 'GET',
-          body: options.body ? JSON.parse(options.body as string) : undefined,
-        }),
-      };
-
-      console.log('🚀 Proxy API Request:', { url, path });
-      
-      const response = await fetch(url, requestOptions);
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || `HTTP error! status: ${response.status}`);
-      }
-
-      return data;
+    if (!response.ok) {
+      throw new Error(data.error || `HTTP error! status: ${response.status}`);
     }
+
+    return data;
   } catch (error) {
     console.error('API Request Error:', error);
     throw error;
   }
 };
 
-// Mock response fonksiyonu - DOKÜMANTASYON FORMATINDA
+// Mock response fonksiyonu - DOKÜMANTASYON FORMATINDA (KURAL 16: Production ortamında disabled)
 const getMockResponse = (endpoint: string, method: string) => {
-  if (isDev) {
+  if (false) {
     console.log('🎭 Mock Response Oluşturuluyor:', { endpoint, method });
   }
   
