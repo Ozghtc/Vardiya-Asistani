@@ -85,8 +85,19 @@ const TanimliAlanlar: React.FC = () => {
                 console.error('Vardiya bilgileri parse hatası:', e);
               }
               
+              // Computed fields'i hesapla
+              const nobetler = parsedVardiyaBilgileri.nobetler || [];
+              const totalHours = nobetler.reduce((sum: number, nobet: any) => sum + (nobet.saat || 0), 0);
+              const totalVardiya = nobetler.length;
+              const activeDays = nobetler.reduce((days: Set<string>, nobet: any) => {
+                if (nobet.gunler && Array.isArray(nobet.gunler)) {
+                  nobet.gunler.forEach((gun: string) => days.add(gun));
+                }
+                return days;
+              }, new Set()).size;
+              
               return {
-                id: row.id,
+                id: parseInt(row.id.toString(), 10), // ID'yi number'a çevir
                 alan_adi: row.alan_adi,
                 aciklama: row.aciklama,
                 renk: row.renk,
@@ -95,7 +106,11 @@ const TanimliAlanlar: React.FC = () => {
                 aktif_mi: row.aktif_mi,
                 kurum_id: row.kurum_id,
                 departman_id: row.departman_id,
-                birim_id: row.birim_id
+                birim_id: row.birim_id,
+                totalHours: totalHours,
+                totalVardiya: totalVardiya,
+                activeDays: activeDays,
+                nobetler: nobetler
               };
             });
           
