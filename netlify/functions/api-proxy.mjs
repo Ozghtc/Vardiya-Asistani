@@ -41,7 +41,8 @@ export const handler = async (event, context) => {
       apiUrl,
       method,
       hasBody: !!body,
-      apiKey: apiKey ? 'PRESENT' : 'MISSING'
+      apiKey: apiKey ? 'PRESENT' : 'MISSING',
+      apiKeyFirst10: apiKey ? apiKey.substring(0, 10) : 'NONE'
     });
 
     // Prepare request options
@@ -52,6 +53,8 @@ export const handler = async (event, context) => {
         'X-API-Key': apiKey
       },
     };
+    
+    console.log('📤 Request Headers:', requestOptions.headers);
 
     if (body && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
       requestOptions.body = JSON.stringify(body);
