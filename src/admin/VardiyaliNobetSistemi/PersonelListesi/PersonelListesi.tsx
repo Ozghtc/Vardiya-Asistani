@@ -161,9 +161,15 @@ const PersonelListesi: React.FC = () => {
       isOpen: true,
       personel: personel
     });
-    setSelectedGunler([]);
-    setSelectedAlanlar([]);
-    setTumunuSec(false);
+    
+    // Tüm günleri otomatik seç
+    setSelectedGunler([...gunler]);
+    
+    // Tüm alanları otomatik seç
+    const tumAlanIds = tanimliAlanlar.map(alan => alan.id);
+    setSelectedAlanlar(tumAlanIds);
+    setTumunuSec(true);
+    
     setNobetKombinasyonlari([]);
   };
 
