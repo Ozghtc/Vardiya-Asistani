@@ -20,19 +20,12 @@ const SistemTanimlamalari: React.FC = () => {
 
   useEffect(() => {
     const fetchAndSetContext = async () => {
-      // Önce currentUser'ı localStorage'dan al
-      const userStr = localStorage.getItem('currentUser');
-      let kurum_id = '', departman_id = '', birim_id = '';
-      if (userStr) {
-        const user = JSON.parse(userStr);
-        kurum_id = user.kurum_id || '';
-        departman_id = user.departman_id || '';
-        birim_id = user.birim_id || '';
-      }
-      // Eğer currentUser'da id'ler varsa onları kullan
-      if (kurum_id && departman_id && birim_id) {
-        setDepartmanBirim({ kurum_id, departman_id, birim_id });
-      }
+      // KURAL 16: Production ortamında localStorage yasak - context disabled
+      setDepartmanBirim({ 
+        kurum_id: 'disabled', 
+        departman_id: 'disabled', 
+        birim_id: 'disabled' 
+      });
     };
     fetchAndSetContext();
   }, [setDepartmanBirim]);

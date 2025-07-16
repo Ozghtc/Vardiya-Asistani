@@ -513,13 +513,13 @@ const KurumYonetimi = () => {
           </button>
           <button
             onClick={() => {
-              localStorage.clear();
-              window.location.reload();
+              // KURAL 16: Production ortamında localStorage yasak - cache temizleme disabled
+              alert('Production ortamında cache temizleme devre dışı');
             }}
-            className="px-4 py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
-            title="LocalStorage'ı temizle ve sayfayı yenile"
+            className="px-4 py-2 bg-gray-100 text-gray-400 rounded-lg cursor-not-allowed"
+            title="Production ortamında disabled"
           >
-            🗑️ Cache Temizle
+            🗑️ Cache Temizle (Disabled)
           </button>
           
           {/* Kullanıcı Tablosu Butonları */}

@@ -127,10 +127,9 @@ const AlanTanimlama: React.FC = () => {
   const [showSuccess, setShowSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Kullanıcı bilgilerini localStorage'dan al
+  // KURAL 16: Production ortamında localStorage yasak - user bilgisi disabled
   const getCurrentUser = () => {
-    const userStr = localStorage.getItem('currentUser');
-    return userStr ? JSON.parse(userStr) : null;
+    return { kurum_id: 'disabled', departman_id: 'disabled', birim_id: 'disabled' };
   };
 
   // Textarea için ayrı handler
@@ -155,28 +154,9 @@ const AlanTanimlama: React.FC = () => {
     loadAreas();
   }, []);
 
-  // localStorage temizleme fonksiyonu
+  // KURAL 16: Production ortamında localStorage yasak - temizleme disabled
   const clearLocalStorage = () => {
-    const confirmed = window.confirm(
-      'Tüm localStorage verileri silinecek. Bu işlem geri alınamaz. Devam etmek istiyor musunuz?'
-    );
-    
-    if (confirmed) {
-      // Alan ile ilgili localStorage'ları temizle
-      localStorage.removeItem('tanimliAlanlar');
-      localStorage.removeItem('kayitliGenelNobetler');
-      localStorage.removeItem('kayitliOzelNobetler');
-      
-      // State'leri sıfırla
-      setUsedColors([]);
-      setAreas([]);
-      setSelectedColor('');
-      
-      // Başarı mesajı
-      setErrorMessage('localStorage temizlendi!');
-      setShowError(true);
-      setTimeout(() => setShowError(false), 2000);
-    }
+    alert('Production ortamında localStorage temizleme devre dışı');
   };
 
   const loadAreas = async () => {

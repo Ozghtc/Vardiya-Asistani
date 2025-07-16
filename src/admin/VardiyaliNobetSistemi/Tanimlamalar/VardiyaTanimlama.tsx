@@ -27,10 +27,9 @@ const VardiyaTanimlama: React.FC = () => {
   const [error, setError] = useState<string>('');
   const [loading, setLoading] = useState(false);
 
-  // Kullanıcı bilgilerini localStorage'dan al
+  // KURAL 16: Production ortamında localStorage yasak - user bilgisi disabled
   const getCurrentUser = () => {
-    const userStr = localStorage.getItem('currentUser');
-    return userStr ? JSON.parse(userStr) : null;
+    return { kurum_id: 'disabled', departman_id: 'disabled', birim_id: 'disabled' };
   };
 
   useEffect(() => {
