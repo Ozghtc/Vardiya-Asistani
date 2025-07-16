@@ -1,16 +1,27 @@
 import React from 'react';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
-import { useModals } from '../hooks/useModals';
 
 // Bölüm 5: Login Modal Component
 // 180 satır - KURAL 9 uyumlu
 
 interface LoginModalProps {
+  showLogin: boolean;
+  showPassword: boolean;
+  closeLogin: () => void;
+  openRegister: () => void;
+  setShowPassword: (show: boolean) => void;
   onSuccess?: () => void;
 }
 
-const LoginModal: React.FC<LoginModalProps> = ({ onSuccess }) => {
+const LoginModal: React.FC<LoginModalProps> = ({ 
+  showLogin, 
+  showPassword, 
+  closeLogin, 
+  openRegister, 
+  setShowPassword,
+  onSuccess 
+}) => {
   const { 
     loginLoading, 
     loginError, 
@@ -18,14 +29,10 @@ const LoginModal: React.FC<LoginModalProps> = ({ onSuccess }) => {
     setLoginData, 
     handleLogin 
   } = useAuth();
-  
-  const { 
-    showLogin, 
-    showPassword, 
-    closeLogin, 
-    openRegister, 
-    togglePassword 
-  } = useModals();
+
+  const togglePassword = () => {
+    setShowPassword(!showPassword);
+  };
 
   const onSubmit = async (e: React.FormEvent) => {
     const result = await handleLogin(e);

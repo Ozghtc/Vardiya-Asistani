@@ -11,8 +11,12 @@ const LandingPage: React.FC = () => {
   const { 
     showLogin,
     showRegister,
+    showPassword,
     openLogin, 
-    openRegister
+    openRegister,
+    closeLogin,
+    closeRegister,
+    setShowPassword
   } = useModals();
 
   return (
@@ -64,10 +68,30 @@ const LandingPage: React.FC = () => {
       <Footer />
 
       {/* Login Modal */}
-      {showLogin && <LoginModal />}
+      {showLogin && (
+        <LoginModal 
+          showLogin={showLogin}
+          showPassword={showPassword}
+          closeLogin={closeLogin}
+          openRegister={() => {
+            closeLogin();
+            openRegister();
+          }}
+          setShowPassword={setShowPassword}
+        />
+      )}
 
       {/* Register Modal */}
-      {showRegister && <RegisterModal />}
+      {showRegister && (
+        <RegisterModal 
+          showRegister={showRegister}
+          closeRegister={closeRegister}
+          openLogin={() => {
+            closeRegister();
+            openLogin();
+          }}
+        />
+      )}
     </div>
   );
 };

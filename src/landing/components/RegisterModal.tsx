@@ -1,15 +1,22 @@
 import React from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { useModals } from '../hooks/useModals';
 
 // Bölüm 6: Register Modal Component
 // 200 satır - KURAL 9 uyumlu
 
 interface RegisterModalProps {
+  showRegister: boolean;
+  closeRegister: () => void;
+  openLogin: () => void;
   onSuccess?: () => void;
 }
 
-const RegisterModal: React.FC<RegisterModalProps> = ({ onSuccess }) => {
+const RegisterModal: React.FC<RegisterModalProps> = ({ 
+  showRegister, 
+  closeRegister, 
+  openLogin,
+  onSuccess 
+}) => {
   const { 
     registerLoading, 
     registerError, 
@@ -17,12 +24,6 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ onSuccess }) => {
     setRegisterData, 
     handleRegister 
   } = useAuth();
-  
-  const { 
-    showRegister, 
-    closeRegister, 
-    openLogin 
-  } = useModals();
 
   const onSubmit = async (e: React.FormEvent) => {
     const result = await handleRegister(e);
