@@ -11,7 +11,7 @@ export const handler = async (event, context) => {
       };
     }
 
-    const { path, method = 'GET', body } = JSON.parse(event.body);
+    const { path, method = 'GET', body, apiKey: bodyApiKey } = JSON.parse(event.body);
     
     console.log('Event method:', event.httpMethod);
     console.log('Event headers:', event.headers);
@@ -34,8 +34,8 @@ export const handler = async (event, context) => {
     // Build API URL with correct Railway backend
     const apiUrl = `https://rare-courage-production.up.railway.app${path}`;
     
-    // API Key - doğru key kullanılıyor
-    const apiKey = 'hzm_1ce98c92189d4a109cd604b22bfd86b7';
+    // API Key - body'den veya header'dan al
+    const apiKey = bodyApiKey || event.headers['x-hzm-api-key'] || 'hzm_1ce98c92189d4a109cd604b22bfd86b7';
     
     console.log('🔄 Proxy Request Details:', {
       apiUrl,

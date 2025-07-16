@@ -35,6 +35,7 @@ const API_BASE_URL = import.meta.env.PROD
   : 'https://rare-courage-production.up.railway.app';
 
 const HZM_API_KEY = 'hzm_1ce98c92189d4a109cd604b22bfd86b7';
+const isDev = false; // Production ortamında her zaman false
 
 const apiRequest = async (path: string, options: RequestInit = {}) => {
   try {
@@ -44,15 +45,17 @@ const apiRequest = async (path: string, options: RequestInit = {}) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'X-HZM-API-Key': HZM_API_KEY, // API key'i header'a ekle
       },
       body: JSON.stringify({
         path,
         method: options.method || 'GET',
         body: options.body ? JSON.parse(options.body as string) : undefined,
+        apiKey: HZM_API_KEY, // API key'i body'de de gönder
       }),
     };
 
-    console.log('🚀 Production API Request (via Netlify proxy):', { url, path });
+    console.log('🚀 Production API Request (via Netlify proxy):', { url, path, apiKey: 'PRESENT' });
     
     const response = await fetch(url, requestOptions);
     const data = await response.json();
