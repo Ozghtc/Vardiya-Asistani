@@ -46,6 +46,20 @@ interface NobetKombinasyonu {
   alanAdlari: string[];
 }
 
+interface KayitliNobetTanimlamasi {
+  id: number;
+  personel_id: number;
+  kurum_id: string;
+  departman_id: string;
+  birim_id: string;
+  gunler: string;
+  alanlar: string;
+  alan_adlari: string;
+  aktif_mi: boolean;
+  olusturma_tarihi: string;
+  guncelleme_tarihi: string;
+}
+
 const PersonelListesi: React.FC = () => {
   const [activeTab, setActiveTab] = useState('liste');
   const [personnel, setPersonnel] = useState<Personnel[]>([]);
@@ -65,6 +79,8 @@ const PersonelListesi: React.FC = () => {
   const [tumunuSec, setTumunuSec] = useState(false);
   const [tanimliAlanlarLoading, setTanimliAlanlarLoading] = useState(false);
   const [nobetKombinasyonlari, setNobetKombinasyonlari] = useState<NobetKombinasyonu[]>([]);
+  const [kayitliNobetTanimlama, setKayitliNobetTanimlama] = useState<KayitliNobetTanimlamasi[]>([]);
+  const [kayitliNobetLoading, setKayitliNobetLoading] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuthContext();
 
@@ -149,12 +165,55 @@ const PersonelListesi: React.FC = () => {
     }
   };
 
+  const loadKayitliNobetTanimlama = async () => {
+    if (!user) return;
+    
+    try {
+      setKayitliNobetLoading(true);
+      
+      const response = await fetch('/.netlify/functions/api-proxy', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          path: '/api/v1/data/table/22',
+          method: 'GET'
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data?.rows) {
+          // Kullanıcının kurum/departman/birim'ine göre filtreleme
+          const filteredNobetler = result.data.rows.filter((nobet: KayitliNobetTanimlamasi) => 
+            nobet.kurum_id === user.kurum_id &&
+            nobet.departman_id === user.departman_id &&
+            nobet.birim_id === user.birim_id &&
+            nobet.aktif_mi
+          );
+          
+          setKayitliNobetTanimlama(filteredNobetler);
+        }
+      }
+    } catch (error) {
+      console.error('Kayıtlı nöbet tanımlamaları yükleme hatası:', error);
+    } finally {
+      setKayitliNobetLoading(false);
+    }
+  };
+
   useEffect(() => {
     loadPersonnel();
     loadTanimliAlanlar();
+    loadKayitliNobetTanimlama();
   }, [user]);
 
   const gunler = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
+
+  const getPersonelNobetTanimlama = (personelId: number) => {
+    return kayitliNobetTanimlama.filter(nobet => nobet.personel_id === personelId);
+  };
 
   const handleNobetTanimlamaOpen = (personel: Personnel) => {
     setNobetTanimlamaPopup({
@@ -264,15 +323,56 @@ const PersonelListesi: React.FC = () => {
     setTumunuSec(false);
   };
 
-  const handleNobetKaydet = () => {
-    // Şimdilik konsola yazdıralım
-    console.log('Nöbet Tanımlama Kaydı:', {
-      personel: nobetTanimlamaPopup.personel,
-      kombinasyonlar: nobetKombinasyonlari
-    });
+  const handleNobetKaydet = async () => {
+    if (!nobetTanimlamaPopup.personel || nobetKombinasyonlari.length === 0) return;
     
-    // Popup'ı kapat
-    handleNobetTanimlamaClose();
+    try {
+      // Her kombinasyon için ayrı kayıt oluştur
+      const kayitPromises = nobetKombinasyonlari.map(kombinasyon => 
+        fetch('/.netlify/functions/api-proxy', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            path: '/api/v1/data/table/22/rows',
+            method: 'POST',
+            body: {
+              personel_id: nobetTanimlamaPopup.personel!.id,
+              kurum_id: nobetTanimlamaPopup.personel!.kurum_id,
+              departman_id: nobetTanimlamaPopup.personel!.departman_id,
+              birim_id: nobetTanimlamaPopup.personel!.birim_id,
+              gunler: JSON.stringify(kombinasyon.gunler),
+              alanlar: JSON.stringify(kombinasyon.alanlar),
+              alan_adlari: JSON.stringify(kombinasyon.alanAdlari),
+              aktif_mi: true,
+              olusturma_tarihi: new Date().toISOString(),
+              guncelleme_tarihi: new Date().toISOString()
+            }
+          })
+        })
+      );
+      
+      const results = await Promise.all(kayitPromises);
+      
+      // Tüm kayıtlar başarılı mı kontrol et
+      const allSuccess = results.every(response => response.ok);
+      
+      if (allSuccess) {
+        // Kayıtlı nöbet tanımlamalarını yeniden yükle
+        await loadKayitliNobetTanimlama();
+        
+        // Popup'ı kapat
+        handleNobetTanimlamaClose();
+        
+        alert('Nöbet tanımlamaları başarıyla kaydedildi!');
+      } else {
+        alert('Kayıt sırasında bir hata oluştu!');
+      }
+    } catch (error) {
+      console.error('Nöbet tanımlama kaydetme hatası:', error);
+      alert('Kayıt sırasında bir hata oluştu!');
+    }
   };
 
   const handleKombinasyonSil = (index: number) => {
@@ -551,40 +651,84 @@ const PersonelListesi: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {personnel.map((person) => (
-                <tr 
-                  key={person.id} 
-                  className="hover:bg-gray-50 transition-colors"
-                >
-                  <td className="px-6 py-4">
-                    <div className="font-medium text-gray-900">{person.ad} {person.soyad}</div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="text-sm text-gray-600">{person.tcno}</div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="text-sm text-blue-600">{person.unvan}</div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      person.aktif_mi 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {person.aktif_mi ? 'Aktif' : 'Pasif'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <button
-                      onClick={() => handleNobetTanimlamaOpen(person)}
-                      className="inline-flex items-center gap-1 px-3 py-1 text-sm bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
-                    >
-                      <Calendar className="w-4 h-4" />
-                      Nöbet Tanımla
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {personnel.map((person) => {
+                const personelNobetler = getPersonelNobetTanimlama(person.id);
+                
+                return (
+                  <React.Fragment key={person.id}>
+                    {/* Ana personel satırı */}
+                    <tr className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="font-medium text-gray-900">{person.ad} {person.soyad}</div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-gray-600">{person.tcno}</div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-blue-600">{person.unvan}</div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          person.aktif_mi 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {person.aktif_mi ? 'Aktif' : 'Pasif'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <button
+                          onClick={() => handleNobetTanimlamaOpen(person)}
+                          className="inline-flex items-center gap-1 px-3 py-1 text-sm bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
+                        >
+                          <Calendar className="w-4 h-4" />
+                          Nöbet Tanımla
+                        </button>
+                      </td>
+                    </tr>
+                    
+                    {/* Kayıtlı nöbet tanımlamaları */}
+                    {personelNobetler.map((nobet) => {
+                      const gunlerArray = JSON.parse(nobet.gunler);
+                      const alanlarArray = JSON.parse(nobet.alan_adlari);
+                      
+                      return (
+                        <React.Fragment key={nobet.id}>
+                          {/* Günler satırı */}
+                          <tr className="bg-blue-50">
+                            <td className="px-6 py-2 text-xs text-gray-600">
+                              <div className="flex items-center gap-1">
+                                <Calendar className="w-3 h-3" />
+                                <span className="font-medium">Günler:</span>
+                              </div>
+                            </td>
+                            <td className="px-6 py-2 text-xs text-gray-700" colSpan={2}>
+                              {gunlerArray.join(', ')}
+                            </td>
+                            <td className="px-6 py-2"></td>
+                            <td className="px-6 py-2"></td>
+                          </tr>
+                          
+                          {/* Alanlar satırı */}
+                          <tr className="bg-green-50">
+                            <td className="px-6 py-2 text-xs text-gray-600">
+                              <div className="flex items-center gap-1">
+                                <Building2 className="w-3 h-3" />
+                                <span className="font-medium">Alanlar:</span>
+                              </div>
+                            </td>
+                            <td className="px-6 py-2 text-xs text-gray-700" colSpan={2}>
+                              {alanlarArray.join(', ')}
+                            </td>
+                            <td className="px-6 py-2"></td>
+                            <td className="px-6 py-2"></td>
+                          </tr>
+                        </React.Fragment>
+                      );
+                    })}
+                  </React.Fragment>
+                );
+              })}
             </tbody>
           </table>
 
