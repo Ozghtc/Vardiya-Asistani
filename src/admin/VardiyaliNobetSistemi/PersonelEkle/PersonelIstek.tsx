@@ -1,355 +1,215 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Trash2, Clock, AlertCircle } from 'lucide-react';
+import { Calendar, ArrowLeft } from 'lucide-react';
+import { useAuthContext } from '../../../contexts/AuthContext';
 
-interface FormData {
-  istekTuru: string;
-  baslangicTarihi: string;
-  bitisTarihi: string;
-  tekrarlaniyorMu: boolean;
-  aciklama: string;
-}
-
-interface SavedRequest {
+interface PersonelBilgisi {
   id: number;
-  istekTuru: string;
-  baslangicTarihi: string;
-  bitisTarihi: string;
-  tekrarlaniyorMu: boolean;
-  aciklama: string;
-  createdAt: string;
+  ad: string;
+  soyad: string;
+  unvan: string;
+  tcno: string;
+  email: string;
+  telefon: string;
+  kurum_id: string;
+  departman_id: string;
+  birim_id: string;
+  aktif_mi: boolean;
+  olusturma_tarihi: string;
+  guncelleme_tarihi: string;
 }
 
-interface Props {
-  data: FormData;
-  onChange: (data: FormData) => void;
-  userData?: {
-    tcno?: string;
-    name?: string;
-    surname?: string;
-  };
-}
 
-const PersonelIstek: React.FC<Props> = ({ data, onChange, userData }) => {
-  const [selectedDates, setSelectedDates] = useState<string[]>([]);
-  const [savedRequests, setSavedRequests] = useState<SavedRequest[]>([]);
-  const [isRange, setIsRange] = useState(false);
-  const [rangeStart, setRangeStart] = useState('');
-  const [rangeEnd, setRangeEnd] = useState('');
-  const [singleDate, setSingleDate] = useState('');
-  const [addedRanges, setAddedRanges] = useState<{start: string, end: string}[]>([]);
-  const [deleteModal, setDeleteModal] = useState<{open: boolean, id: number | null}>({open: false, id: null});
-  const [error, setError] = useState<string | null>(null);
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [personelId, setPersonelId] = useState('');
-  const [selectedVardiya, setSelectedVardiya] = useState('');
-  const [selectedTarih, setSelectedTarih] = useState('');
-  const [istekler, setIstekler] = useState<any[]>([]);
 
-  const istekTurleri = [
-    { id: 'yillik-izin', name: 'YILLIK İZİN', description: 'Yıllık izin talebi' },
-    { id: 'mazeret', name: 'MAZERET İZNİ', description: 'Mazeret izni talebi' },
-    { id: 'nobet', name: 'NÖBET İSTEĞİ', description: 'Nöbet günü tercihi' },
-    { id: 'bosluk', name: 'BOŞLUK İSTEĞİ', description: 'Nöbet boşluğu talebi' },
-    { id: 'degisim', name: 'NÖBET DEĞİŞİMİ', description: 'Nöbet değişim talebi' }
-  ];
+const PersonelIstek: React.FC = () => {
+  const { user } = useAuthContext();
+  const [personelListesi, setPersonelListesi] = useState<PersonelBilgisi[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState<string>('2025-07');
+  const [startDate, setStartDate] = useState<string>('2025-07-01');
+  const [endDate, setEndDate] = useState<string>('2025-07-31');
 
-  const getIstekTuruName = (id: string) => {
-    return istekTurleri.find(tur => tur.id === id)?.name || id;
+  // Aydan tarihleri oluştur
+  const generateDatesFromMonth = (monthStr: string) => {
+    const [year, month] = monthStr.split('-');
+    const firstDay = new Date(parseInt(year), parseInt(month) - 1, 1);
+    const lastDay = new Date(parseInt(year), parseInt(month), 0);
+    
+    setStartDate(firstDay.toISOString().split('T')[0]);
+    setEndDate(lastDay.toISOString().split('T')[0]);
   };
 
-  const handleIstekEkle = async () => {
-    if (!selectedVardiya || !selectedTarih) {
-      setError('Vardiya ve tarih seçimi zorunludur');
-      return;
-    }
-
-    // Supabase ile ilgili kodları kaldır
-    // ... existing code ...
-  };
-
-  const handleIstekSil = async (istekId: number) => {
-    // Supabase ile ilgili kodları kaldır
-    // ... existing code ...
-  };
-
+  // Ay değiştiğinde tarihleri güncelle
   useEffect(() => {
-    // Supabase ile ilgili kodları kaldır
-    // ... existing code ...
-  }, [personelId]);
+    generateDatesFromMonth(selectedMonth);
+  }, [selectedMonth]);
+
+  // Personel listesini çek
+  useEffect(() => {
+    const fetchPersonelListesi = async () => {
+      if (!user) return;
+      
+      setLoading(true);
+      try {
+        const response = await fetch('/.netlify/functions/api-proxy', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            path: '/api/v1/data/table/21',
+            method: 'GET'
+          })
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data?.rows) {
+            // Kullanıcının kurum/departman/birim'ine göre filtreleme
+            const filteredPersonnel = result.data.rows.filter((person: PersonelBilgisi) => 
+              person.kurum_id === user.kurum_id &&
+              person.departman_id === user.departman_id &&
+              person.birim_id === user.birim_id &&
+              person.aktif_mi
+            );
+            
+            setPersonelListesi(filteredPersonnel);
+          }
+        }
+      } catch (error) {
+        console.error('Personel listesi yüklenirken hata:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPersonelListesi();
+  }, [user]);
+
+  // Ay adını Türkçe göster
+  const getMonthName = (monthStr: string) => {
+    const [year, month] = monthStr.split('-');
+    const monthNames = [
+      'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
+      'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'
+    ];
+    return `${monthNames[parseInt(month) - 1]} ${year}`;
+  };
+
+  // Tarihi formatla
+  const formatDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString('tr-TR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+  };
 
   return (
-    <div className="p-6">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Sol Panel - Yeni İstek */}
-        <div className="bg-white rounded-xl p-6 shadow-sm">
-          <h3 className="text-lg font-semibold text-gray-800 mb-6">Yeni İstek Oluştur</h3>
-          
-          {/* Tarih Seçimi */}
-          <div className="space-y-4 mb-6">
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="isRange"
-                checked={isRange}
-                onChange={e => {
-                  setIsRange(e.target.checked);
-                  setRangeStart('');
-                  setRangeEnd('');
-                }}
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              />
-              <label htmlFor="isRange" className="text-sm font-medium text-gray-700">
-                İki Tarih Aralığı
-              </label>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-3">
-              {!isRange ? (
-                <div className="flex-1 flex items-center gap-2">
-                  <input
-                    type="date"
-                    value={singleDate}
-                    onChange={e => setSingleDate(e.target.value)}
-                    className="flex-1 rounded-lg border-gray-300"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (singleDate) {
-                        setAddedRanges(prev => [...prev, { start: singleDate, end: singleDate }]);
-                        setSingleDate('');
-                      }
-                    }}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
-                    disabled={!singleDate}
-                  >
-                    Ekle
-                  </button>
-                </div>
-              ) : (
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <div className="flex-1">
-                    <label className="block text-sm text-gray-600 mb-1">Başlangıç</label>
-                    <input
-                      type="date"
-                      value={rangeStart}
-                      onChange={e => setRangeStart(e.target.value)}
-                      className="w-full rounded-lg border-gray-300"
-                      max={rangeEnd || undefined}
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <label className="block text-sm text-gray-600 mb-1">Bitiş</label>
-                    <input
-                      type="date"
-                      value={rangeEnd}
-                      onChange={e => setRangeEnd(e.target.value)}
-                      className="w-full rounded-lg border-gray-300"
-                      min={rangeStart || undefined}
-                    />
-                  </div>
-                  <div className="flex items-end">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (rangeStart && rangeEnd && rangeStart <= rangeEnd) {
-                          setAddedRanges(prev => [...prev, { start: rangeStart, end: rangeEnd }]);
-                          setRangeStart('');
-                          setRangeEnd('');
-                        }
-                      }}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
-                      disabled={!(rangeStart && rangeEnd && rangeStart <= rangeEnd)}
-                    >
-                      Ekle
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Eklenen Tarihler */}
-            {addedRanges.length > 0 && (
-              <div className="flex flex-wrap gap-2 p-3 bg-gray-50 rounded-lg">
-                {addedRanges.map((range, index) => (
-                  <div key={index} className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-gray-200">
-                    <Calendar className="w-4 h-4 text-gray-400" />
-                    <span className="text-sm font-medium">
-                      {range.start === range.end ? range.start : `${range.start} - ${range.end}`}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setAddedRanges(ranges => ranges.filter((_, i) => i !== index))}
-                      className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* İstek Türü */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              İstek Türü
-            </label>
-            <select
-              value={data.istekTuru}
-              onChange={(e) => onChange({ ...data, istekTuru: e.target.value })}
-              className="w-full rounded-lg border-gray-300"
-            >
-              <option value="">İstek türü seçin</option>
-              {istekTurleri.map(tur => (
-                <option key={tur.id} value={tur.id}>{tur.name}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Tekrarlanma */}
-          <div className="mb-6">
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={data.tekrarlaniyorMu}
-                onChange={(e) => onChange({ ...data, tekrarlaniyorMu: e.target.checked })}
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              />
-              <span className="text-sm text-gray-700">Bu istek haftalık olarak tekrarlansın</span>
-            </label>
-          </div>
-
-          {/* Açıklama */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Açıklama
-            </label>
-            <textarea
-              value={data.aciklama}
-              onChange={(e) => onChange({ ...data, aciklama: e.target.value })}
-              rows={4}
-              className="w-full rounded-lg border-gray-300"
-              placeholder="İsteğinizle ilgili açıklama ekleyin..."
-            />
-          </div>
-
-          <button
-            type="button"
-            onClick={() => {
-              const newRequests = addedRanges.map(range => ({
-                id: Date.now() + Math.random(),
-                istekTuru: data.istekTuru,
-                baslangicTarihi: range.start,
-                bitisTarihi: range.end,
-                tekrarlaniyorMu: data.tekrarlaniyorMu,
-                aciklama: data.aciklama,
-                createdAt: new Date().toLocaleString()
-              }));
-
-              setSavedRequests(prev => [...prev, ...newRequests]);
-              setAddedRanges([]);
-              onChange({
-                istekTuru: '',
-                baslangicTarihi: '',
-                bitisTarihi: '',
-                tekrarlaniyorMu: false,
-                aciklama: ''
-              });
-            }}
-            className="w-full py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
-            disabled={addedRanges.length === 0 || !data.istekTuru}
-          >
-            İsteği Kaydet
+    <div className="p-6 bg-gray-50 min-h-screen">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="flex items-center gap-4 mb-6">
+          <button className="flex items-center gap-2 text-gray-600 hover:text-gray-800">
+            <ArrowLeft className="w-5 h-5" />
+            Geri
           </button>
         </div>
 
-        {/* Sağ Panel - Kayıtlı İstekler */}
-        <div className="bg-white rounded-xl p-6 shadow-sm">
-          <h3 className="text-lg font-semibold text-gray-800 mb-6">Kayıtlı İstekler</h3>
-          
-          {savedRequests.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <AlertCircle className="w-12 h-12 text-gray-300 mb-3" />
-              <p className="text-gray-500">Henüz kayıtlı istek bulunmuyor</p>
+        {/* Başlık ve Tarih Seçici */}
+        <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Calendar className="w-6 h-6 text-blue-600" />
+              <h1 className="text-2xl font-bold text-gray-900">
+                {getMonthName(selectedMonth)} Dönemi
+              </h1>
             </div>
-          ) : (
-            <div className="space-y-4">
-              {savedRequests.map(request => (
-                <div key={request.id} className="p-4 rounded-lg border border-gray-200 hover:border-blue-200 transition-colors">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm font-medium">
-                      {getIstekTuruName(request.istekTuru)}
-                    </span>
-                    <button
-                      onClick={() => setDeleteModal({open: true, id: request.id})}
-                      className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Calendar className="w-4 h-4" />
-                      <span>
-                        {request.baslangicTarihi}
-                        {request.bitisTarihi !== request.baslangicTarihi && 
-                          ` - ${request.bitisTarihi}`
-                        }
-                      </span>
-                    </div>
-
-                    {request.tekrarlaniyorMu && (
-                      <div className="flex items-center gap-2 text-sm text-green-600">
-                        <Clock className="w-4 h-4" />
-                        <span>Haftalık tekrar</span>
-                      </div>
-                    )}
-
-                    {request.aciklama && (
-                      <p className="text-sm text-gray-600 mt-2 pt-2 border-t">
-                        {request.aciklama}
-                      </p>
-                    )}
-
-                    <div className="text-xs text-gray-400 mt-2">
-                      Oluşturulma: {request.createdAt}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Silme Modal */}
-      {deleteModal.open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4">
-            <h4 className="text-lg font-semibold text-gray-800 mb-4">İsteği Sil</h4>
-            <p className="text-gray-600 mb-6">Bu isteği silmek istediğinize emin misiniz?</p>
-            <div className="flex justify-end gap-3">
-              <button
-                className="px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-                onClick={() => setDeleteModal({open: false, id: null})}
-              >
-                İptal
-              </button>
-              <button
-                className="px-4 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
-                onClick={() => {
-                  setSavedRequests(prev => prev.filter(r => r.id !== deleteModal.id));
-                  setDeleteModal({open: false, id: null});
-                }}
-              >
-                Sil
-              </button>
+            
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">Başlangıç</span>
+                <span className="font-semibold">{formatDate(startDate)}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">Bitiş</span>
+                <span className="font-semibold">{formatDate(endDate)}</span>
+              </div>
             </div>
           </div>
+
+          <div className="mt-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Ay Seçin
+            </label>
+            <input
+              type="month"
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
         </div>
-      )}
+
+        {/* Personel Tablosu */}
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Personel
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Ad Soyad
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Ünvan
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {loading ? (
+                  <tr>
+                    <td colSpan={3} className="px-6 py-8 text-center text-gray-500">
+                      Yükleniyor...
+                    </td>
+                  </tr>
+                ) : personelListesi.length > 0 ? (
+                  personelListesi.map((personel) => (
+                    <tr key={personel.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                            <span className="text-blue-600 font-medium">
+                              {personel.ad.charAt(0)}{personel.soyad.charAt(0)}
+                            </span>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">
+                          {personel.ad} {personel.soyad}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">
+                          {personel.unvan}
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={3} className="px-6 py-8 text-center text-gray-500">
+                      Personel bulunamadı
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
