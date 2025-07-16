@@ -2,12 +2,14 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { addUser, addKurum, getUsers, getKurumlar } from '../../lib/api';
 import { LoginData, RegisterData, User, EnrichedUser, AuthResponse } from '../types/auth.types';
+import { useAuthContext } from '../../contexts/AuthContext';
 
 // Bölüm 4: Authentication Logic
 // 150 satır - KURAL 9 uyumlu
 
 export const useAuth = () => {
   const navigate = useNavigate();
+  const { login: contextLogin } = useAuthContext();
   const [loginLoading, setLoginLoading] = useState(false);
   const [registerLoading, setRegisterLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
@@ -149,6 +151,9 @@ export const useAuth = () => {
       // Kurum bilgilerini al
       const enrichedUser = await enrichUserWithNames(user);
       
+      // AuthContext'e kullanıcı bilgilerini kaydet
+      contextLogin(enrichedUser);
+      
       // KURAL 16: Production ortamında localStorage yasak - direkt yönlendirme
       console.log('✅ Güvenli login başarılı:', {
         email: user.email,
@@ -247,6 +252,13 @@ export const useAuth = () => {
 
       if (userResult.success) {
         console.log('✅ Kayıt başarılı');
+        
+        // AuthContext'e kullanıcı bilgilerini kaydet
+        contextLogin({
+          ...userData,
+          id: userResult.data?.row?.id || Date.now().toString(),
+          rol: rol as 'admin' | 'yonetici' | 'personel'
+        });
         
         // KURAL 16: Production ortamında localStorage yasak - direkt yönlendirme
         console.log('✅ Kayıt başarılı, direkt yönlendirme:', {

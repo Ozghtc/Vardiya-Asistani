@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
-import { getUsers } from '../lib/api';
+import { useAuthContext } from '../contexts/AuthContext';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -8,40 +8,14 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
-  const [user, setUser] = useState<any>(null);
+  const { user, isAuthenticated } = useAuthContext();
   const [loading, setLoading] = useState(true);
-  const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
-    const validateUser = async () => {
-      try {
-        // KURAL 16: Production ortamında localStorage yasak - authentication disabled
-        setAuthError('Authentication system disabled in production');
-        setLoading(false);
-        return;
-        
-        // HZM API ile gerçek kullanıcı doğrulaması (production'da disabled)
-        const users = await getUsers(13); // Kullanıcı tablosu ID: 13
-        
-        // KURAL 16: Production ortamında disabled
-        const validUser = null;
-
-        if (validUser) {
-          setUser(validUser);
-        } else {
-          // KURAL 16: Production ortamında localStorage yasak
-          setAuthError('Authentication system disabled in production');
-        }
-      } catch (error) {
-        console.error('Kullanıcı doğrulama hatası:', error);
-        setAuthError('Authentication system disabled in production');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    validateUser();
-  }, []);
+    // AuthContext'den kullanıcı bilgilerini al
+    console.log('🔐 ProtectedRoute: Kullanıcı kontrol ediliyor:', { user, isAuthenticated });
+    setLoading(false);
+  }, [user, isAuthenticated]);
 
   // Yüklenirken loading göster
   if (loading) {
@@ -54,12 +28,14 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles 
   }
 
   // Kullanıcı yoksa login sayfasına yönlendir
-  if (!user) {
+  if (!isAuthenticated || !user) {
+    console.log('🔐 ProtectedRoute: Kullanıcı yok, login sayfasına yönlendiriliyor');
     return <Navigate to="/" replace />;
   }
 
   // Rol kontrolü
   if (!allowedRoles.includes(user.rol)) {
+    console.log('🔐 ProtectedRoute: Yetkisiz erişim, admin sayfasına yönlendiriliyor');
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -79,6 +55,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles 
     );
   }
 
+  console.log('🔐 ProtectedRoute: Erişim izni verildi');
   return <>{children}</>;
 };
 
