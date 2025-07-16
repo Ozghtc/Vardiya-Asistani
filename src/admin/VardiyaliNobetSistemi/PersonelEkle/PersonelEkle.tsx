@@ -1,12 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { UserPlus, ChevronLeft, Save, User, Calendar, FileText, Eye, EyeOff, CheckCircle } from 'lucide-react';
+import { UserPlus, ChevronLeft, Save, User, Eye, EyeOff, CheckCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthContext } from '../../../contexts/AuthContext';
-import PersonelNobetTanimlama from './PersonelNobetTanimlama';
-import PersonelIstek from './PersonelIstek';
 
 const PersonelEkle: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('bilgiler');
   const navigate = useNavigate();
   const { user } = useAuthContext();
   
@@ -20,12 +17,7 @@ const PersonelEkle: React.FC = () => {
     phone: '',
     loginEmail: '',
     password: '',
-    hasLoginPage: false,
-    istekTuru: '',
-    baslangicTarihi: '',
-    bitisTarihi: '',
-    tekrarlaniyorMu: false,
-    aciklama: ''
+    hasLoginPage: false
   });
 
   const [showPassword, setShowPassword] = useState(false);
@@ -142,250 +134,9 @@ const PersonelEkle: React.FC = () => {
     }
   };
 
-  const tabs = [
-    { 
-      id: 'bilgiler', 
-      name: 'Personel Bilgileri', 
-      icon: <User className="w-5 h-5" />,
-      description: 'Temel personel bilgileri ve giriş ayarları'
-    },
-    { 
-      id: 'nobet', 
-      name: 'Nöbet Tanımlama', 
-      icon: <Calendar className="w-5 h-5" />,
-      description: 'Vardiya ve nöbet programı ayarları'
-    },
-    { 
-      id: 'istek', 
-      name: 'İstek ve İzinler', 
-      icon: <FileText className="w-5 h-5" />,
-      description: 'Özel istekler ve izin talepleri'
-    }
-  ];
-
-  const renderPersonelBilgileri = () => (
-    <div className="space-y-8">
-      {/* Personel Bilgileri */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-            <User className="w-5 h-5 text-blue-600" />
-            Personel Bilgileri
-          </h3>
-          <p className="text-sm text-gray-600 mt-1">Personelin temel bilgilerini giriniz</p>
-        </div>
-        
-        <div className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                TC Kimlik No <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={formData.tcno}
-                onChange={(e) => handleInputChange('tcno', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="TC KİMLİK NO"
-                maxLength={11}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Ünvan <span className="text-red-500">*</span>
-              </label>
-              <select
-                value={formData.title}
-                onChange={(e) => handleInputChange('title', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="">Seçiniz</option>
-                {titles.map(title => (
-                  <option key={title} value={title}>{title}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Ad <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) => handleInputChange('name', e.target.value.toUpperCase())}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="AD"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Soyad <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={formData.surname}
-                onChange={(e) => handleInputChange('surname', e.target.value.toUpperCase())}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="SOYAD"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                E-posta
-              </label>
-              <input
-                type="email"
-                value={formData.email}
-                onChange={(e) => handleInputChange('email', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="ornek@email.com"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Telefon
-              </label>
-              <input
-                type="tel"
-                value={formData.phone}
-                onChange={(e) => handleInputChange('phone', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="05XX XXX XX XX"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Giriş Bilgileri */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-            <Eye className="w-5 h-5 text-green-600" />
-            Giriş Bilgileri
-          </h3>
-          <p className="text-sm text-gray-600 mt-1">Personelin sisteme giriş bilgilerini ayarlayın</p>
-        </div>
-        
-        <div className="p-6">
-          <div className="mb-6">
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={formData.hasLoginPage}
-                onChange={(e) => handleInputChange('hasLoginPage', e.target.checked)}
-                className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-              />
-              <span className="text-sm font-medium text-gray-700">
-                Bu personel için kullanıcı sayfası açılsın
-              </span>
-            </label>
-          </div>
-
-          {formData.hasLoginPage && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Giriş E-postası
-                </label>
-                <input
-                  type="email"
-                  value={formData.loginEmail}
-                  onChange={(e) => handleInputChange('loginEmail', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="giris@email.com"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Şifre
-                </label>
-                <div className="relative">
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={formData.password}
-                    onChange={(e) => handleInputChange('password', e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-12"
-                    placeholder="••••••••"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-3 text-gray-500 hover:text-gray-700"
-                  >
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Kaydet Butonu */}
-      <div className="flex justify-end">
-        <button
-          onClick={handleSave}
-          disabled={!isFormValid}
-          className={`flex items-center gap-2 px-8 py-3 rounded-lg font-medium transition-all ${
-            isFormValid
-              ? 'bg-green-600 text-white hover:bg-green-700 shadow-lg hover:shadow-xl cursor-pointer' 
-              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-          }`}
-        >
-          <Save className="w-5 h-5" />
-          Personeli Kaydet
-        </button>
-      </div>
-
-      {/* Success Message */}
-      {showSuccess && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
-            <div className="text-center">
-              <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">Başarılı!</h3>
-              <p className="text-gray-600">Personel başarıyla kaydedildi.</p>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-
-  const renderContent = () => {
-    switch (activeTab) {
-      case 'bilgiler':
-        return renderPersonelBilgileri();
-      case 'nobet':
-        return <PersonelNobetTanimlama />;
-      case 'istek':
-        return (
-          <PersonelIstek 
-            data={{
-              istekTuru: formData.istekTuru,
-              baslangicTarihi: formData.baslangicTarihi,
-              bitisTarihi: formData.bitisTarihi,
-              tekrarlaniyorMu: formData.tekrarlaniyorMu,
-              aciklama: formData.aciklama
-            }}
-            onChange={(d) => setFormData(f => ({ ...f, ...d }))}
-          />
-        );
-      default:
-        return null;
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 py-6">
+      <div className="max-w-4xl mx-auto px-4 py-6">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between">
@@ -406,30 +157,200 @@ const PersonelEkle: React.FC = () => {
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="mb-8">
-          <div className="flex space-x-1 bg-gray-200 p-1 rounded-lg">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-all ${
-                  activeTab === tab.id
-                    ? 'bg-white text-blue-600 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                {tab.icon}
-                <span className="hidden sm:block">{tab.name}</span>
-              </button>
-            ))}
+        {/* Form */}
+        <div className="space-y-8">
+          {/* Personel Bilgileri */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                <User className="w-5 h-5 text-blue-600" />
+                Personel Bilgileri
+              </h3>
+              <p className="text-sm text-gray-600 mt-1">Personelin temel bilgilerini giriniz</p>
+            </div>
+            
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    TC Kimlik No <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.tcno}
+                    onChange={(e) => handleInputChange('tcno', e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="TC KİMLİK NO"
+                    maxLength={11}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Ünvan <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={formData.title}
+                    onChange={(e) => handleInputChange('title', e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="">Seçiniz</option>
+                    {titles.map(title => (
+                      <option key={title} value={title}>{title}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Ad <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => handleInputChange('name', e.target.value.toUpperCase())}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="AD"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Soyad <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.surname}
+                    onChange={(e) => handleInputChange('surname', e.target.value.toUpperCase())}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="SOYAD"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    E-posta
+                  </label>
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => handleInputChange('email', e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="ornek@email.com"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Telefon
+                  </label>
+                  <input
+                    type="tel"
+                    value={formData.phone}
+                    onChange={(e) => handleInputChange('phone', e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="05XX XXX XX XX"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Giriş Bilgileri */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                <Eye className="w-5 h-5 text-green-600" />
+                Giriş Bilgileri
+              </h3>
+              <p className="text-sm text-gray-600 mt-1">Personelin sisteme giriş bilgilerini ayarlayın</p>
+            </div>
+            
+            <div className="p-6">
+              <div className="mb-6">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.hasLoginPage}
+                    onChange={(e) => handleInputChange('hasLoginPage', e.target.checked)}
+                    className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <span className="text-sm font-medium text-gray-700">
+                    Bu personel için kullanıcı sayfası açılsın
+                  </span>
+                </label>
+              </div>
+
+              {formData.hasLoginPage && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Giriş E-postası
+                    </label>
+                    <input
+                      type="email"
+                      value={formData.loginEmail}
+                      onChange={(e) => handleInputChange('loginEmail', e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="giris@email.com"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Şifre
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        value={formData.password}
+                        onChange={(e) => handleInputChange('password', e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-12"
+                        placeholder="••••••••"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-3 text-gray-500 hover:text-gray-700"
+                      >
+                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Kaydet Butonu */}
+          <div className="flex justify-end">
+            <button
+              onClick={handleSave}
+              disabled={!isFormValid}
+              className={`flex items-center gap-2 px-8 py-3 rounded-lg font-medium transition-all ${
+                isFormValid
+                  ? 'bg-green-600 text-white hover:bg-green-700 shadow-lg hover:shadow-xl cursor-pointer' 
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              }`}
+            >
+              <Save className="w-5 h-5" />
+              Personeli Kaydet
+            </button>
           </div>
         </div>
 
-        {/* Content */}
-        <div className="mb-8">
-          {renderContent()}
-        </div>
+        {/* Success Message */}
+        {showSuccess && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
+              <div className="text-center">
+                <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-800 mb-2">Başarılı!</h3>
+                <p className="text-gray-600">Personel başarıyla kaydedildi.</p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

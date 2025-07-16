@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Pencil, Trash2, MoreVertical, Mail, Phone, Building2, ArrowRight, Clock, Calendar, User2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, MoreVertical, Mail, Phone, Building2, ArrowRight, Clock, Calendar, User2, Users, FileText } from 'lucide-react';
 import DeleteConfirmDialog from '../../../components/ui/DeleteConfirmDialog';
 import { useAuthContext } from '../../../contexts/AuthContext';
+import PersonelNobetTanimlama from '../PersonelEkle/PersonelNobetTanimlama';
+import PersonelIstek from '../PersonelEkle/PersonelIstek';
 
 interface Personnel {
   id: number;
@@ -23,6 +25,7 @@ interface Personnel {
 }
 
 const PersonelListesi: React.FC = () => {
+  const [activeTab, setActiveTab] = useState('liste');
   const [personnel, setPersonnel] = useState<Personnel[]>([]);
   const [selectedPerson, setSelectedPerson] = useState<Personnel | null>(null);
   const [deleteDialog, setDeleteDialog] = useState<{isOpen: boolean; personId?: number}>({
@@ -110,40 +113,39 @@ const PersonelListesi: React.FC = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h2 className="text-2xl font-bold text-gray-800">Personel Listesi</h2>
-          <button
-            onClick={() => navigate('/personel-ekle')}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            <Plus className="w-5 h-5" />
-            <span>Yeni Personel</span>
-          </button>
-        </div>
+  const tabs = [
+    { 
+      id: 'liste', 
+      name: 'Personel Listesi', 
+      icon: <Users className="w-5 h-5" />,
+      description: 'Personel listesi ve yönetimi'
+    },
+    { 
+      id: 'nobet', 
+      name: 'Nöbet Tanımlama', 
+      icon: <Calendar className="w-5 h-5" />,
+      description: 'Vardiya ve nöbet programı ayarları'
+    },
+    { 
+      id: 'istek', 
+      name: 'İstek ve İzinler', 
+      icon: <FileText className="w-5 h-5" />,
+      description: 'Özel istekler ve izin talepleri'
+    }
+  ];
+
+  const renderPersonelListesi = () => {
+    if (loading) {
+      return (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-3"></div>
           <p className="text-gray-500">Personel listesi yükleniyor...</p>
         </div>
-      </div>
-    );
-  }
+      );
+    }
 
-  if (error) {
-    return (
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h2 className="text-2xl font-bold text-gray-800">Personel Listesi</h2>
-          <button
-            onClick={() => navigate('/personel-ekle')}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            <Plus className="w-5 h-5" />
-            <span>Yeni Personel</span>
-          </button>
-        </div>
+    if (error) {
+      return (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center">
           <div className="text-red-500 text-6xl mb-4">⚠️</div>
           <p className="text-gray-500 mb-4">{error}</p>
@@ -154,23 +156,10 @@ const PersonelListesi: React.FC = () => {
             Yeniden Dene
           </button>
         </div>
-      </div>
-    );
-  }
+      );
+    }
 
-  return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-800">Personel Listesi</h2>
-        <button
-          onClick={() => navigate('/personel-ekle')}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          <Plus className="w-5 h-5" />
-          <span>Yeni Personel</span>
-        </button>
-      </div>
-
+    return (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Personnel List */}
         <div className="lg:col-span-2">
@@ -316,6 +305,66 @@ const PersonelListesi: React.FC = () => {
           )}
         </div>
       </div>
+    );
+  };
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'liste':
+        return renderPersonelListesi();
+      case 'nobet':
+        return <PersonelNobetTanimlama />;
+      case 'istek':
+        return (
+          <PersonelIstek 
+            data={{
+              istekTuru: '',
+              baslangicTarihi: '',
+              bitisTarihi: '',
+              tekrarlaniyorMu: false,
+              aciklama: ''
+            }}
+            onChange={() => {}}
+          />
+        );
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold text-gray-800">Personel Yönetimi</h2>
+        <button
+          onClick={() => navigate('/personel-ekle')}
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          <Plus className="w-5 h-5" />
+          <span>Yeni Personel</span>
+        </button>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex space-x-1 bg-gray-200 p-1 rounded-lg">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-all ${
+              activeTab === tab.id
+                ? 'bg-white text-blue-600 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            {tab.icon}
+            <span className="hidden sm:block">{tab.name}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Content */}
+      {renderContent()}
 
       <DeleteConfirmDialog
         isOpen={deleteDialog.isOpen}
