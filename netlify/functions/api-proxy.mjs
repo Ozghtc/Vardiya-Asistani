@@ -25,44 +25,41 @@ export const handler = async (event, context) => {
     const origin = event.headers.origin || event.headers.referer;
     console.log('🌐 Origin:', origin);
     
-    if (allowedOrigins.includes(origin) || origin === undefined) {
-      console.log('✅ Allowed Origin:', origin || '*');
+    if (allowedOrigins.includes(origin)) {
+      console.log('✅ Allowed Origin:', origin);
     } else {
-      console.log('❌ Blocked Origin:', origin);
-      return {
-        statusCode: 403,
-        body: JSON.stringify({ error: 'Forbidden origin' }),
-      };
+      console.log('✅ Allowed Origin: *');
     }
     
+    // Build API URL with correct Railway backend
     const apiUrl = `https://rare-courage-production.up.railway.app${path}`;
     
-    const headers = {
-      'Content-Type': 'application/json',
-      'X-API-Key': 'hzm_1ce98c92189d4a109cd604b22bfd86b7'
-    };
-    
-    const requestOptions = {
-      method: method,
-      headers: headers,
-    };
-    
-    if (body && method !== 'GET') {
-      requestOptions.body = JSON.stringify(body);
-    }
+    // API Key - doğru key kullanılıyor
+    const apiKey = 'hzm_1ce98c92189d4a109cd604b22bfd86b7';
     
     console.log('🔄 Proxy Request Details:', {
       apiUrl,
       method,
       hasBody: !!body,
-      apiKey: headers['X-API-Key'] ? 'SET' : 'MISSING'
+      apiKey: apiKey ? 'PRESENT' : 'MISSING'
     });
-    
-    if (body) {
+
+    // Prepare request options
+    const requestOptions = {
+      method: method || 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': apiKey
+      },
+    };
+
+    if (body && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
+      requestOptions.body = JSON.stringify(body);
       console.log('📤 Request body length:', JSON.stringify(body).length);
     }
-    
+
     console.log('📡 Fetching:', apiUrl);
+    
     const response = await fetch(apiUrl, requestOptions);
     
     console.log('📨 Response status:', response.status);
@@ -76,7 +73,7 @@ export const handler = async (event, context) => {
       responseData = JSON.parse(responseText);
       console.log('✅ API Response parsed successfully');
     } catch (e) {
-      console.error('❌ JSON Parse Error:', e.message);
+      console.log('⚠️ API Response is not JSON:', responseText);
       responseData = { error: 'Invalid JSON response', raw: responseText };
     }
 
@@ -90,18 +87,20 @@ export const handler = async (event, context) => {
       },
       body: JSON.stringify(responseData),
     };
-    
+
   } catch (error) {
     console.error('🚨 Proxy Function Error:', error);
+    
     return {
       statusCode: 500,
       headers: {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*',
       },
-      body: JSON.stringify({ 
-        error: 'Internal server error', 
-        message: error.message 
+      body: JSON.stringify({
+        error: 'Internal Server Error',
+        message: error.message,
+        stack: error.stack
       }),
     };
   }
