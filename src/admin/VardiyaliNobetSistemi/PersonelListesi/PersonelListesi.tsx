@@ -197,19 +197,17 @@ const PersonelListesi: React.FC = () => {
   };
 
   const isGunDisabled = (gun: string) => {
-    // Eğer seçili alanlar varsa ve bu gun + seçili alanlar kombinasyonu zaten eklenmişse
-    if (selectedAlanlar.length > 0) {
-      return isKombinasyonVarMi([gun], selectedAlanlar);
-    }
-    return false;
+    // Bu gün daha önce herhangi bir alanla eklenmiş mi?
+    return nobetKombinasyonlari.some(kombinasyon => 
+      kombinasyon.gunler.includes(gun)
+    );
   };
 
   const isAlanDisabled = (alanId: number) => {
-    // Eğer seçili günler varsa ve seçili günler + bu alan kombinasyonu zaten eklenmişse
-    if (selectedGunler.length > 0) {
-      return isKombinasyonVarMi(selectedGunler, [alanId]);
-    }
-    return false;
+    // Bu alan daha önce herhangi bir günle eklenmiş mi?
+    return nobetKombinasyonlari.some(kombinasyon => 
+      kombinasyon.alanlar.includes(alanId)
+    );
   };
 
   const handleAlanToggle = (alanId: number) => {
