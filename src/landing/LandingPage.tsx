@@ -9,6 +9,8 @@ import Footer from './components/Footer';
 
 const LandingPage: React.FC = () => {
   const { 
+    showLogin,
+    showRegister,
     openLogin, 
     openRegister
   } = useModals();
@@ -62,10 +64,10 @@ const LandingPage: React.FC = () => {
       <Footer />
 
       {/* Login Modal */}
-      <LoginModal />
+      {showLogin && <LoginModal />}
 
       {/* Register Modal */}
-      <RegisterModal />
+      {showRegister && <RegisterModal />}
     </div>
   );
 };
