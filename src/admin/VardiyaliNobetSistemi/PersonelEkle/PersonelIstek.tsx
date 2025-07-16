@@ -32,8 +32,13 @@ const PersonelIstek: React.FC = () => {
     const firstDay = new Date(parseInt(year), parseInt(month) - 1, 1);
     const lastDay = new Date(parseInt(year), parseInt(month), 0);
     
-    setStartDate(firstDay.toISOString().split('T')[0]);
-    setEndDate(lastDay.toISOString().split('T')[0]);
+    // Türkiye tarih formatına çevir (YYYY-MM-DD)
+    const formatToInputDate = (date: Date) => {
+      return date.toISOString().split('T')[0];
+    };
+    
+    setStartDate(formatToInputDate(firstDay));
+    setEndDate(formatToInputDate(lastDay));
   };
 
   // Tarih aralığındaki günleri hesapla
@@ -106,9 +111,10 @@ const PersonelIstek: React.FC = () => {
     return `${monthNames[parseInt(month) - 1]} ${year}`;
   };
 
-  // Tarihi formatla
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('tr-TR', {
+  // Tarihi Türkiye formatında göster (gün/ay/yıl)
+  const formatDateTR = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('tr-TR', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric'
@@ -190,14 +196,8 @@ const PersonelIstek: React.FC = () => {
                         </div>
                         <div className="text-xs text-gray-400">
                           {date.toLocaleDateString('tr-TR', { 
-                            day: '2-digit', 
-                            month: '2-digit' 
-                          })}
-                        </div>
-                        <div className="text-xs text-gray-400">
-                          {date.toLocaleDateString('tr-TR', { 
                             weekday: 'short' 
-                          })}
+                          }).toUpperCase()}
                         </div>
                       </div>
                     </th>
@@ -264,7 +264,7 @@ const PersonelIstek: React.FC = () => {
                 <strong>Toplam {dateRange.length} gün</strong> için vardiya planı görüntüleniyor.
               </p>
               <p className="text-xs text-blue-600 mt-1">
-                Tarih aralığını değiştirmek için yukarıdaki başlangıç ve bitiş tarihlerini ayarlayın.
+                Tarih aralığı: {formatDateTR(startDate)} - {formatDateTR(endDate)}
               </p>
             </div>
           </div>
