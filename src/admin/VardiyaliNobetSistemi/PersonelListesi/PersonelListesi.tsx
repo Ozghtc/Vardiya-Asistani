@@ -40,6 +40,12 @@ interface NobetTanimlamaPopup {
   personel: Personnel | null;
 }
 
+interface NobetKombinasyonu {
+  gunler: string[];
+  alanlar: number[];
+  alanAdlari: string[];
+}
+
 const PersonelListesi: React.FC = () => {
   const [activeTab, setActiveTab] = useState('liste');
   const [personnel, setPersonnel] = useState<Personnel[]>([]);
@@ -58,6 +64,7 @@ const PersonelListesi: React.FC = () => {
   const [selectedAlanlar, setSelectedAlanlar] = useState<number[]>([]);
   const [tumunuSec, setTumunuSec] = useState(false);
   const [tanimliAlanlarLoading, setTanimliAlanlarLoading] = useState(false);
+  const [nobetKombinasyonlari, setNobetKombinasyonlari] = useState<NobetKombinasyonu[]>([]);
   const navigate = useNavigate();
   const { user } = useAuthContext();
 
@@ -157,6 +164,7 @@ const PersonelListesi: React.FC = () => {
     setSelectedGunler([]);
     setSelectedAlanlar([]);
     setTumunuSec(false);
+    setNobetKombinasyonlari([]);
   };
 
   const handleNobetTanimlamaClose = () => {
@@ -167,6 +175,7 @@ const PersonelListesi: React.FC = () => {
     setSelectedGunler([]);
     setSelectedAlanlar([]);
     setTumunuSec(false);
+    setNobetKombinasyonlari([]);
   };
 
   const handleGunToggle = (gun: string) => {
@@ -202,15 +211,42 @@ const PersonelListesi: React.FC = () => {
   };
 
   const handleNobetEkle = () => {
+    if (selectedGunler.length === 0 || selectedAlanlar.length === 0) return;
+    
+    // Seçili alanların isimlerini al
+    const alanAdlari = selectedAlanlar.map(alanId => {
+      const alan = tanimliAlanlar.find(a => a.id === alanId);
+      return alan ? alan.alan_adi : '';
+    }).filter(Boolean);
+    
+    // Yeni kombinasyonu ekle
+    const yeniKombinasyon: NobetKombinasyonu = {
+      gunler: [...selectedGunler],
+      alanlar: [...selectedAlanlar],
+      alanAdlari: alanAdlari
+    };
+    
+    setNobetKombinasyonlari(prev => [...prev, yeniKombinasyon]);
+    
+    // Seçimleri sıfırla
+    setSelectedGunler([]);
+    setSelectedAlanlar([]);
+    setTumunuSec(false);
+  };
+
+  const handleNobetKaydet = () => {
     // Şimdilik konsola yazdıralım
-    console.log('Nöbet Tanımlama:', {
+    console.log('Nöbet Tanımlama Kaydı:', {
       personel: nobetTanimlamaPopup.personel,
-      gunler: selectedGunler,
-      alanlar: selectedAlanlar
+      kombinasyonlar: nobetKombinasyonlari
     });
     
     // Popup'ı kapat
     handleNobetTanimlamaClose();
+  };
+
+  const handleKombinasyonSil = (index: number) => {
+    setNobetKombinasyonlari(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleDelete = async (id: number) => {
@@ -643,6 +679,56 @@ const PersonelListesi: React.FC = () => {
                 </div>
               )}
             </div>
+
+            {/* Ekle Butonu */}
+            <div className="flex justify-center">
+              <button
+                onClick={handleNobetEkle}
+                disabled={selectedGunler.length === 0 || selectedAlanlar.length === 0}
+                className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-colors ${
+                  selectedGunler.length === 0 || selectedAlanlar.length === 0
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                }`}
+              >
+                <Plus className="w-5 h-5" />
+                Ekle
+              </button>
+            </div>
+
+            {/* Eklenen Kombinasyonlar */}
+            {nobetKombinasyonlari.length > 0 && (
+              <div className="border-t pt-6">
+                <h4 className="text-md font-medium text-gray-800 mb-4">Eklenen Nöbet Tanımlamaları</h4>
+                <div className="space-y-3">
+                  {nobetKombinasyonlari.map((kombinasyon, index) => (
+                    <div
+                      key={index}
+                      className="bg-green-50 border border-green-200 rounded-lg p-4"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-sm font-medium text-green-800">Günler:</span>
+                            <span className="text-sm text-green-700">{kombinasyon.gunler.join(', ')}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-green-800">Alanlar:</span>
+                            <span className="text-sm text-green-700">{kombinasyon.alanAdlari.join(', ')}</span>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handleKombinasyonSil(index)}
+                          className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Footer */}
@@ -654,16 +740,16 @@ const PersonelListesi: React.FC = () => {
               İptal
             </button>
             <button
-              onClick={handleNobetEkle}
-              disabled={selectedGunler.length === 0 || selectedAlanlar.length === 0}
+              onClick={handleNobetKaydet}
+              disabled={nobetKombinasyonlari.length === 0}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                selectedGunler.length === 0 || selectedAlanlar.length === 0
+                nobetKombinasyonlari.length === 0
                   ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                  : 'bg-blue-600 text-white hover:bg-blue-700'
+                  : 'bg-green-600 text-white hover:bg-green-700'
               }`}
             >
               <Check className="w-4 h-4" />
-              Ekle
+              Kaydet
             </button>
           </div>
         </div>
