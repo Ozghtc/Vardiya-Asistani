@@ -196,6 +196,22 @@ const PersonelListesi: React.FC = () => {
     });
   };
 
+  const isGunDisabled = (gun: string) => {
+    // Eğer seçili alanlar varsa ve bu gun + seçili alanlar kombinasyonu zaten eklenmişse
+    if (selectedAlanlar.length > 0) {
+      return isKombinasyonVarMi([gun], selectedAlanlar);
+    }
+    return false;
+  };
+
+  const isAlanDisabled = (alanId: number) => {
+    // Eğer seçili günler varsa ve seçili günler + bu alan kombinasyonu zaten eklenmişse
+    if (selectedGunler.length > 0) {
+      return isKombinasyonVarMi(selectedGunler, [alanId]);
+    }
+    return false;
+  };
+
   const handleAlanToggle = (alanId: number) => {
     setSelectedAlanlar(prev => {
       const newSelected = prev.includes(alanId) 
@@ -222,12 +238,6 @@ const PersonelListesi: React.FC = () => {
 
   const handleNobetEkle = () => {
     if (selectedGunler.length === 0 || selectedAlanlar.length === 0) return;
-    
-    // Aynı kombinasyon zaten var mı kontrol et
-    if (isKombinasyonVarMi(selectedGunler, selectedAlanlar)) {
-      alert('Bu gün-alan kombinasyonu zaten eklenmiş!');
-      return;
-    }
     
     // Seçili alanların isimlerini al
     const alanAdlari = selectedAlanlar.map(alanId => {
@@ -617,28 +627,34 @@ const PersonelListesi: React.FC = () => {
             <div>
               <h4 className="text-md font-medium text-gray-800 mb-4">Günler</h4>
               <div className="grid grid-cols-7 gap-2">
-                {gunler.map((gun) => (
-                  <div
-                    key={gun}
-                    className={`p-3 rounded-lg border cursor-pointer transition-colors ${
-                      selectedGunler.includes(gun)
-                        ? 'bg-blue-50 border-blue-300 text-blue-700'
-                        : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'
-                    }`}
-                    onClick={() => handleGunToggle(gun)}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">{gun}</span>
-                      <input
-                        type="checkbox"
-                        checked={selectedGunler.includes(gun)}
-                        onChange={() => handleGunToggle(gun)}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                        onClick={(e) => e.stopPropagation()}
-                      />
+                {gunler.map((gun) => {
+                  const isDisabled = isGunDisabled(gun);
+                  return (
+                    <div
+                      key={gun}
+                      className={`p-3 rounded-lg border transition-colors ${
+                        isDisabled
+                          ? 'bg-gray-100 border-gray-300 text-gray-400 cursor-not-allowed'
+                          : selectedGunler.includes(gun)
+                          ? 'bg-blue-50 border-blue-300 text-blue-700 cursor-pointer'
+                          : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100 cursor-pointer'
+                      }`}
+                      onClick={() => !isDisabled && handleGunToggle(gun)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">{gun}</span>
+                        <input
+                          type="checkbox"
+                          checked={selectedGunler.includes(gun)}
+                          onChange={() => handleGunToggle(gun)}
+                          disabled={isDisabled}
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 disabled:opacity-50"
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
@@ -664,28 +680,34 @@ const PersonelListesi: React.FC = () => {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {tanimliAlanlar.map((alan) => (
-                    <div
-                      key={alan.id}
-                      className={`p-3 rounded-lg border cursor-pointer transition-colors ${
-                        selectedAlanlar.includes(alan.id)
-                          ? 'bg-blue-50 border-blue-300 text-blue-700'
-                          : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'
-                      }`}
-                      onClick={() => handleAlanToggle(alan.id)}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium">{alan.alan_adi}</span>
-                        <input
-                          type="checkbox"
-                          checked={selectedAlanlar.includes(alan.id)}
-                          onChange={() => handleAlanToggle(alan.id)}
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                          onClick={(e) => e.stopPropagation()}
-                        />
+                  {tanimliAlanlar.map((alan) => {
+                    const isDisabled = isAlanDisabled(alan.id);
+                    return (
+                      <div
+                        key={alan.id}
+                        className={`p-3 rounded-lg border transition-colors ${
+                          isDisabled
+                            ? 'bg-gray-100 border-gray-300 text-gray-400 cursor-not-allowed'
+                            : selectedAlanlar.includes(alan.id)
+                            ? 'bg-blue-50 border-blue-300 text-blue-700 cursor-pointer'
+                            : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100 cursor-pointer'
+                        }`}
+                        onClick={() => !isDisabled && handleAlanToggle(alan.id)}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium">{alan.alan_adi}</span>
+                          <input
+                            type="checkbox"
+                            checked={selectedAlanlar.includes(alan.id)}
+                            onChange={() => handleAlanToggle(alan.id)}
+                            disabled={isDisabled}
+                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 disabled:opacity-50"
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
 
