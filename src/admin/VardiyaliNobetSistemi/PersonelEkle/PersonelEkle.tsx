@@ -108,7 +108,7 @@ const PersonelEkle: React.FC = () => {
         body: JSON.stringify({
           path: '/api/v1/data/table/21/rows',
           method: 'POST',
-          data: personelData
+          body: personelData
         })
       });
 
