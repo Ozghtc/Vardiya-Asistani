@@ -35,4 +35,4 @@ npm install
 - Kullanıcı tablosu oluşturma butonu **sadece admin sayfasında** (KurumYonetimi.tsx) bulunur.
 - Diğer kullanıcı yönetim panellerinde bu buton bulunmaz.
 - Tablo oluşturulduktan sonra kullanıcı işlemleri yapılabilir.
-- Kullanıcı ekleme/güncelleme için önce veritabanı tablosunun oluşturulmuş olması gerekir. 
+- Kullanıcı ekleme/güncelleme için önce veritabanı tablosunun oluşturulmuş olması gerekir. # Force deployment - Tue Jul 15 21:25:06 PDT 2025
