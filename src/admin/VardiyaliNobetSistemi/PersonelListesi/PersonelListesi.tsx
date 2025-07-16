@@ -48,7 +48,7 @@ interface NobetKombinasyonu {
 
 interface KayitliNobetTanimlamasi {
   id: number;
-  personel_id: number;
+  personel_id: string;
   kurum_id: string;
   departman_id: string;
   birim_id: string;
@@ -185,6 +185,9 @@ const PersonelListesi: React.FC = () => {
       if (response.ok) {
         const result = await response.json();
         if (result.success && result.data?.rows) {
+          console.log('Nöbet tanımlamaları yüklendi:', result.data.rows);
+          console.log('Kullanıcı bilgileri:', user);
+          
           // Kullanıcının kurum/departman/birim'ine göre filtreleme
           const filteredNobetler = result.data.rows.filter((nobet: KayitliNobetTanimlamasi) => 
             nobet.kurum_id === user.kurum_id &&
@@ -193,6 +196,7 @@ const PersonelListesi: React.FC = () => {
             nobet.aktif_mi
           );
           
+          console.log('Filtrelenmiş nöbet tanımlamaları:', filteredNobetler);
           setKayitliNobetTanimlama(filteredNobetler);
         }
       }
@@ -212,7 +216,7 @@ const PersonelListesi: React.FC = () => {
   const gunler = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
 
   const getPersonelNobetTanimlama = (personelId: number) => {
-    return kayitliNobetTanimlama.filter(nobet => nobet.personel_id === personelId);
+    return kayitliNobetTanimlama.filter(nobet => parseInt(nobet.personel_id) === personelId);
   };
 
   const handleNobetTanimlamaOpen = (personel: Personnel) => {
@@ -689,42 +693,47 @@ const PersonelListesi: React.FC = () => {
                     
                     {/* Kayıtlı nöbet tanımlamaları */}
                     {personelNobetler.map((nobet) => {
-                      const gunlerArray = JSON.parse(nobet.gunler);
-                      const alanlarArray = JSON.parse(nobet.alan_adlari);
-                      
-                      return (
-                        <React.Fragment key={nobet.id}>
-                          {/* Günler satırı */}
-                          <tr className="bg-blue-50">
-                            <td className="px-6 py-2 text-xs text-gray-600">
-                              <div className="flex items-center gap-1">
-                                <Calendar className="w-3 h-3" />
-                                <span className="font-medium">Günler:</span>
-                              </div>
-                            </td>
-                            <td className="px-6 py-2 text-xs text-gray-700" colSpan={2}>
-                              {gunlerArray.join(', ')}
-                            </td>
-                            <td className="px-6 py-2"></td>
-                            <td className="px-6 py-2"></td>
-                          </tr>
-                          
-                          {/* Alanlar satırı */}
-                          <tr className="bg-green-50">
-                            <td className="px-6 py-2 text-xs text-gray-600">
-                              <div className="flex items-center gap-1">
-                                <Building2 className="w-3 h-3" />
-                                <span className="font-medium">Alanlar:</span>
-                              </div>
-                            </td>
-                            <td className="px-6 py-2 text-xs text-gray-700" colSpan={2}>
-                              {alanlarArray.join(', ')}
-                            </td>
-                            <td className="px-6 py-2"></td>
-                            <td className="px-6 py-2"></td>
-                          </tr>
-                        </React.Fragment>
-                      );
+                      try {
+                        const gunlerArray = JSON.parse(nobet.gunler);
+                        const alanlarArray = JSON.parse(nobet.alan_adlari);
+                        
+                        return (
+                          <React.Fragment key={nobet.id}>
+                            {/* Günler satırı */}
+                            <tr className="bg-blue-50">
+                              <td className="px-6 py-2 text-xs text-gray-600">
+                                <div className="flex items-center gap-1">
+                                  <Calendar className="w-3 h-3" />
+                                  <span className="font-medium">Günler:</span>
+                                </div>
+                              </td>
+                              <td className="px-6 py-2 text-xs text-gray-700" colSpan={2}>
+                                {gunlerArray.join(', ')}
+                              </td>
+                              <td className="px-6 py-2"></td>
+                              <td className="px-6 py-2"></td>
+                            </tr>
+                            
+                            {/* Alanlar satırı */}
+                            <tr className="bg-green-50">
+                              <td className="px-6 py-2 text-xs text-gray-600">
+                                <div className="flex items-center gap-1">
+                                  <Building2 className="w-3 h-3" />
+                                  <span className="font-medium">Alanlar:</span>
+                                </div>
+                              </td>
+                              <td className="px-6 py-2 text-xs text-gray-700" colSpan={2}>
+                                {alanlarArray.join(', ')}
+                              </td>
+                              <td className="px-6 py-2"></td>
+                              <td className="px-6 py-2"></td>
+                            </tr>
+                          </React.Fragment>
+                        );
+                      } catch (error) {
+                        console.error('JSON parse hatası:', error, nobet);
+                        return null;
+                      }
                     })}
                   </React.Fragment>
                 );
