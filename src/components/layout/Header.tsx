@@ -15,14 +15,13 @@ const Header: React.FC = () => {
     kurum_adi?: string;
     departman_adi?: string;
     birim_adi?: string;
+    email?: string;
   } | null>(null);
 
   React.useEffect(() => {
     const updateTime = () => {
       const now = new Date();
-      // Gün.Ay.Yıl
       const date = now.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-      // 24 saatlik saat:dk:sn
       const time = now.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
       setCurrentTime({ date, time });
     };
@@ -32,11 +31,30 @@ const Header: React.FC = () => {
   }, []);
 
   React.useEffect(() => {
-    const userStr = localStorage.getItem('currentUser');
-    if (userStr) {
-      setCurrentUser(JSON.parse(userStr));
-    }
-  }, []);
+    const validateAndSetUser = () => {
+      try {
+        const userStr = localStorage.getItem('currentUser');
+        if (userStr) {
+          const userData = JSON.parse(userStr);
+          
+          // Temel güvenlik kontrolü
+          if (userData.email && userData.rol) {
+            setCurrentUser(userData);
+          } else {
+            // Geçersiz kullanıcı verisi
+            localStorage.removeItem('currentUser');
+            navigate('/');
+          }
+        }
+      } catch (error) {
+        console.error('Kullanıcı verisi parse hatası:', error);
+        localStorage.removeItem('currentUser');
+        navigate('/');
+      }
+    };
+
+    validateAndSetUser();
+  }, [navigate]);
 
   const getPageTitle = () => {
     switch (location.pathname) {
@@ -68,13 +86,19 @@ const Header: React.FC = () => {
   };
 
   const handleLogout = () => {
+    // Güvenli logout
     localStorage.removeItem('currentUser');
+    setCurrentUser(null);
     setShowMenu(false);
     navigate('/');
   };
 
   const handleLogoClick = () => {
-    if (!currentUser) return;
+    if (!currentUser) {
+      navigate('/');
+      return;
+    }
+    
     const role = (currentUser.rol || currentUser.role || '').toLowerCase();
     if (role === 'admin') {
       navigate('/admin');
@@ -85,6 +109,11 @@ const Header: React.FC = () => {
     }
   };
 
+  // Kullanıcı yoksa header'ı gösterme
+  if (!currentUser) {
+    return null;
+  }
+
   return (
     <header className="bg-white shadow">
       <div className="container mx-auto px-4 pb-4">
@@ -92,48 +121,57 @@ const Header: React.FC = () => {
           {/* Sol: logo */}
           <div className="flex flex-col items-start space-y-1 pt-3">
             <div className="w-full flex justify-center">
-              <div className="bg-blue-600 rounded-full px-12 py-1.5 flex items-center shadow-md mt-1" style={{maxWidth: 340}}>
+              <div className="bg-blue-600 rounded-full px-12 py-1.5 flex items-center shadow-md mt-1 cursor-pointer" 
+                   style={{maxWidth: 340}} 
+                   onClick={handleLogoClick}>
                 <span className="text-white font-bold text-base tracking-wide" style={{fontFamily: 'Montserrat, Arial, sans-serif', letterSpacing: '0.05em'}}>
                   Altintassoft
                 </span>
               </div>
             </div>
           </div>
+          
           {/* Orta: kurum adı */}
           <div className="flex flex-col items-center justify-center flex-1">
             {currentUser && (currentUser.rol || currentUser.role || '').toLowerCase() !== 'admin' && (
               <>
-                <span className="font-extrabold text-2xl md:text-3xl text-gray-800 tracking-wide uppercase text-center pt-3" style={{letterSpacing: '0.04em'}}>{currentUser.kurum_adi || '-'}</span>
+                <span className="font-extrabold text-2xl md:text-3xl text-gray-800 tracking-wide uppercase text-center pt-3" style={{letterSpacing: '0.04em'}}>
+                  {currentUser.kurum_adi || 'Sistem'}
+                </span>
                 <p className="text-gray-700 font-semibold text-sm tracking-wide mt-[-4px] mb-2">
-                  {currentUser.departman_adi || '-'}&nbsp;&nbsp;&nbsp;{currentUser.birim_adi || '-'}
+                  {currentUser.departman_adi || 'Yönetim'}&nbsp;&nbsp;&nbsp;{currentUser.birim_adi || 'Sistem'}
                 </p>
               </>
             )}
           </div>
+          
           {/* Sağ: kullanıcı bilgileri ve ikonlar */}
           <div className="flex items-start justify-end gap-2 -mt-1">
             {/* İSİM + ROL + SAAT */}
             <div className="flex flex-col items-end leading-tight mt-0.5">
-              {/* İsim */}
-              <span className="text-sm font-bold text-blue-700">
-                {currentUser?.ad || currentUser?.name}
+              {/* İsim - Güvenli gösterim */}
+              <span className="text-sm font-bold text-blue-700" title={currentUser.email || 'Kullanıcı'}>
+                {currentUser.ad || currentUser.name || 'Kullanıcı'}
               </span>
+              
               {/* Yetki (Buton) */}
               <button
                 onClick={() => {
-                  const role = (currentUser?.rol || currentUser?.role || '').toLowerCase();
+                  const role = (currentUser.rol || currentUser.role || '').toLowerCase();
                   if (role === 'admin') navigate('/admin');
                   else if (role === 'yonetici') navigate('/vardiyali-nobet');
                   else navigate('/personel/panel');
                 }}
                 className={`mt-1 text-sm font-bold px-3 py-0.5 rounded shadow-sm transition cursor-pointer focus:outline-none
-                  ${((currentUser?.rol || currentUser?.role || '').toLowerCase() === 'admin') ? 'bg-red-100 text-red-700 hover:bg-red-200' :
-                    ((currentUser?.rol || currentUser?.role || '').toLowerCase() === 'yonetici') ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' :
+                  ${((currentUser.rol || currentUser.role || '').toLowerCase() === 'admin') ? 'bg-red-100 text-red-700 hover:bg-red-200' :
+                    ((currentUser.rol || currentUser.role || '').toLowerCase() === 'yonetici') ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' :
                     'bg-green-100 text-green-700 hover:bg-green-200'}`}
                 title="Kendi paneline git"
               >
-                {((currentUser?.rol || currentUser?.role || '').toLowerCase() === 'admin') ? 'Admin' : ((currentUser?.rol || currentUser?.role || '').toLowerCase() === 'yonetici') ? 'Yönetici' : 'Personel'}
+                {((currentUser.rol || currentUser.role || '').toLowerCase() === 'admin') ? 'Admin' : 
+                 ((currentUser.rol || currentUser.role || '').toLowerCase() === 'yonetici') ? 'Yönetici' : 'Personel'}
               </button>
+              
               {/* Tarih & saat */}
               <div className="flex items-center gap-1 bg-blue-600 text-white px-3 py-[4px] rounded-xl shadow text-xs font-medium mt-[2px] min-w-[180px] max-w-[240px] justify-end">
                 <Clock className="w-4 h-4 text-white opacity-80" />
@@ -142,6 +180,7 @@ const Header: React.FC = () => {
                 <span style={{ fontVariantNumeric: 'tabular-nums' }}>{currentTime?.time}</span>
               </div>
             </div>
+            
             {/* Zil ikonu */}
             <button
               type="button"
@@ -149,6 +188,7 @@ const Header: React.FC = () => {
             >
               <BellRing className="h-6 w-6" />
             </button>
+            
             {/* Profil ikonu */}
             <div className="relative mt-1">
               <button
@@ -159,12 +199,20 @@ const Header: React.FC = () => {
                 <User className="h-6 w-6" />
               </button>
               {showMenu && (
-                <div className="absolute right-0 mt-2 w-40 bg-white border rounded shadow-lg z-50">
+                <div className="absolute right-0 mt-2 w-48 bg-white border rounded shadow-lg z-50">
+                  <div className="px-4 py-3 border-b">
+                    <p className="text-sm font-medium text-gray-900">
+                      {currentUser.ad || currentUser.name || 'Kullanıcı'}
+                    </p>
+                    <p className="text-sm text-gray-500 truncate">
+                      {currentUser.email || 'Email bilgisi yok'}
+                    </p>
+                  </div>
                   <button
                     onClick={handleLogout}
-                    className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
+                    className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 focus:outline-none focus:bg-gray-100"
                   >
-                    Çıkış Yap
+                    Güvenli Çıkış
                   </button>
                 </div>
               )}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLocalStorage } from '../../hooks/useLocalStorage';
+import { useTemporaryState } from '../../hooks/useApiState';
 import { getKurumlar, createUsersTable, getUsers, addUser, updateUser, deleteUser } from '../../lib/api';
 
 // Types
@@ -60,7 +60,7 @@ const KullaniciYonetimPaneli: React.FC = () => {
   const [kurumlar, setKurumlar] = useState<Kurum[]>([]);
   const [departmanlar, setDepartmanlar] = useState<Departman[]>([]);
   const [birimler, setBirimler] = useState<Birim[]>([]);
-  const [permissions, setPermissions] = useLocalStorage<Permission[]>('permissions', []);
+  const [permissions, setPermissions] = useTemporaryState<Permission[]>([]);
   const [loading, setLoading] = useState(true); // Başlangıçta loading true
   const [error, setError] = useState<string | null>(null);
   const [tableCreating, setTableCreating] = useState(false);

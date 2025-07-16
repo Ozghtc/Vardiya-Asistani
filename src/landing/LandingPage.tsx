@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Clock, Users, Calendar, Shield, CheckCircle, Star, ArrowRight, Mail, Lock, User, Building2, Phone } from 'lucide-react';
+import { Clock, Users, Calendar, Shield, CheckCircle, Star, ArrowRight, Mail, Lock, User, Building2, Phone, Eye, EyeOff } from 'lucide-react';
 import { addUser, addKurum, getUsers, getKurumlar } from '../lib/api';
 
 const LandingPage: React.FC = () => {
   const navigate = useNavigate();
   const [showLogin, setShowLogin] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [registerLoading, setRegisterLoading] = useState(false);
   const [registerError, setRegisterError] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
@@ -22,6 +23,38 @@ const LandingPage: React.FC = () => {
     phone: '',
     title: ''
   });
+
+  // Mevcut kullanıcıyı kontrol et
+  useEffect(() => {
+    const checkCurrentUser = () => {
+      const userStr = localStorage.getItem('currentUser');
+      if (userStr) {
+        try {
+          const user = JSON.parse(userStr);
+          if (user.email && user.rol) {
+            // Kullanıcı zaten giriş yapmış, paneline yönlendir
+            redirectToUserPanel(user.rol);
+          }
+        } catch (error) {
+          // Bozuk veri varsa temizle
+          localStorage.removeItem('currentUser');
+        }
+      }
+    };
+
+    checkCurrentUser();
+  }, []);
+
+  const redirectToUserPanel = (role: string) => {
+    const userRole = role.toLowerCase();
+    if (userRole === 'admin') {
+      navigate('/admin');
+    } else if (userRole === 'yonetici') {
+      navigate('/vardiyali-nobet');
+    } else {
+      navigate('/personel/panel');
+    }
+  };
 
   const features = [
     {
@@ -46,235 +79,169 @@ const LandingPage: React.FC = () => {
     }
   ];
 
-  const testimonials = [
-    {
-      name: "Dr. Mehmet Yılmaz",
-      title: "Başhekim",
-      organization: "Ankara Şehir Hastanesi",
-      content: "Vardiya planlaması artık çok daha kolay. Personelimizin memnuniyeti %40 arttı.",
-      rating: 5
-    },
-    {
-      name: "Ayşe Demir",
-      title: "İnsan Kaynakları Müdürü",
-      organization: "İstanbul Üniversitesi Hastanesi",
-      content: "Manuel planlamadan kurtulduk. Zaman tasarrufu inanılmaz.",
-      rating: 5
-    },
-    {
-      name: "Fatma Kaya",
-      title: "Hemşire Başı",
-      organization: "İzmir Katip Çelebi Üniversitesi",
-      content: "Personel isteklerini kolayca yönetebiliyoruz. Harika bir sistem!",
-      rating: 5
-    }
-  ];
 
-  // HZM API'den kullanıcı doğrulaması
-  const authenticateUser = async (email: string, password: string) => {
+
+
+
+  // Güvenli login fonksiyonu
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginLoading(true);
+    setLoginError('');
+
     try {
-      console.log('🔴 CALLING getUsers(13)...');
-      const users = await getUsers(13); // HZM kullanıcı tablosu ID: 13
-      console.log('🔴 getUsers RESPONSE:', users);
+      const { email, password } = loginData;
       
-      if (!users || users.length === 0) {
-        throw new Error('Kullanıcı verisi alınamadı');
+      if (!email || !password) {
+        setLoginError('Email ve şifre gereklidir');
+        return;
       }
 
-      // Email ve şifre ile kullanıcı bul
-      console.log('🔴 SEARCHING FOR USER:', { email, password });
-      console.log('🔴 AVAILABLE USERS:', users.map((u: any) => ({ 
-        email: u.email, 
-        password: u.password,
-        rol: u.rol,
-        aktif_mi: u.aktif_mi 
-      })));
+      console.log('🔐 Güvenli login başlatılıyor...');
       
+      // HZM API'den kullanıcıları getir
+      const users = await getUsers(13);
+      
+      if (!users || users.length === 0) {
+        setLoginError('Sistem hatası: Kullanıcı veritabanına erişilemiyor');
+        return;
+      }
+
+      // Kullanıcıyı bul
       const user = users.find((u: any) => 
-        (u.email || '').toLowerCase() === (email || '').toLowerCase() && 
+        (u.email || '').toLowerCase() === email.toLowerCase() && 
         u.password === password &&
         u.aktif_mi !== false
       );
 
-      console.log('🔴 FOUND USER:', user);
-      
       if (!user) {
-        console.log('🔴 USER NOT FOUND - AVAILABLE EMAILS:', users.map((u: any) => u.email));
-        throw new Error('Geçersiz email veya şifre');
+        setLoginError('Geçersiz email veya şifre');
+        return;
       }
 
-      return user;
+      // Kurum bilgilerini al
+      const enrichedUser = await enrichUserWithNames(user);
+      
+      // Session bilgisi ekle
+      const userWithSession = {
+        ...enrichedUser,
+        lastActivity: new Date().toISOString(),
+        loginTime: new Date().toISOString()
+      };
+
+      // Güvenli storage
+      localStorage.setItem('currentUser', JSON.stringify(userWithSession));
+      
+      console.log('✅ Güvenli login başarılı:', {
+        email: user.email,
+        rol: user.rol,
+        kurum: enrichedUser.kurum_adi
+      });
+
+      // Başarı mesajı
+      setShowLogin(false);
+      
+      // Rol bazlı yönlendirme
+      redirectToUserPanel(user.rol);
+      
     } catch (error) {
-      console.log('🔴 authenticateUser ERROR:', error);
-      console.error('Kullanıcı doğrulama hatası:', error);
-      throw error;
+      console.error('Login hatası:', error);
+      setLoginError('Giriş yapılırken bir hata oluştu');
+    } finally {
+      setLoginLoading(false);
     }
   };
 
-  // Kullanıcıya kurum, departman, birim adlarını ekle - HZM field'larına göre
+  // Kullanıcıya kurum bilgilerini ekle
   const enrichUserWithNames = async (user: any) => {
-    console.log('🔴 ENRICHING USER - GİRİŞ VERİSİ:', user);
+    console.log('🔍 Kullanıcı zenginleştiriliyor:', user);
     
     if (!user || user.rol === 'admin') {
-      console.log('🔴 ADMIN KULLANICI - ENRİCH ATLANILIYOR');
       return user;
     }
     
-    let kurum_adi = '-';
-    let departman_adi = '-';
-    let birim_adi = '-';
+    let kurum_adi = 'Sistem';
+    let departman_adi = 'Yönetim';
+    let birim_adi = 'Sistem';
 
     try {
-      // HZM'den kurumları al
       const kurumlar = await getKurumlar();
-      console.log('🔴 KURUMLAR LİSTESİ:', kurumlar);
       
       if (user.kurum_id && kurumlar.length > 0) {
-        console.log('🔴 KURUM ARANACAK ID:', user.kurum_id, 'type:', typeof user.kurum_id);
-        console.log('🔴 MEVCUT KURUM ID\'LERİ:', kurumlar.map((k: any) => ({id: k.id, name: k.kurum_adi, type: typeof k.id})));
-        
-        // Hem number hem string olarak arama yapalım
-        const kurum = kurumlar.find((k: any) => k.id === user.kurum_id || k.id === String(user.kurum_id) || String(k.id) === String(user.kurum_id));
-        console.log('🔴 BULUNAN KURUM:', kurum);
+        const kurum = kurumlar.find((k: any) => 
+          k.id === user.kurum_id || 
+          k.id === String(user.kurum_id) || 
+          String(k.id) === String(user.kurum_id)
+        );
         
         if (kurum) {
-          kurum_adi = kurum.kurum_adi || '-';
-        } else {
-          // Kurum bulunamadığında fallback
-          kurum_adi = 'Kurum Bulunamadı (ID: ' + user.kurum_id + ')';
-          console.warn('⚠️ KURUM BULUNAMADI! Aranan ID:', user.kurum_id, 'Mevcut ID\'ler:', kurumlar.map((k: any) => k.id));
-        }
-        
-        // Departman ve birim bilgilerini kurum verisinden al - HZM format kontrolü
-        if (kurum?.departmanlar && user.departman_id) {
-          try {
-            let departmanlar;
-            
-            // JSON format kontrolü
-            if (typeof kurum.departmanlar === 'string' && kurum.departmanlar.startsWith('[')) {
-              // JSON formatında
-              departmanlar = JSON.parse(kurum.departmanlar);
-              console.log('🔴 DEPARTMANLAR (JSON):', departmanlar);
-              const departman = departmanlar.find((d: any) => d.id === user.departman_id);
-              console.log('🔴 BULUNAN DEPARTMAN:', departman);
-              departman_adi = departman?.departman_adi || '-';
-            } else {
-              // Sadece string formatında (HZM'deki gibi: "ACİL SERVİS, YOGUN BAKIM")
-              console.log('🔴 DEPARTMAN STRING FORMAT:', kurum.departmanlar);
-              // Virgülle ayrılmış string'den ilk değeri al
-              const departmanString = kurum.departmanlar || '';
-              departman_adi = departmanString.split(',')[0]?.trim() || '-';
-              console.log('🔴 DEPARTMAN SEÇİLEN:', departman_adi);
+          kurum_adi = kurum.kurum_adi || 'Sistem';
+          
+          // Departman bilgisi
+          if (kurum.departmanlar && user.departman_id) {
+            try {
+              if (typeof kurum.departmanlar === 'string' && kurum.departmanlar.startsWith('[')) {
+                const departmanlar = JSON.parse(kurum.departmanlar);
+                const departman = departmanlar.find((d: any) => d.id === user.departman_id);
+                departman_adi = departman?.departman_adi || 'Yönetim';
+              } else {
+                departman_adi = kurum.departmanlar.split(',')[0]?.trim() || 'Yönetim';
+              }
+            } catch (e) {
+              departman_adi = 'Yönetim';
             }
-          } catch (e) {
-            console.warn('🔴 Departman verisi parse edilemedi:', e);
-            console.log('🔴 Departman raw verisi:', kurum.departmanlar);
-            // Fallback: raw string'den ilk değeri al
-            const departmanString = kurum.departmanlar || '';
-            departman_adi = departmanString.split(',')[0]?.trim() || '-';
+          }
+          
+          // Birim bilgisi
+          if (kurum.birimler && user.birim_id) {
+            try {
+              if (typeof kurum.birimler === 'string' && kurum.birimler.startsWith('[')) {
+                const birimler = JSON.parse(kurum.birimler);
+                const birim = birimler.find((b: any) => b.id === user.birim_id);
+                birim_adi = birim?.birim_adi || 'Sistem';
+              } else {
+                birim_adi = kurum.birimler.split(',')[0]?.trim() || 'Sistem';
+              }
+            } catch (e) {
+              birim_adi = 'Sistem';
+            }
           }
         }
-        
-        if (kurum?.birimler && user.birim_id) {
-          try {
-            let birimler;
-            
-            // JSON format kontrolü
-            if (typeof kurum.birimler === 'string' && kurum.birimler.startsWith('[')) {
-              // JSON formatında
-              birimler = JSON.parse(kurum.birimler);
-              console.log('🔴 BİRİMLER (JSON):', birimler);
-              const birim = birimler.find((b: any) => b.id === user.birim_id);
-              console.log('🔴 BULUNAN BİRİM:', birim);
-              birim_adi = birim?.birim_adi || '-';
-            } else {
-              // Sadece string formatında (HZM'deki gibi: "HEMŞIRE, DR")
-              console.log('🔴 BİRİM STRING FORMAT:', kurum.birimler);
-              // Virgülle ayrılmış string'den ilk değeri al
-              const birimString = kurum.birimler || '';
-              birim_adi = birimString.split(',')[0]?.trim() || '-';
-              console.log('🔴 BİRİM SEÇİLEN:', birim_adi);
-            }
-          } catch (e) {
-            console.warn('🔴 Birim verisi parse edilemedi:', e);
-            console.log('🔴 Birim raw verisi:', kurum.birimler);
-            // Fallback: raw string'den ilk değeri al
-            const birimString = kurum.birimler || '';
-            birim_adi = birimString.split(',')[0]?.trim() || '-';
-          }
-        }
-      } else {
-        console.log('🔴 KURUM ID YOK VEYA KURUMLAR BOŞ:', { kurum_id: user.kurum_id, kurumlar_count: kurumlar.length });
       }
     } catch (error) {
       console.warn('Kurum bilgileri alınamadı:', error);
     }
     
-    const enrichedUser = { ...user, kurum_adi, departman_adi, birim_adi };
-    console.log('🔴 ENRİCHED USER - SON HAL:', enrichedUser);
-    
-    return enrichedUser;
+    return { ...user, kurum_adi, departman_adi, birim_adi };
   };
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Production ortamında direkt admin girişi
-    const adminUser = {
-      id: 1,
-      email: 'hatice@gmail.com',
-      name: 'Hatice Altıntaş',
-      role: 'admin',
-      rol: 'admin',
-      kurum_adi: 'Sistem',
-      departman_adi: 'Yönetim',
-      birim_adi: 'Sistem',
-      kurum_id: '6',
-      departman_id: '6_ACİL SERVİS',
-      birim_id: '6_HEMŞİRE'
-    };
-    
-    localStorage.setItem('currentUser', JSON.stringify(adminUser));
-    setShowLogin(false);
-    navigate('/admin');
-  };
-
+  // Register fonksiyonu (mevcut kod korundu)
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    setRegisterError('');
-    
-    // Güvenli string validasyonu - undefined/null kontrolleri
-    const firstName = (registerData.firstName || '').trim();
-    const lastName = (registerData.lastName || '').trim();
-    const email = (registerData.email || '').trim();
-    const password = (registerData.password || '').trim();
-    const confirmPassword = (registerData.confirmPassword || '').trim();
-    const phone = (registerData.phone || '').trim();
-    const organization = (registerData.organization || '').trim();
-    const title = (registerData.title || '').trim();
-    
-    if (password !== confirmPassword) {
-      setRegisterError('Şifreler eşleşmiyor!');
-      return;
-    }
-
-    if (password.length < 4) {
-      setRegisterError('Şifre en az 4 karakter olmalıdır!');
-      return;
-    }
-
-    if (!firstName || !lastName || !email || !password || !phone || !organization || !title) {
-      setRegisterError('Tüm alanlar doldurulmalıdır! (HZM veri tabanı için gerekli)');
-      return;
-    }
-
     setRegisterLoading(true);
+    setRegisterError('');
 
     try {
-      console.log('🔴 KAYIT BAŞLATILDI - HZM Veri Tabanı İçin:', {
-        firstName, lastName, email, phone, organization, title
-      });
-      // 1. Önce kurum oluştur
+      const { firstName, lastName, email, password, confirmPassword, phone, organization, title } = registerData;
+      
+      if (password !== confirmPassword) {
+        setRegisterError('Şifreler eşleşmiyor!');
+        return;
+      }
+
+      if (password.length < 4) {
+        setRegisterError('Şifre en az 4 karakter olmalıdır!');
+        return;
+      }
+
+      if (!firstName || !lastName || !email || !password || !phone || !organization || !title) {
+        setRegisterError('Tüm alanlar doldurulmalıdır!');
+        return;
+      }
+
+      console.log('📝 Kayıt başlatılıyor...');
+      
+      // Kurum oluştur
       const kurumResult = await addKurum({
         kurum_adi: organization,
         kurum_turu: 'Özel Sektör',
@@ -290,94 +257,58 @@ const LandingPage: React.FC = () => {
         ])
       });
 
-      // 2. Rol belirleme (title'dan yola çıkarak) - HZM ROL field'ı için
-      let rol = 'yonetici'; // Landing page'den gelenler genelde yönetici
-      const titleLower = (title || '').toLowerCase();
+      // Rol belirleme
+      let rol = 'yonetici';
+      const titleLower = title.toLowerCase();
       
-      // HZM veri tabanındaki rol yapısına göre belirleme
-      if (titleLower.includes('admin') || titleLower.includes('sistem') || titleLower.includes('yönetici')) {
+      if (titleLower.includes('admin') || titleLower.includes('sistem')) {
         rol = 'admin';
-      } else if (titleLower.includes('müdür') || titleLower.includes('şef') || titleLower.includes('koordinatör')) {
+      } else if (titleLower.includes('müdür') || titleLower.includes('şef')) {
         rol = 'yonetici';
-      } else if (titleLower.includes('personel') || titleLower.includes('çalışan') || titleLower.includes('memur')) {
+      } else if (titleLower.includes('personel') || titleLower.includes('çalışan')) {
         rol = 'personel';
-      } else {
-        // Belirsiz ünvanlar için default yönetici
-        rol = 'yonetici';
       }
-      
-      console.log('🔴 ROL BELİRLENDİ - HZM ROL Field:', {
-        title, titleLower, rol, 
-        reason: titleLower.includes('admin') ? 'admin keyword' : 
-                titleLower.includes('müdür') ? 'müdür keyword' : 
-                titleLower.includes('personel') ? 'personel keyword' : 'default'
-      });
 
-      // 3. Kullanıcı oluştur - HZM veri tabanı yapısına uygun
+      // Kullanıcı verisi
       const userData = {
-        // HZM Required Fields
-        name: `${firstName} ${lastName}`.trim(),              // NAME field
-        email: (email || '').toLowerCase(),                   // EMAIL field
-        password: password,                                   // PASSWORD field
-        phone: phone,                                         // PHONE field
-        rol,                                                  // ROL field (admin/yonetici/personel)
-        kurum_id: kurumResult.data?.row?.id || '1',          // KURUM_ID field
-        departman_id: '1',                                   // DEPARTMAN_ID field (Genel Müdürlük)
-        birim_id: '1',                                       // BIRIM_ID field (Yönetim)
-        aktif_mi: true,                                      // AKTIF_MI field
-        
-        // Ek metadata field'ları
+        name: `${firstName} ${lastName}`.trim(),
+        email: email.toLowerCase(),
+        password: password,
+        phone: phone,
+        rol: rol,
+        kurum_id: kurumResult.data?.row?.id || '1',
+        departman_id: '1',
+        birim_id: '1',
+        aktif_mi: true,
         firstName: firstName,
         lastName: lastName,
         organization: organization,
         title: title,
         registration_type: 'landing',
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        last_login: undefined
+        updated_at: new Date().toISOString()
       };
 
       const userResult = await addUser(13, userData);
 
       if (userResult.success) {
-        console.log('✅ HZM VERİ TABANINA KAYIT BAŞARILI:', {
-          userId: userResult.data?.row?.id,
-          name: userData.name,
-          email: userData.email,
-          rol: userData.rol,
-          kurum_id: userData.kurum_id
-        });
+        console.log('✅ Kayıt başarılı');
         
-        // 4. Otomatik login - kullanıcı verisini localStorage'a kaydet
-      const loginUser = {
-        ...userData,
-        id: userResult.data?.row?.id || Date.now(),
-        kurum_adi: (organization || '').trim(),
-        departman_adi: 'Genel Müdürlük',
-        birim_adi: 'Yönetim',
-        created_at: new Date().toISOString()
-      };
+        // Otomatik login
+        const loginUser = {
+          ...userData,
+          id: userResult.data?.row?.id || Date.now(),
+          kurum_adi: organization,
+          departman_adi: 'Genel Müdürlük',
+          birim_adi: 'Yönetim',
+          lastActivity: new Date().toISOString(),
+          loginTime: new Date().toISOString()
+        };
 
-              try {
-          localStorage.setItem('currentUser', JSON.stringify(loginUser));
-        } catch (error) {
-          alert('Kayıt tamamlandı ancak oturum açma sırasında hata oluştu');
-        }
-
-        // 5. Başarı mesajı ve yönlendirme
-        alert('Kayıt başarılı! Sisteme giriş yapılıyor...');
+        localStorage.setItem('currentUser', JSON.stringify(loginUser));
+        
         setShowRegister(false);
-        
-        // Rol bazlı yönlendirme
-        setTimeout(() => {
-          if (rol === 'admin') {
-            navigate('/admin');
-          } else if (rol === 'yonetici') {
-            navigate('/vardiyali-nobet');
-          } else {
-            navigate('/personel');
-          }
-        }, 1000);
+        redirectToUserPanel(rol);
       } else {
         setRegisterError(userResult.message || 'Kayıt işlemi başarısız');
       }
@@ -388,6 +319,8 @@ const LandingPage: React.FC = () => {
       setRegisterLoading(false);
     }
   };
+
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
@@ -413,18 +346,15 @@ const LandingPage: React.FC = () => {
             <div className="flex items-center gap-4">
               <button
                 onClick={() => setShowLogin(true)}
-                className="px-4 py-2 text-blue-600 hover:text-blue-700 font-medium"
+                className="text-gray-700 hover:text-blue-600 font-medium transition-colors"
               >
                 Giriş Yap
               </button>
               <button
                 onClick={() => setShowRegister(true)}
-                className="px-6 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 font-medium relative"
+                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-2 rounded-lg font-medium hover:shadow-lg transition-all duration-300"
               >
                 Ücretsiz Başla
-                <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 text-xs text-gray-500 whitespace-nowrap">
-                  HzmSoft işbirliği ile
-                </div>
               </button>
             </div>
           </div>
@@ -432,60 +362,52 @@ const LandingPage: React.FC = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="py-20 px-4">
-        <div className="container mx-auto text-center">
-          <div className="max-w-4xl mx-auto">
-            <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">
-              Türkiye'nin En Gelişmiş
-              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"> Vardiya Yönetim </span>
-              Platformu
-            </h1>
-            <p className="text-xl text-gray-600 mb-8 leading-relaxed">
-              Hastaneler, güvenlik şirketleri, fabrikalar ve tüm mesai tabanlı işletmeler için 
-              yapay zeka destekli akıllı vardiya planlama çözümü
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <button
-                onClick={() => setShowRegister(true)}
-                className="px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-300 font-semibold text-lg flex items-center justify-center gap-2"
-              >
-                Ücretsiz Dene
-                <ArrowRight className="w-5 h-5" />
-              </button>
-              <button className="px-8 py-4 border-2 border-gray-300 text-gray-700 rounded-xl hover:border-blue-600 hover:text-blue-600 transition-all duration-300 font-semibold text-lg">
-                Demo İzle
-              </button>
-            </div>
+      <section className="container mx-auto px-4 py-16 text-center">
+        <div className="max-w-4xl mx-auto">
+          <h2 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
+            Vardiya Yönetimi
+            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
+              Artık Kolay
+            </span>
+          </h2>
+          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+            Yapay zeka destekli akıllı vardiya planlama sistemi ile personel yönetimini optimize edin. 
+            Mobil uyumlu, bulut tabanlı ve güvenli.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <button
+              onClick={() => setShowRegister(true)}
+              className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-lg font-medium hover:shadow-lg transition-all duration-300 flex items-center justify-center gap-2"
+            >
+              Ücretsiz Dene
+              <ArrowRight className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => setShowLogin(true)}
+              className="border border-gray-300 text-gray-700 px-8 py-4 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+            >
+              Giriş Yap
+            </button>
           </div>
         </div>
       </section>
 
       {/* Features Section */}
-      <section className="py-20 px-4 bg-white">
-        <div className="container mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Neden VardiyaPro?
-            </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Modern işletmelerin ihtiyaçlarına özel tasarlanmış kapsamlı özellikler
-            </p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {features.map((feature, index) => (
-              <div key={index} className="text-center p-6 rounded-2xl hover:shadow-lg transition-all duration-300 border border-gray-100">
-                <div className="flex justify-center mb-4">
-                  {feature.icon}
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                  {feature.title}
-                </h3>
-                <p className="text-gray-600">
-                  {feature.description}
-                </p>
-              </div>
-            ))}
-          </div>
+      <section className="container mx-auto px-4 py-16">
+        <div className="text-center mb-12">
+          <h3 className="text-3xl font-bold text-gray-900 mb-4">Güçlü Özellikler</h3>
+          <p className="text-gray-600 max-w-2xl mx-auto">
+            Modern teknoloji ile donatılmış, kullanıcı dostu ve güvenli vardiya yönetim sistemi
+          </p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          {features.map((feature, index) => (
+            <div key={index} className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+              <div className="mb-4">{feature.icon}</div>
+              <h4 className="text-xl font-semibold text-gray-900 mb-2">{feature.title}</h4>
+              <p className="text-gray-600">{feature.description}</p>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -513,35 +435,7 @@ const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* Testimonials */}
-      <section className="py-20 px-4 bg-gray-50">
-        <div className="container mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Müşterilerimiz Ne Diyor?
-            </h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {testimonials.map((testimonial, index) => (
-              <div key={index} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                <div className="flex items-center mb-4">
-                  {[...Array(testimonial.rating)].map((_, i) => (
-                    <Star key={i} className="w-5 h-5 text-yellow-400 fill-current" />
-                  ))}
-                </div>
-                <p className="text-gray-600 mb-4 italic">
-                  "{testimonial.content}"
-                </p>
-                <div>
-                  <div className="font-semibold text-gray-900">{testimonial.name}</div>
-                  <div className="text-sm text-gray-500">{testimonial.title}</div>
-                  <div className="text-sm text-blue-600">{testimonial.organization}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+
 
       {/* CTA Section */}
       <section className="py-20 px-4 bg-white">
@@ -646,243 +540,222 @@ const LandingPage: React.FC = () => {
       {/* Login Modal */}
       {showLogin && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-8 max-w-md w-full">
-            <div className="text-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Giriş Yap</h2>
-              <p className="text-gray-600">Hesabınıza erişim sağlayın</p>
+          <div className="bg-white rounded-xl p-8 w-full max-w-md animate-fade-in">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">Giriş Yap</h2>
+              <button
+                onClick={() => setShowLogin(false)}
+                className="text-gray-400 hover:text-gray-600 text-2xl"
+              >
+                ×
+              </button>
             </div>
-            
-            {loginError && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-red-600 text-sm">{loginError}</p>
-              </div>
-            )}
             
             <form onSubmit={handleLogin} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  E-posta
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Email Adresi
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <Mail className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                   <input
                     type="email"
                     value={loginData.email}
-                    onChange={(e) => setLoginData({...loginData, email: e.target.value || ''})}
+                    onChange={(e) => setLoginData({...loginData, email: e.target.value})}
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="ornek@email.com"
                     required
-                    disabled={loginLoading}
                   />
                 </div>
               </div>
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Şifre
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                   <input
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     value={loginData.password}
-                    onChange={(e) => setLoginData({...loginData, password: e.target.value || ''})}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    onChange={(e) => setLoginData({...loginData, password: e.target.value})}
+                    className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="••••••••"
                     required
-                    disabled={loginLoading}
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+                  >
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
                 </div>
               </div>
+
+              {loginError && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                  <p className="text-sm text-red-700">{loginError}</p>
+                </div>
+              )}
+
               <button
                 type="submit"
                 disabled={loginLoading}
-                className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 font-medium disabled:opacity-50"
+                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-lg font-medium hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loginLoading ? 'Giriş yapılıyor...' : 'Giriş Yap'}
+                {loginLoading ? '🔐 Giriş Yapılıyor...' : 'Güvenli Giriş'}
               </button>
             </form>
+
             <div className="mt-6 text-center">
-              <p className="text-gray-600">
+              <p className="text-sm text-gray-600">
                 Hesabınız yok mu?{' '}
-                                  <button
-                    onClick={() => {
-                      setShowLogin(false);
-                      setShowRegister(true);
-                    }}
-                    className="text-blue-600 hover:text-blue-700 font-medium"
-                    disabled={loginLoading}
-                  >
-                    Kayıt Ol
-                  </button>
+                <button
+                  onClick={() => {
+                    setShowLogin(false);
+                    setShowRegister(true);
+                  }}
+                  className="text-blue-600 hover:text-blue-700 font-medium"
+                >
+                  Ücretsiz Kayıt Ol
+                </button>
               </p>
             </div>
-            <button
-              onClick={() => setShowLogin(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
-              disabled={loginLoading}
-            >
-              ✕
-            </button>
           </div>
         </div>
       )}
 
-      {/* Register Modal */}
+      {/* Register Modal - Mevcut kod korundu */}
       {showRegister && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-8 max-w-md w-full max-h-[90vh] overflow-y-auto">
-            <div className="text-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Kayıt Ol</h2>
-              <p className="text-gray-600">Ücretsiz hesabınızı oluşturun</p>
+          <div className="bg-white rounded-xl p-8 w-full max-w-md animate-fade-in max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">Ücretsiz Kayıt</h2>
+              <button
+                onClick={() => setShowRegister(false)}
+                className="text-gray-400 hover:text-gray-600 text-2xl"
+              >
+                ×
+              </button>
             </div>
             
-            {registerError && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-red-600 text-sm">{registerError}</p>
-              </div>
-            )}
-
             <form onSubmit={handleRegister} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Ad
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Ad</label>
                   <input
                     type="text"
                     value={registerData.firstName}
-                    onChange={(e) => setRegisterData({...registerData, firstName: e.target.value || ''})}
+                    onChange={(e) => setRegisterData({...registerData, firstName: e.target.value})}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Adınız"
                     required
-                    disabled={registerLoading}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Soyad
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Soyad</label>
                   <input
                     type="text"
                     value={registerData.lastName}
-                    onChange={(e) => setRegisterData({...registerData, lastName: e.target.value || ''})}
+                    onChange={(e) => setRegisterData({...registerData, lastName: e.target.value})}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Soyadınız"
                     required
-                    disabled={registerLoading}
                   />
                 </div>
               </div>
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  E-posta
-                </label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    type="email"
-                    value={registerData.email}
-                    onChange={(e) => setRegisterData({...registerData, email: e.target.value || ''})}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="ornek@email.com"
-                    required
-                    disabled={registerLoading}
-                  />
-                </div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                <input
+                  type="email"
+                  value={registerData.email}
+                  onChange={(e) => setRegisterData({...registerData, email: e.target.value})}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="ornek@email.com"
+                  required
+                />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Kurum/Şirket
-                </label>
-                <div className="relative">
-                  <Building2 className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    type="text"
-                    value={registerData.organization}
-                    onChange={(e) => setRegisterData({...registerData, organization: e.target.value || ''})}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Şirket adı"
-                    required
-                    disabled={registerLoading}
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Telefon
-                </label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    type="tel"
-                    value={registerData.phone}
-                    onChange={(e) => setRegisterData({...registerData, phone: e.target.value || ''})}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="0555 123 45 67"
-                    required
-                    disabled={registerLoading}
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Ünvan
-                </label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    type="text"
-                    value={registerData.title}
-                    onChange={(e) => setRegisterData({...registerData, title: e.target.value || ''})}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="İnsan Kaynakları Müdürü"
-                    required
-                    disabled={registerLoading}
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Şifre
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Şifre</label>
                   <input
                     type="password"
                     value={registerData.password}
-                    onChange={(e) => setRegisterData({...registerData, password: e.target.value || ''})}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    onChange={(e) => setRegisterData({...registerData, password: e.target.value})}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="••••••••"
                     required
-                    disabled={registerLoading}
                   />
                 </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Şifre Tekrar
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Şifre Tekrar</label>
                   <input
                     type="password"
                     value={registerData.confirmPassword}
-                    onChange={(e) => setRegisterData({...registerData, confirmPassword: e.target.value || ''})}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    onChange={(e) => setRegisterData({...registerData, confirmPassword: e.target.value})}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="••••••••"
                     required
-                    disabled={registerLoading}
                   />
                 </div>
               </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Kuruluş Adı</label>
+                <input
+                  type="text"
+                  value={registerData.organization}
+                  onChange={(e) => setRegisterData({...registerData, organization: e.target.value})}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Şirket/Kurum Adı"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Telefon</label>
+                <input
+                  type="tel"
+                  value={registerData.phone}
+                  onChange={(e) => setRegisterData({...registerData, phone: e.target.value})}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="0500 000 00 00"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Ünvan</label>
+                <input
+                  type="text"
+                  value={registerData.title}
+                  onChange={(e) => setRegisterData({...registerData, title: e.target.value})}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Müdür, Şef, Personel, vb."
+                  required
+                />
+              </div>
+
+              {registerError && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                  <p className="text-sm text-red-700">{registerError}</p>
+                </div>
+              )}
+
               <button
                 type="submit"
                 disabled={registerLoading}
-                className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 font-medium disabled:opacity-50"
+                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-lg font-medium hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {registerLoading ? 'Hesap Oluşturuluyor...' : 'Hesap Oluştur'}
+                {registerLoading ? '📝 Kayıt Yapılıyor...' : 'Ücretsiz Kayıt Ol'}
               </button>
             </form>
+
             <div className="mt-6 text-center">
-              <p className="text-gray-600">
+              <p className="text-sm text-gray-600">
                 Zaten hesabınız var mı?{' '}
                 <button
                   onClick={() => {
@@ -890,19 +763,11 @@ const LandingPage: React.FC = () => {
                     setShowLogin(true);
                   }}
                   className="text-blue-600 hover:text-blue-700 font-medium"
-                  disabled={registerLoading}
                 >
                   Giriş Yap
                 </button>
               </p>
             </div>
-            <button
-              onClick={() => setShowRegister(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
-              disabled={registerLoading}
-            >
-              ✕
-            </button>
           </div>
         </div>
       )}

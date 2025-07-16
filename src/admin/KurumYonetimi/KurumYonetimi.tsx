@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLocalStorage } from '../../hooks/useLocalStorage';
+import { useTemporaryState } from '../../hooks/useApiState';
 import { useCapitalization } from '../../hooks/useCapitalization';
 import Select from 'react-select';
 import CreatableSelect from 'react-select/creatable';
@@ -62,7 +62,7 @@ const PERSONEL_TURLERI = [
 const KurumYonetimi = () => {
   // States
   const [kurumlar, setKurumlar] = useState<Kurum[]>([]);
-  const [departmanBirimler, setDepartmanBirimler] = useLocalStorage<DepartmanBirim[]>('departmanBirimler', []);
+  const [departmanBirimler, setDepartmanBirimler] = useTemporaryState<DepartmanBirim[]>([]);
 
   // Form states
   const [kurumForm, setKurumForm] = useState({

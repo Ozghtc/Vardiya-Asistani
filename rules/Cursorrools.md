@@ -116,11 +116,68 @@
 
 ---
 
-## 13. Hata Bulma ve Düzeltme Kuralı
+## 13. Hata Bulma ve Düzeltme Kuralı (Debug / Fix)
 
+**Amaç:** Cursor, tespit ettiği hataları minimum kullanıcı müdahalesiyle, yapıyı bozmadan ve otomatik olarak düzeltmelidir.
+
+### Kök Neden Analizi:
 * Cursor bir hata algıladığında sadece dosya içine bakmakla kalmamalı, İlgili bileşen, API, context, prop zincirini de incelemelidir.
 * Hata sadece semptom olarak değil, **kök nedenine (root cause)** kadar analiz edilmelidir.
 * Düzenleme yapıldıysa, hangi satırda, ne değişikliğin yapıldığı kullanıcıya özet olarak bildirilmeli ve gerekiyorsa kod bloğu paylaşılmalıdır.
+
+### Hata Tespit ve Raporlama:
+* **a.** Hata tespit edildiğinde, hata satırı ve etkilenen dosya net şekilde kullanıcıya gösterilmelidir.
+  - Örnek çıktı: `src/pages/Home.tsx dosyasında, 42. satırda hata.`
+
+* **b.** Terminal hataları sadeleştirilerek anlamlı mesajlara dönüştürülmelidir.
+  - `TypeError: Cannot read property 'name' of undefined`
+  - ✅ **Açıklama:** "Veri henüz yüklenmeden kullanılmış olabilir."
+
+### Otomatik Çözüm:
+* **c.** Cursor, hatayı tespit ettiğinde kullanıcıya otomatik çözüm önerisi sunmalı veya doğrudan uygulayabilmelidir.
+  - "Bu alana `?.` operatörü eklenerek hata önlenebilir."
+
+* **d.** Düzeltme sadece hatalı kısımda yapılmalı, kodun geri kalanı değiştirilmemelidir.
+  - ❌ Dosya yeniden yazılmamalı
+  - ✅ Hatalı blok hedeflenmelidir.
+
+* **e.** Düzeltme sonrası sistem otomatik olarak yeniden başlatılabilir hâle gelmelidir.
+  - Kullanıcıdan `npm start`, `pnpm dev` gibi manuel müdahale istenmemelidir.
+
+### Sistem Bütünlüğü:
+* **f.** Dosya modüler ise, tüm bağlı parçalar kontrol edilmeli ve zincir hatalar engellenmelidir.
+
+* **g.** Hatalar geçici olarak gizlenmemeli, yapısal olarak çözülmelidir.
+  - ❌ `try/catch` ile bastırma
+  - ✅ Veri kontrolü ve koşullu akış uygulanmalıdır.
+
+### Hata Kategorileri:
+* **h.** API hataları ayırt edilmeli, bağlantı mı yoksa veri mi bozuk net belirtilmelidir.
+
+* **i.** Backend hataları ile frontend hataları ayrıştırılmalıdır.
+  - **Backend:** veri tutarsızlığı, bağlantı hatası
+  - **Frontend:** undefined, null, import, DOM
+
+### Koruma ve Güvenlik:
+* **j.** Daha önce yapılan değişiklikler dikkate alınmalı, çakışmalar engellenmelidir.
+
+* **k.** Elle yazılmış özel bloklara Cursor dokunmamalıdır.
+  - `// #manuel` gibi işaretlerle korunmuş alanlar varsa atlanmalıdır.
+
+### Test ve Doğrulama:
+* **l.** Test dosyası varsa (`test.ts`, `*.spec.ts`), hata düzeltmeden sonra otomatik test yapılmalı ve sonucu kullanıcıya gösterilmelidir.
+
+* **m.** Düzeltme sonrası kullanıcıya değişiklik özeti sunulmalıdır.
+  - "3 dosyada şu değişiklikler yapıldı."
+
+### Geri Alma ve Güvenlik:
+* **n.** Geri alma (undo) özelliği her hata düzeltmesinden sonra aktif olmalıdır.
+  - Kullanıcı tek tıklamayla eski hâline dönebilmelidir.
+
+* **o.** Hata düzeltme işlemleri hızlı değil, doğru ve zincir hatasız olmalıdır.
+  - Kod çalışıyor gibi görünse bile arkada bozukluk yaratmamalıdır.
+
+
 
 ---
 
