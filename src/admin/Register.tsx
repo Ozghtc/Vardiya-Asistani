@@ -168,8 +168,7 @@ const Register: React.FC = () => {
           created_at: new Date().toISOString()
         };
 
-        // Otomatik login - localStorage'a kaydet
-        localStorage.setItem('currentUser', JSON.stringify(enrichedUser));
+              // KURAL 16: Production ortamında localStorage yasak - kayıt disabled
 
         // Rol bazlı yönlendirme
         if (enrichedUser.rol === 'admin') {

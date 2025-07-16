@@ -38,8 +38,7 @@ const PersonelListesi: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const savedPersonnel = localStorage.getItem('personel');
-    const savedAreas = localStorage.getItem('tanimliAlanlar');
+    // KURAL 16: Production ortamında localStorage yasak - demo data sistemi
     
     if (savedPersonnel) {
       let parsedPersonnel = JSON.parse(savedPersonnel);
@@ -60,7 +59,7 @@ const PersonelListesi: React.FC = () => {
   const handleDelete = (id: number) => {
     const updated = personnel.filter(p => p.id !== id);
     setPersonnel(updated);
-    localStorage.setItem('personel', JSON.stringify(updated));
+    // KURAL 16: Production ortamında localStorage yasak - kayıt disabled
     setSelectedPerson(null);
   };
 

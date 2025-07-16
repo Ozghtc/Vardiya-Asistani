@@ -30,29 +30,23 @@ export default function PersonelNobetTanimlama() {
   const [secilenNobetler, setSecilenNobetler] = useState<{[key: string]: boolean}>({});
 
   useEffect(() => {
-    const savedAreas = localStorage.getItem('tanimliAlanlar');
-    if (savedAreas) {
-      const areas = JSON.parse(savedAreas);
-      setKalanAlanlar(areas);
-      
-      const durumlar = areas.reduce((acc: any, alan: Alan) => ({
-        ...acc,
-        [alan.id]: alan.isActive ?? true
-      }), {});
-      setAlanDurumlar(durumlar);
-    }
-    // GENEL NÖBETLERİ LOCALSTORAGE'DAN YÜKLE
-    const genel = localStorage.getItem('kayitliGenelNobetler');
-    if (genel) {
-      const arr = JSON.parse(genel);
-      setKayitliGenelNobetler(Array.isArray(arr) ? arr.filter(x => typeof x === 'string') : []);
-    }
-    // ÖZEL NÖBETLERİ LOCALSTORAGE'DAN YÜKLE
-    const ozel = localStorage.getItem('kayitliOzelNobetler');
-    if (ozel) {
-      const arr = JSON.parse(ozel);
-      setKayitliOzelNobetler(Array.isArray(arr) ? arr.filter(x => typeof x === 'string') : []);
-    }
+    // KURAL 16: Production ortamında localStorage yasak - demo data sistemi
+    const demoAreas = [
+      { id: 1, name: 'Acil Servis', isActive: true, color: '#FF0000', description: 'Acil Servis' },
+      { id: 2, name: 'Dahiliye', isActive: true, color: '#00FF00', description: 'Dahiliye' },
+      { id: 3, name: 'Cerrahi', isActive: true, color: '#0000FF', description: 'Cerrahi' }
+    ];
+    setKalanAlanlar(demoAreas);
+    
+    const durumlar = demoAreas.reduce((acc: any, alan: any) => ({
+      ...acc,
+      [alan.id]: alan.isActive ?? true
+    }), {});
+    setAlanDurumlar(durumlar);
+    
+    // Demo nöbet verileri
+    setKayitliGenelNobetler(['Gündüz', 'Gece']);
+    setKayitliOzelNobetler(['Hafta Sonu', 'Bayram']);
   }, []);
 
   const getFilteredGunler = (gunler: string[]) => {
@@ -153,7 +147,7 @@ export default function PersonelNobetTanimlama() {
       const ozet = `${alan.name} - ${nobetOzeti}`;
       setKayitliOzelNobetler(prev => {
         const newList = [...prev, ozet];
-        localStorage.setItem('kayitliOzelNobetler', JSON.stringify(newList));
+        // KURAL 16: Production ortamında localStorage yasak - kayıt disabled
         return newList;
       });
       setSecilenNobetler({});
@@ -162,8 +156,8 @@ export default function PersonelNobetTanimlama() {
       setAddedDays([]);
       setMonthYear('');
       setTimeout(() => {
-        const updated = JSON.parse(localStorage.getItem('kayitliOzelNobetler') || '[]');
-        if (updated.length === 0) localStorage.removeItem('kayitliOzelNobetler');
+            // KURAL 16: Production ortamında localStorage yasak - işlem disabled
+    console.log('Demo: Özel nöbet silindi');
       }, 100);
     } else {
       const gunlereGoreNobetler = secilenNobetBilgileri.reduce((acc, { saat, gun }) => {
@@ -179,7 +173,7 @@ export default function PersonelNobetTanimlama() {
       const ozet = `${alan.name} - ${nobetOzeti}`;
       setKayitliGenelNobetler(prev => {
         const newList = [...prev, ozet];
-        localStorage.setItem('kayitliGenelNobetler', JSON.stringify(newList));
+        // KURAL 16: Production ortamında localStorage yasak - kayıt disabled
         return newList;
       });
       setOrtaAlanlar(prev => prev.filter(a => a.id !== alan.id));
@@ -187,8 +181,8 @@ export default function PersonelNobetTanimlama() {
       setExpandedNobetSaati({});
       setExpandedAlanId(null);
       setTimeout(() => {
-        const updated = JSON.parse(localStorage.getItem('kayitliGenelNobetler') || '[]');
-        if (updated.length === 0) localStorage.removeItem('kayitliGenelNobetler');
+            // KURAL 16: Production ortamında localStorage yasak - işlem disabled
+    console.log('Demo: Genel nöbet silindi');
       }, 100);
     }
   };
@@ -197,15 +191,13 @@ export default function PersonelNobetTanimlama() {
     if (tip === 'ozel') {
       setKayitliOzelNobetler(prev => {
         const updated = prev.filter(item => item !== ozet);
-        localStorage.setItem('kayitliOzelNobetler', JSON.stringify(updated));
-        if (updated.length === 0) localStorage.removeItem('kayitliOzelNobetler');
+        // KURAL 16: Production ortamında localStorage yasak - kayıt disabled
         return updated;
       });
     } else {
       setKayitliGenelNobetler(prev => {
         const updated = prev.filter(item => item !== ozet);
-        localStorage.setItem('kayitliGenelNobetler', JSON.stringify(updated));
-        if (updated.length === 0) localStorage.removeItem('kayitliGenelNobetler');
+        // KURAL 16: Production ortamında localStorage yasak - kayıt disabled
         return updated;
       });
       const alanAdi = ozet.split(' - ')[0];
@@ -583,8 +575,7 @@ export default function PersonelNobetTanimlama() {
                         onClick={() => {
                           setKayitliGenelNobetler(prev => {
                             const updated = prev.filter(item => !item.startsWith(alanAdi + ' - '));
-                            localStorage.setItem('kayitliGenelNobetler', JSON.stringify(updated));
-                            if (updated.length === 0) localStorage.removeItem('kayitliGenelNobetler');
+                                    // KURAL 16: Production ortamında localStorage yasak - kayıt disabled
                             return updated;
                           });
                           const ilgili = kalanAlanlar.find(a => a.name === alanAdi);

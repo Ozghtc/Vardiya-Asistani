@@ -436,7 +436,7 @@ const AlanTanimlama: React.FC = () => {
   const handleRemoveArea = (id: number) => {
     const updatedAreas = areas.filter(area => area.id !== id);
     setAreas(updatedAreas);
-    localStorage.setItem('tanimliAlanlar', JSON.stringify(updatedAreas));
+          // KURAL 16: Production ortamında localStorage yasak - kayıt disabled
   };
 
   return (

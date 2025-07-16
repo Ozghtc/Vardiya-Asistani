@@ -67,7 +67,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles 
           <p className="text-gray-600 mb-6">Bu sayfaya erişim yetkiniz bulunmamaktadır.</p>
           <button
             onClick={() => {
-              localStorage.removeItem('currentUser');
+              // KURAL 16: Production ortamında localStorage yasak - temizleme disabled
               window.location.href = '/';
             }}
             className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"

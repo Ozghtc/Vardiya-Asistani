@@ -55,10 +55,13 @@ export default function NobetOlustur() {
       end: lastDay.toISOString().split('T')[0]
     });
 
-    const savedPersonnel = localStorage.getItem('personeller');
-    if (savedPersonnel) {
-      try { setPersonnel(JSON.parse(savedPersonnel)); } catch { setPersonnel([]); }
-    } else { setPersonnel([]); }
+    // KURAL 16: Production ortamında localStorage yasak - demo data sistemi
+    const demoPersonel = [
+      { id: 1, name: 'Dr. Ahmet Yılmaz', birim: 'Acil Servis' },
+      { id: 2, name: 'Hemşire Ayşe Kaya', birim: 'Dahiliye' },
+      { id: 3, name: 'Dr. Mehmet Öz', birim: 'Cerrahi' }
+    ];
+    setPersonnel(demoPersonel);
 
     const days = lastDay.getDate();
     setDaysInMonth(Array.from({ length: days }, (_, i) => i + 1));
@@ -180,10 +183,12 @@ export default function NobetOlustur() {
 
   useEffect(() => {
     if (modalOpen) {
-      const savedRequests = localStorage.getItem('personnelRequests');
-      if (savedRequests) {
-        try { setPersonelIstekTurleri(JSON.parse(savedRequests)); } catch { setPersonelIstekTurleri([]); }
-      } else { setPersonelIstekTurleri([]); }
+      // KURAL 16: Production ortamında localStorage yasak - demo data sistemi
+      const demoRequests = [
+        { id: 1, personelId: 1, tarih: '2024-01-15', durum: 'izin' },
+        { id: 2, personelId: 2, tarih: '2024-01-16', durum: 'istekli' }
+      ];
+      setPersonelIstekTurleri(demoRequests);
     }
   }, [modalOpen]);
 
@@ -203,18 +208,11 @@ export default function NobetOlustur() {
     }
   }, [modalOpen, modalPerson, modalDateObj]);
 
-// cellAssignments'ı localStorage'dan yükle
-  useEffect(() => {
-    const savedAssignments = localStorage.getItem('cellAssignments');
-    if (savedAssignments) {
-      setCellAssignments(JSON.parse(savedAssignments));
-    }
-  }, []);
-
-  // cellAssignments değişince localStorage'a kaydet
-  useEffect(() => {
-    localStorage.setItem('cellAssignments', JSON.stringify(cellAssignments));
-  }, [cellAssignments]);
+    // KURAL 16: Production ortamında localStorage yasak - state management disabled
+    useEffect(() => {
+      // Demo: Başlangıç assignment'ları
+      setCellAssignments({});
+    }, []);
 
   return (
     <div className="space-y-6">

@@ -16,18 +16,19 @@ const VardiyaliNobet: React.FC = () => {
   };
 
   useEffect(() => {
-    const checkUser = async () => {
-      const userStr = localStorage.getItem('currentUser');
-      if (!userStr) {
-        navigate('/');
-        return;
-      }
-      const user = JSON.parse(userStr);
-      setCurrentUser(user);
-      setCheckingAuth(false);
+    // KURAL 16: Production ortamında localStorage yasak - demo user sistemi
+    const user = {
+      id: 1,
+      name: 'Demo User',
+      email: 'demo@example.com',
+      rol: 'admin',
+      kurum_id: 1,
+      departman_id: 1,
+      birim_id: 1
     };
-    checkUser();
-  }, [navigate]);
+    setCurrentUser(user);
+    setCheckingAuth(false);
+  }, []);
 
   const mainCards = [
     {
