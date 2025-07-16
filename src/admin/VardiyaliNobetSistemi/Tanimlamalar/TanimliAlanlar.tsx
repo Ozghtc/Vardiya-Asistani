@@ -71,6 +71,8 @@ const TanimliAlanlar: React.FC = () => {
       try {
         const response = await apiRequest('/api/v1/data/table/18');
         if (response.success && response.data.rows) {
+          console.log('📊 API\'den gelen ham veri:', response.data.rows);
+          
           const apiData = response.data.rows
             .filter((row: any) => 
               row.kurum_id === currentUser.kurum_id && 
@@ -96,7 +98,7 @@ const TanimliAlanlar: React.FC = () => {
                 return days;
               }, new Set()).size;
               
-              return {
+              const mappedRow = {
                 id: parseInt(row.id.toString(), 10), // ID'yi number'a çevir
                 alan_adi: row.alan_adi,
                 aciklama: row.aciklama,
@@ -112,10 +114,14 @@ const TanimliAlanlar: React.FC = () => {
                 activeDays: activeDays,
                 nobetler: nobetler
               };
+              
+              console.log('🔄 Alan map edildi:', { originalId: row.id, mappedId: mappedRow.id, name: mappedRow.alan_adi });
+              return mappedRow;
             });
           
           alanData = [...alanData, ...apiData];
           console.log('✅ API\'den gelen alan sayısı:', apiData.length);
+          console.log('📋 Final alan ID\'leri:', alanData.map(a => ({ id: a.id, name: a.alan_adi })));
         }
       } catch (error) {
         console.error('API hatası:', error);
@@ -229,18 +235,35 @@ const TanimliAlanlar: React.FC = () => {
 
     try {
       setLoading(true);
+      console.log('🗑️ Alan siliniyor, ID:', alanId);
+      
       const response = await apiRequest(`/api/v1/data/table/18/rows/${alanId}`, {
         method: 'DELETE',
       });
       
       if (response.success) {
+        console.log('✅ Alan başarıyla silindi:', response.data);
         loadAlanlar(); // Listeyi yenile
       } else {
+        console.error('❌ Alan silme hatası:', response.error);
         alert('Alan silinirken hata oluştu: ' + (response.error || 'Bilinmeyen hata'));
       }
-    } catch (error) {
-      console.error('Alan silme hatası:', error);
-      alert('Alan silinirken hata oluştu');
+    } catch (error: any) {
+      console.error('❌ Alan silme exception:', error);
+      
+      // Hata türüne göre mesaj
+      let errorMessage = 'Alan silinirken hata oluştu';
+      
+      if (error.message && error.message.includes('Row not found')) {
+        errorMessage = 'Bu alan bulunamadı. Sayfayı yenileyin.';
+        loadAlanlar(); // Listeyi yenile
+      } else if (error.message && error.message.includes('Failed to delete row')) {
+        errorMessage = 'Silme işlemi başarısız. Lütfen tekrar deneyin.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      alert(errorMessage);
     } finally {
       setLoading(false);
     }
