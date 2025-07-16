@@ -37,25 +37,71 @@ const API_BASE_URL = import.meta.env.PROD
 const HZM_API_KEY = 'hzm_1ce98c92189d4a109cd604b22bfd86b7';
 const isDev = false; // Production ortamında her zaman false
 
+// JWT Token yönetimi
+let jwtToken: string | null = null;
+let tokenExpiry: number | null = null;
+
+const getJWTToken = async (): Promise<string> => {
+  // Token mevcut ve henüz expire olmadıysa kullan
+  if (jwtToken && tokenExpiry && Date.now() < tokenExpiry) {
+    return jwtToken;
+  }
+  
+  // Yeni token al
+  try {
+    console.log('🔐 JWT Token alınıyor...');
+    
+    // API Key ile JWT token almayı dene
+    const response = await fetch('https://rare-courage-production.up.railway.app/api/v1/auth/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email: 'ozgurhzm@gmail.com',
+        apiKey: HZM_API_KEY
+      })
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      if (data.token) {
+        jwtToken = data.token;
+        tokenExpiry = Date.now() + (24 * 60 * 60 * 1000); // 24 saat
+        console.log('✅ JWT Token alındı');
+        return jwtToken;
+      }
+    }
+    
+    throw new Error('JWT Token alınamadı');
+  } catch (error) {
+    console.error('❌ JWT Token alma hatası:', error);
+    // Fallback olarak API key'i JWT token gibi kullan
+    return HZM_API_KEY;
+  }
+};
+
 const apiRequest = async (path: string, options: RequestInit = {}) => {
   try {
     // KURAL 13: Railway API bozulmuş - ÖNCE GERÇEKNİ DENE, SONRA MOCK
     console.log('⚠️ Railway API authentication bozulmuş - Önce gerçek API denenecek');
     console.log('🔄 Gerçek API Request:', { path, method: options.method || 'GET' });
     
-    // KURAL 16: Production ortamında çalışıyoruz - her zaman Netlify proxy kullan
+    // KURAL 16: Production ortamında çalışıyoruz - JWT token ile authentication
+    const token = await getJWTToken();
     const url = '/.netlify/functions/api-proxy';
     const requestOptions: RequestInit = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-HZM-API-Key': HZM_API_KEY, // API key'i header'a ekle
+        'X-HZM-API-Key': HZM_API_KEY, // Fallback için API key
       },
       body: JSON.stringify({
         path,
         method: options.method || 'GET',
         body: options.body ? JSON.parse(options.body as string) : undefined,
-        apiKey: HZM_API_KEY, // API key'i body'de de gönder
+        jwtToken: token, // JWT token gönder
+        apiKey: HZM_API_KEY, // Fallback için API key
       }),
     };
 
