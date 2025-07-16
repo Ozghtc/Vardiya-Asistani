@@ -186,6 +186,16 @@ const PersonelListesi: React.FC = () => {
     );
   };
 
+  const isKombinasyonVarMi = (gunler: string[], alanlar: number[]) => {
+    return nobetKombinasyonlari.some(kombinasyon => {
+      const ayniGunler = gunler.every(gun => kombinasyon.gunler.includes(gun)) && 
+                         kombinasyon.gunler.every(gun => gunler.includes(gun));
+      const ayniAlanlar = alanlar.every(alan => kombinasyon.alanlar.includes(alan)) && 
+                          kombinasyon.alanlar.every(alan => alanlar.includes(alan));
+      return ayniGunler && ayniAlanlar;
+    });
+  };
+
   const handleAlanToggle = (alanId: number) => {
     setSelectedAlanlar(prev => {
       const newSelected = prev.includes(alanId) 
@@ -212,6 +222,12 @@ const PersonelListesi: React.FC = () => {
 
   const handleNobetEkle = () => {
     if (selectedGunler.length === 0 || selectedAlanlar.length === 0) return;
+    
+    // Aynı kombinasyon zaten var mı kontrol et
+    if (isKombinasyonVarMi(selectedGunler, selectedAlanlar)) {
+      alert('Bu gün-alan kombinasyonu zaten eklenmiş!');
+      return;
+    }
     
     // Seçili alanların isimlerini al
     const alanAdlari = selectedAlanlar.map(alanId => {
