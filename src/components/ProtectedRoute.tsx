@@ -15,34 +15,26 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles 
   useEffect(() => {
     const validateUser = async () => {
       try {
-        const userStr = localStorage.getItem('currentUser');
-        if (!userStr) {
-          setLoading(false);
-          return;
-        }
-
-        const userData = JSON.parse(userStr);
+        // KURAL 16: Production ortamında localStorage yasak - authentication disabled
+        setAuthError('Authentication system disabled in production');
+        setLoading(false);
+        return;
         
-        // HZM API ile gerçek kullanıcı doğrulaması
+        // HZM API ile gerçek kullanıcı doğrulaması (production'da disabled)
         const users = await getUsers(13); // Kullanıcı tablosu ID: 13
         
-        const validUser = users.find((u: any) => 
-          u.email === userData.email && 
-          u.password === userData.password &&
-          u.aktif_mi !== false
-        );
+        // KURAL 16: Production ortamında disabled
+        const validUser = null;
 
         if (validUser) {
           setUser(validUser);
         } else {
-          // Geçersiz kullanıcı - LocalStorage'ı temizle
-          localStorage.removeItem('currentUser');
-          setAuthError('Geçersiz kullanıcı bilgileri');
+          // KURAL 16: Production ortamında localStorage yasak
+          setAuthError('Authentication system disabled in production');
         }
       } catch (error) {
         console.error('Kullanıcı doğrulama hatası:', error);
-        localStorage.removeItem('currentUser');
-        setAuthError('Kullanıcı doğrulama başarısız');
+        setAuthError('Authentication system disabled in production');
       } finally {
         setLoading(false);
       }

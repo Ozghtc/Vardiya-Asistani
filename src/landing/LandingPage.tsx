@@ -24,25 +24,10 @@ const LandingPage: React.FC = () => {
     title: ''
   });
 
-  // Mevcut kullanıcıyı kontrol et
+  // KURAL 16: Production ortamında localStorage yasak - session HZM API üzerinden
   useEffect(() => {
-    const checkCurrentUser = () => {
-      const userStr = localStorage.getItem('currentUser');
-      if (userStr) {
-        try {
-          const user = JSON.parse(userStr);
-          if (user.email && user.rol) {
-            // Kullanıcı zaten giriş yapmış, paneline yönlendir
-            redirectToUserPanel(user.rol);
-          }
-        } catch (error) {
-          // Bozuk veri varsa temizle
-          localStorage.removeItem('currentUser');
-        }
-      }
-    };
-
-    checkCurrentUser();
+    // Session kontrolü HZM API üzerinden yapılacak
+    console.log('🔐 Production ortamında session kontrolü devre dışı');
   }, []);
 
   const redirectToUserPanel = (role: string) => {
@@ -129,9 +114,7 @@ const LandingPage: React.FC = () => {
         loginTime: new Date().toISOString()
       };
 
-      // Güvenli storage
-      localStorage.setItem('currentUser', JSON.stringify(userWithSession));
-      
+      // KURAL 16: Production ortamında localStorage yasak - direkt yönlendirme
       console.log('✅ Güvenli login başarılı:', {
         email: user.email,
         rol: user.rol,
@@ -294,18 +277,12 @@ const LandingPage: React.FC = () => {
       if (userResult.success) {
         console.log('✅ Kayıt başarılı');
         
-        // Otomatik login
-        const loginUser = {
-          ...userData,
-          id: userResult.data?.row?.id || Date.now(),
-          kurum_adi: organization,
-          departman_adi: 'Genel Müdürlük',
-          birim_adi: 'Yönetim',
-          lastActivity: new Date().toISOString(),
-          loginTime: new Date().toISOString()
-        };
-
-        localStorage.setItem('currentUser', JSON.stringify(loginUser));
+        // KURAL 16: Production ortamında localStorage yasak - direkt yönlendirme
+        console.log('✅ Kayıt başarılı, direkt yönlendirme:', {
+          email: userData.email,
+          rol: rol,
+          kurum: organization
+        });
         
         setShowRegister(false);
         redirectToUserPanel(rol);
