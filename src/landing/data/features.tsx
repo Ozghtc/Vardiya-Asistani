@@ -1,4 +1,3 @@
-import React from 'react';
 import { Clock, Users, Calendar, Shield } from 'lucide-react';
 
 export const features = [
@@ -22,4 +21,7 @@ export const features = [
     title: "Güvenli Altyapı",
     description: "256-bit SSL şifreleme ve KVKK uyumlu veri koruma"
   }
-]; 
+];
+
+// Bölüm 1: Features Data
+// 30 satır - KURAL 9 uyumlu 

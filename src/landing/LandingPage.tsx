@@ -8,18 +8,9 @@ import RegisterModal from './components/RegisterModal';
 import Footer from './components/Footer';
 
 const LandingPage: React.FC = () => {
-  const { handleLogin, handleRegister, loginLoading, loginError, registerLoading, registerError } = useAuth();
   const { 
-    showLogin, 
-    showRegister, 
-    loginData, 
-    registerData, 
-    showPassword,
-    setShowLogin, 
-    setShowRegister, 
-    setLoginData, 
-    setRegisterData,
-    setShowPassword 
+    openLogin, 
+    openRegister
   } = useModals();
 
   return (
@@ -45,13 +36,13 @@ const LandingPage: React.FC = () => {
             </div>
             <div className="flex items-center gap-4">
               <button
-                onClick={() => setShowLogin(true)}
+                onClick={openLogin}
                 className="text-gray-700 hover:text-blue-600 font-medium transition-colors"
               >
                 Giriş Yap
               </button>
               <button
-                onClick={() => setShowRegister(true)}
+                onClick={openRegister}
                 className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-2 rounded-lg font-medium hover:shadow-lg transition-all duration-300"
               >
                 Ücretsiz Başla
@@ -63,48 +54,18 @@ const LandingPage: React.FC = () => {
 
       {/* Main Content */}
       <LandingContent 
-        onShowLogin={() => setShowLogin(true)}
-        onShowRegister={() => setShowRegister(true)}
+        onShowLogin={openLogin}
+        onShowRegister={openRegister}
       />
 
       {/* Footer */}
       <Footer />
 
       {/* Login Modal */}
-      {showLogin && (
-        <LoginModal
-          isOpen={showLogin}
-          onClose={() => setShowLogin(false)}
-          onSwitchToRegister={() => {
-            setShowLogin(false);
-            setShowRegister(true);
-          }}
-          loginData={loginData}
-          setLoginData={setLoginData}
-          showPassword={showPassword}
-          setShowPassword={setShowPassword}
-          onLogin={handleLogin}
-          loading={loginLoading}
-          error={loginError}
-        />
-      )}
+      <LoginModal />
 
       {/* Register Modal */}
-      {showRegister && (
-        <RegisterModal
-          isOpen={showRegister}
-          onClose={() => setShowRegister(false)}
-          onSwitchToLogin={() => {
-            setShowRegister(false);
-            setShowLogin(true);
-          }}
-          registerData={registerData}
-          setRegisterData={setRegisterData}
-          onRegister={handleRegister}
-          loading={registerLoading}
-          error={registerError}
-        />
-      )}
+      <RegisterModal />
     </div>
   );
 };
