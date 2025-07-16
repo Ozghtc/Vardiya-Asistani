@@ -748,124 +748,125 @@ const PersonelListesi: React.FC = () => {
               {nobetFilter === 'tanimsiz' && ' (nöbet tanımsız)'}
             </p>
           </div>
-        
-        <div className="overflow-hidden">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-gray-50 border-b border-gray-100">
-                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-600">Ad Soyad</th>
-                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-600">TC Kimlik No</th>
-                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-600">Ünvan</th>
-                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-600">Durum</th>
-                <th className="text-right px-6 py-4 text-sm font-semibold text-gray-600">İşlem</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {filteredPersonnel.map((person) => {
-                const personelNobetler = getPersonelNobetTanimlama(person.id);
-                
-                return (
-                  <React.Fragment key={person.id}>
-                    {/* Ana personel satırı */}
-                    <tr className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="font-medium text-gray-900">{person.ad} {person.soyad}</div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-600">{person.tcno}</div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-blue-600">{person.unvan}</div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          person.aktif_mi 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-red-100 text-red-800'
-                        }`}>
-                          {person.aktif_mi ? 'Aktif' : 'Pasif'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <button
-                          onClick={() => handleNobetTanimlamaOpen(person)}
-                          className="inline-flex items-center gap-1 px-3 py-1 text-sm bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
-                        >
-                          <Calendar className="w-4 h-4" />
-                          Nöbet Tanımla
-                        </button>
-                      </td>
-                    </tr>
-                    
-                    {/* Kayıtlı nöbet tanımlamaları */}
-                    {personelNobetler.map((nobet) => {
-                      try {
-                        const gunlerArray = JSON.parse(nobet.gunler);
-                        const alanlarArray = JSON.parse(nobet.alan_adlari);
-                        
-                        return (
-                          <React.Fragment key={nobet.id}>
-                            {/* Günler satırı */}
-                            <tr className="bg-blue-50">
-                              <td className="px-6 py-2 text-xs text-gray-600">
-                                <div className="flex items-center gap-1">
-                                  <Calendar className="w-3 h-3" />
-                                  <span className="font-medium">Günler:</span>
-                                </div>
-                              </td>
-                              <td className="px-6 py-2 text-xs text-gray-700" colSpan={2}>
-                                {gunlerArray.join(', ')}
-                              </td>
-                              <td className="px-6 py-2"></td>
-                              <td className="px-6 py-2"></td>
-                            </tr>
-                            
-                            {/* Alanlar satırı */}
-                            <tr className="bg-green-50">
-                              <td className="px-6 py-2 text-xs text-gray-600">
-                                <div className="flex items-center gap-1">
-                                  <Building2 className="w-3 h-3" />
-                                  <span className="font-medium">Alanlar:</span>
-                                </div>
-                              </td>
-                              <td className="px-6 py-2 text-xs text-gray-700" colSpan={2}>
-                                {alanlarArray.join(', ')}
-                              </td>
-                              <td className="px-6 py-2"></td>
-                              <td className="px-6 py-2"></td>
-                            </tr>
-                          </React.Fragment>
-                        );
-                      } catch (error) {
-                        console.error('JSON parse hatası:', error, nobet);
-                        return null;
-                      }
-                    })}
-                  </React.Fragment>
-                );
-              })}
-            </tbody>
-          </table>
+          
+          <div className="overflow-hidden">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-100">
+                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-600">Ad Soyad</th>
+                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-600">TC Kimlik No</th>
+                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-600">Ünvan</th>
+                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-600">Durum</th>
+                  <th className="text-right px-6 py-4 text-sm font-semibold text-gray-600">İşlem</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {filteredPersonnel.map((person) => {
+                  const personelNobetler = getPersonelNobetTanimlama(person.id);
+                  
+                  return (
+                    <React.Fragment key={person.id}>
+                      {/* Ana personel satırı */}
+                      <tr className="hover:bg-gray-50 transition-colors">
+                        <td className="px-6 py-4">
+                          <div className="font-medium text-gray-900">{person.ad} {person.soyad}</div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-sm text-gray-600">{person.tcno}</div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-sm text-blue-600">{person.unvan}</div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            person.aktif_mi 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {person.aktif_mi ? 'Aktif' : 'Pasif'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <button
+                            onClick={() => handleNobetTanimlamaOpen(person)}
+                            className="inline-flex items-center gap-1 px-3 py-1 text-sm bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
+                          >
+                            <Calendar className="w-4 h-4" />
+                            Nöbet Tanımla
+                          </button>
+                        </td>
+                      </tr>
+                      
+                      {/* Kayıtlı nöbet tanımlamaları */}
+                      {personelNobetler.map((nobet) => {
+                        try {
+                          const gunlerArray = JSON.parse(nobet.gunler);
+                          const alanlarArray = JSON.parse(nobet.alan_adlari);
+                          
+                          return (
+                            <React.Fragment key={nobet.id}>
+                              {/* Günler satırı */}
+                              <tr className="bg-blue-50">
+                                <td className="px-6 py-2 text-xs text-gray-600">
+                                  <div className="flex items-center gap-1">
+                                    <Calendar className="w-3 h-3" />
+                                    <span className="font-medium">Günler:</span>
+                                  </div>
+                                </td>
+                                <td className="px-6 py-2 text-xs text-gray-700" colSpan={2}>
+                                  {gunlerArray.join(', ')}
+                                </td>
+                                <td className="px-6 py-2"></td>
+                                <td className="px-6 py-2"></td>
+                              </tr>
+                              
+                              {/* Alanlar satırı */}
+                              <tr className="bg-green-50">
+                                <td className="px-6 py-2 text-xs text-gray-600">
+                                  <div className="flex items-center gap-1">
+                                    <Building2 className="w-3 h-3" />
+                                    <span className="font-medium">Alanlar:</span>
+                                  </div>
+                                </td>
+                                <td className="px-6 py-2 text-xs text-gray-700" colSpan={2}>
+                                  {alanlarArray.join(', ')}
+                                </td>
+                                <td className="px-6 py-2"></td>
+                                <td className="px-6 py-2"></td>
+                              </tr>
+                            </React.Fragment>
+                          );
+                        } catch (error) {
+                          console.error('JSON parse hatası:', error, nobet);
+                          return null;
+                        }
+                      })}
+                    </React.Fragment>
+                  );
+                })}
+              </tbody>
+            </table>
 
-          {filteredPersonnel.length === 0 && (
-            <div className="text-center py-12">
-              <User2 className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500">
-                {nobetFilter === 'tum' && 'Henüz personel kaydı bulunmuyor'}
-                {nobetFilter === 'tanimli' && 'Nöbet tanımlı personel bulunmuyor'}
-                {nobetFilter === 'tanimsiz' && 'Nöbet tanımsız personel bulunmuyor'}
-              </p>
-              {nobetFilter === 'tum' && (
-                <button
-                  onClick={() => navigate('/personel-ekle')}
-                  className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
-                >
-                  <Plus className="w-5 h-5" />
-                  <span>İlk Personeli Ekle</span>
-                </button>
-              )}
-            </div>
-          )}
+            {filteredPersonnel.length === 0 && (
+              <div className="text-center py-12">
+                <User2 className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                <p className="text-gray-500">
+                  {nobetFilter === 'tum' && 'Henüz personel kaydı bulunmuyor'}
+                  {nobetFilter === 'tanimli' && 'Nöbet tanımlı personel bulunmuyor'}
+                  {nobetFilter === 'tanimsiz' && 'Nöbet tanımsız personel bulunmuyor'}
+                </p>
+                {nobetFilter === 'tum' && (
+                  <button
+                    onClick={() => navigate('/personel-ekle')}
+                    className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
+                  >
+                    <Plus className="w-5 h-5" />
+                    <span>İlk Personeli Ekle</span>
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -1058,7 +1059,8 @@ const PersonelListesi: React.FC = () => {
               <Check className="w-4 h-4" />
               Kaydet
             </button>
-                  </div>
+          </div>
+        </div>
       </div>
     );
   };
