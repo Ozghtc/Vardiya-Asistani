@@ -1,11 +1,11 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User } from '../landing/types/auth.types';
+import { User, EnrichedUser } from '../landing/types/auth.types';
 
 interface AuthContextType {
-  user: User | null;
-  setUser: (user: User | null) => void;
+  user: EnrichedUser | null;
+  setUser: (user: EnrichedUser | null) => void;
   isAuthenticated: boolean;
-  login: (user: User) => void;
+  login: (user: EnrichedUser) => void;
   logout: () => void;
 }
 
@@ -24,9 +24,9 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<EnrichedUser | null>(null);
 
-  const login = (userData: User) => {
+  const login = (userData: EnrichedUser) => {
     console.log('🔐 AuthContext: Kullanıcı giriş yaptı:', userData);
     setUser(userData);
   };

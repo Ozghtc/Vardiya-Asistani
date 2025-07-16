@@ -1,22 +1,14 @@
 import React from 'react';
 import { BellRing, User, Clock } from 'lucide-react';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
+import { useAuthContext } from '../../contexts/AuthContext';
 
 const Header: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user: currentUser, logout } = useAuthContext();
   const [showMenu, setShowMenu] = React.useState(false);
   const [currentTime, setCurrentTime] = React.useState<{date: string, time: string} | null>(null);
-  const [currentUser, setCurrentUser] = React.useState<{
-    ad?: string;
-    name?: string;
-    role?: string;
-    rol?: string;
-    kurum_adi?: string;
-    departman_adi?: string;
-    birim_adi?: string;
-    email?: string;
-  } | null>(null);
 
   React.useEffect(() => {
     const updateTime = () => {
@@ -30,24 +22,10 @@ const Header: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // AuthContext'den kullanıcı bilgilerini al - Demo veri gömme kaldırıldı
   React.useEffect(() => {
-    const validateAndSetUser = () => {
-      // KURAL 16: Production ortamında localStorage yasak - authentication disabled
-      console.log('🔒 Production ortamında authentication sistem devre dışı');
-      
-      // Production ortamında varsayılan kullanıcı (demo amaçlı)
-      setCurrentUser({
-        name: 'Demo Kullanıcı',
-        email: 'demo@vardiyapro.com',
-        rol: 'yonetici',
-        kurum_adi: 'Demo Kurum',
-        departman_adi: 'Demo Departman',
-        birim_adi: 'Demo Birim'
-      });
-    };
-
-    validateAndSetUser();
-  }, [navigate]);
+    console.log('🔐 Header: AuthContext kullanıcı bilgileri:', currentUser);
+  }, [currentUser]);
 
   const getPageTitle = () => {
     switch (location.pathname) {
@@ -81,7 +59,7 @@ const Header: React.FC = () => {
   const handleLogout = () => {
     // KURAL 16: Production ortamında localStorage yasak - direkt yönlendirme
     console.log('🔒 Production logout - landing page\'e yönlendiriliyor');
-    setCurrentUser(null);
+    logout();
     setShowMenu(false);
     navigate('/');
   };
@@ -92,7 +70,7 @@ const Header: React.FC = () => {
       return;
     }
     
-    const role = (currentUser.rol || currentUser.role || '').toLowerCase();
+    const role = (currentUser.rol || '').toLowerCase();
     if (role === 'admin') {
       navigate('/admin');
     } else if (role === 'yonetici') {
@@ -126,7 +104,7 @@ const Header: React.FC = () => {
           
           {/* Orta: kurum adı */}
           <div className="flex flex-col items-center justify-center flex-1">
-            {currentUser && (currentUser.rol || currentUser.role || '').toLowerCase() !== 'admin' && (
+            {currentUser && currentUser.rol.toLowerCase() !== 'admin' && (
               <>
                 <span className="font-extrabold text-2xl md:text-3xl text-gray-800 tracking-wide uppercase text-center pt-3" style={{letterSpacing: '0.04em'}}>
                   {currentUser.kurum_adi || 'Sistem'}
@@ -144,25 +122,25 @@ const Header: React.FC = () => {
             <div className="flex flex-col items-end leading-tight mt-0.5">
               {/* İsim - Güvenli gösterim */}
               <span className="text-sm font-bold text-blue-700" title={currentUser.email || 'Kullanıcı'}>
-                {currentUser.ad || currentUser.name || 'Kullanıcı'}
+                {currentUser.name || 'Kullanıcı'}
               </span>
               
               {/* Yetki (Buton) */}
               <button
                 onClick={() => {
-                  const role = (currentUser.rol || currentUser.role || '').toLowerCase();
+                  const role = (currentUser.rol || '').toLowerCase();
                   if (role === 'admin') navigate('/admin');
                   else if (role === 'yonetici') navigate('/vardiyali-nobet');
                   else navigate('/personel/panel');
                 }}
                 className={`mt-1 text-sm font-bold px-3 py-0.5 rounded shadow-sm transition cursor-pointer focus:outline-none
-                  ${((currentUser.rol || currentUser.role || '').toLowerCase() === 'admin') ? 'bg-red-100 text-red-700 hover:bg-red-200' :
-                    ((currentUser.rol || currentUser.role || '').toLowerCase() === 'yonetici') ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' :
+                  ${(currentUser.rol.toLowerCase() === 'admin') ? 'bg-red-100 text-red-700 hover:bg-red-200' :
+                    (currentUser.rol.toLowerCase() === 'yonetici') ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' :
                     'bg-green-100 text-green-700 hover:bg-green-200'}`}
                 title="Kendi paneline git"
               >
-                {((currentUser.rol || currentUser.role || '').toLowerCase() === 'admin') ? 'Admin' : 
-                 ((currentUser.rol || currentUser.role || '').toLowerCase() === 'yonetici') ? 'Yönetici' : 'Personel'}
+                {(currentUser.rol.toLowerCase() === 'admin') ? 'Admin' : 
+                 (currentUser.rol.toLowerCase() === 'yonetici') ? 'Yönetici' : 'Personel'}
               </button>
               
               {/* Tarih & saat */}
@@ -195,7 +173,7 @@ const Header: React.FC = () => {
                 <div className="absolute right-0 mt-2 w-48 bg-white border rounded shadow-lg z-50">
                   <div className="px-4 py-3 border-b">
                     <p className="text-sm font-medium text-gray-900">
-                      {currentUser.ad || currentUser.name || 'Kullanıcı'}
+                      {currentUser.name || 'Kullanıcı'}
                     </p>
                     <p className="text-sm text-gray-500 truncate">
                       {currentUser.email || 'Email bilgisi yok'}
