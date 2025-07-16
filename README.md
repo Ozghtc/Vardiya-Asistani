@@ -12,7 +12,7 @@ npm run dev
 
 Başlatıldıktan sonra uygulamaya şu adresten erişebilirsiniz:
 
-[http://localhost:5173](http://localhost:5173)
+[https://vardiyaasistani.netlify.app](https://vardiyaasistani.netlify.app)
 
 ## Kurulum
 

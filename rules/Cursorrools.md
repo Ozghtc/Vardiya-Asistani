@@ -12,10 +12,10 @@
 
 ---
 
-## 2. Localhost ve Otomasyon
+## 2. Production Ortamı ve Otomasyon
 
-* Bir işlem tamamlandığında, **localhost otomatik olarak yeniden başlatılabilir** hale gelmelidir.
-* Kullanıcıdan **manuel yeniden başlatma beklenmemelidir.**
+* Bir işlem tamamlandığında, **production ortamı otomatik olarak güncellenir** hale gelmelidir.
+* Kullanıcıdan **manuel deployment beklenmemelidir.**
 
 ---
 
@@ -172,3 +172,62 @@
 🔍 Açıklama: HZM API anahtarı yetersiz
 ✅ Çözüm: Direkt HZM panelinden kontrol edilmeli
 ```
+
+---
+
+## 16. Yayın Ortamı (Production) Zorunluluğu ve Local Bağlantı Yasağı
+
+**Uygulama artık Netlify, Railway veya benzeri bir yayına (production) kurulmuş ve API bağlantısı aktif hale gelmişse; bundan sonraki tüm işlemler yayın ortamına göre yapılmalı, Cursor hiçbir şekilde yerel (local) bağlantı, test, öneri, düzeltme yapmamalıdır.**
+
+### ❌ Yasaklanan Tüm Davranışlar:
+
+#### 1. Yerel test ifadesi:
+Cursor aşağıdaki gibi ifadeler kullanmamalı ve kullanıcıyı bu tür yönlendirmelere teşvik etmemelidir:
+
+* "Localde çalışıyor olabilir"
+* "Yerelde test ettim, sorun görünmüyor"
+* "Localden veri geldi ama canlıda bozulmuş"
+* "Yerel log alarak kontrol eder misin?"
+
+#### 2. Yerel bağlantı önerisi veya komutu:
+* `localhost:3000`, `127.0.0.1`, `vite`, `npm run dev` gibi bağlantılar ve komutlar kesinlikle kullanılmamalı ve önermemelidir.
+
+#### 3. Local kaynaklı düzeltme girişimi:
+* Her türlü hata kontrolü, bileşen analizi, API testi veya veri akışı analizi yalnızca yayın ortamındaki bağlantı üzerinden yapılmalıdır.
+* Sadece `https://...netlify.app`, `https://...railway.app` gibi production URL'leri kullanılmalıdır.
+
+### 🧹 Temizlik Zorunluluğu:
+
+Eğer sistemde hali hazırda geliştirilmiş veya açılmış olan herhangi bir sayfa, component veya modül içinde:
+
+* `localhost`, `127.0.0.1`, `vite`, `file://` gibi yerel bağlantılar
+* `console.log("localde test ettim")` gibi açıklamalar
+* Geçici mock dosyalar, sahte veriler
+
+bulunuyorsa:
+
+**🔧 Cursor bunları tespit etmeli ve otomatik olarak temizlemelidir.**
+
+#### Temizlik işlemi sırasında:
+
+* Yerel bağlantılar canlı bağlantı adresiyle değiştirilmelidir.
+* Geçici mock veri dosyaları veya local API bağlantıları sistemden kaldırılmalıdır.
+* Gerekirse kullanıcıya şöyle bir uyarı verilebilir:
+
+```
+❗ Sayfa içinde local bağlantılar tespit edildi. 
+Bunlar sistemden kaldırıldı ve canlı bağlantılarla değiştirildi.
+```
+
+### ✅ Uygulanacak Sistem Davranışı:
+
+* Tüm testler, hata düzeltmeleri ve veri kontrolleri **yayın ortamı üzerinde** gerçekleştirilmelidir.
+* Cursor, yalnızca **Netlify veya Railway üzerinden yayınlanan** API ve sayfa yapılarıyla işlem yapmalıdır.
+* Yerel ortamlar artık **referans kabul edilmemelidir**.
+* Production URL'leri:
+  * Frontend: `https://vardiyaasistani.netlify.app`
+  * Backend: `https://rare-courage-production.up.railway.app`
+
+### 🚨 Kritik Uyarı:
+
+Bu kural aktif olduktan sonra, Cursor'un herhangi bir yerel geliştirme ortamı önerisi **kesinlikle yasaktır** ve sistem tamamen production odaklı çalışmalıdır.

@@ -233,9 +233,8 @@ const LandingPage: React.FC = () => {
       const enrichedUser = await enrichUserWithNames(user);
       console.log('🔴 ENRICHED USER:', enrichedUser);
       
-      // Kullanıcıyı localStorage'a kaydet (session için)
-      localStorage.setItem('currentUser', JSON.stringify(enrichedUser));
-      console.log('🔴 SAVED TO LOCALSTORAGE:', enrichedUser);
+              // Kullanıcıyı localStorage'a kaydet (session için)
+        localStorage.setItem('currentUser', JSON.stringify(enrichedUser));
       
       // Popup'u kapat
       setShowLogin(false);
@@ -380,13 +379,11 @@ const LandingPage: React.FC = () => {
         created_at: new Date().toISOString()
       };
 
-      try {
-        localStorage.setItem('currentUser', JSON.stringify(loginUser));
-        console.log('✅ LocalStorage kaydetme başarılı');
-      } catch (error) {
-        console.error('❌ LocalStorage kaydetme hatası:', error);
-        alert('Kayıt tamamlandı ancak oturum açma sırasında hata oluştu');
-      }
+              try {
+          localStorage.setItem('currentUser', JSON.stringify(loginUser));
+        } catch (error) {
+          alert('Kayıt tamamlandı ancak oturum açma sırasında hata oluştu');
+        }
 
         // 5. Başarı mesajı ve yönlendirme
         alert('Kayıt başarılı! Sisteme giriş yapılıyor...');

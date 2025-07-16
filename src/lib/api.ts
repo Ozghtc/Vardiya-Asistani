@@ -1,5 +1,5 @@
 const API_CONFIG = {
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'https://hzmbackandveritabani-production-c660.up.railway.app',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'https://rare-courage-production.up.railway.app',
   apiKey: import.meta.env.VITE_API_KEY || 'hzm_1ce98c92189d4a109cd604b22bfd86b7',
   projectId: import.meta.env.VITE_PROJECT_ID || '5',
   tableId: import.meta.env.VITE_TABLE_ID || '10',
@@ -41,147 +41,67 @@ const logError = (message: string, error?: any) => {
   }
 };
 
-const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
-  const method = options.method || 'GET';
-  
-  console.log('🔴 API REQUEST STARTED:', { endpoint, method, hasBody: !!options.body });
-  
-  logInfo('API Request BAŞLADI', {
-    endpoint,
-    method,
-    hasBody: !!options.body
-  });
+const API_BASE_URL = import.meta.env.PROD 
+  ? '/.netlify/functions/api-proxy'
+  : 'https://rare-courage-production.up.railway.app';
 
-  // Strateji 1: Netlify Functions Proxy kullan (DOKÜMANTASYONA GÖRE)
+const HZM_API_KEY = 'hzm_1ce98c92189d4a109cd604b22bfd86b7';
+
+const apiRequest = async (path: string, options: RequestInit = {}) => {
   try {
-    logInfo('Strateji 1: Netlify Functions Proxy deneniyor...');
-    
-    const proxyRequestData = {
-      path: endpoint,
-      method: method,
-      body: options.body || null,
-      apiKey: API_CONFIG.apiKey
-    };
+    const isDev = import.meta.env.DEV;
     
     if (isDev) {
-      console.log('📤 Proxy\'ye gönderilen data:', proxyRequestData);
-    }
-    
-    const proxyResponse = await fetch(API_CONFIG.proxyURL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(proxyRequestData),
-    });
-
-    if (isDev) {
-      console.log('📡 Proxy Response Status:', proxyResponse.status);
-      console.log('📡 Proxy Response Headers:', Object.fromEntries(proxyResponse.headers.entries()));
-    }
-    
-    if (!proxyResponse.ok) {
-      const errorText = await proxyResponse.text();
-      logWarning(`Proxy HTTP Error (${proxyResponse.status})`, errorText);
-      throw new Error(`Proxy HTTP error! status: ${proxyResponse.status}`);
-    }
-    
-    let data;
-    try {
-      data = await proxyResponse.json();
-    } catch (jsonError) {
-      logError('Proxy JSON parse hatası', jsonError);
-      const errorText = await proxyResponse.text();
-      throw new Error('Proxy response is not valid JSON');
-    }
-    
-    // API success kontrolü (dokümantasyona göre)
-    if (data.success === false) {
-      logWarning('API Error Response:', data);
-      throw new Error(data.error || 'API request failed');
-    }
-    
-    logSuccess('Proxy Success', data);
-    return data;
-  } catch (error) {
-    logWarning('Strateji 1 başarısız (Netlify Proxy)', isDev ? error : 'Proxy hatası');
-    
-    // Strateji 2: Doğrudan API'yi dene (X-API-Key ile)
-    logInfo('Strateji 2: Direct API deneniyor...');
-    const baseUrl = `${API_CONFIG.baseURL}${endpoint}`;
-    
-    try {
-      const directResponse = await fetch(baseUrl, {
-        method,
-        mode: 'cors',
-        credentials: 'omit',
+      // Development: Direct HZM API connection
+      const url = `${API_BASE_URL}${path}`;
+      const requestOptions: RequestInit = {
+        ...options,
         headers: {
           'Content-Type': 'application/json',
-          'X-API-Key': API_CONFIG.apiKey,
-          'Accept': 'application/json',
+          'X-API-Key': HZM_API_KEY,
+          ...options.headers,
         },
-        body: options.body,
-      });
+      };
+
+      console.log('🚀 Direct API Request:', { url, method: requestOptions.method });
       
-      if (directResponse.ok) {
-        const directData = await directResponse.json();
-        
-        // API success kontrolü
-        if (directData.success === false) {
-          logWarning('Direct API Error Response:', directData);
-          throw new Error(directData.error || 'Direct API request failed');
-        }
-        
-        logSuccess('Strateji 2 başarılı (Direct API)', directData);
-        return directData;
-      } else {
-        logWarning(`Direct API HTTP Error (${directResponse.status})`);
-        const errorResponse = await directResponse.text();
-        logWarning('Direct API Error Details:', errorResponse);
+      const response = await fetch(url, requestOptions);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || `HTTP error! status: ${response.status}`);
       }
-    } catch (directError) {
-      logWarning('Strateji 2 başarısız (Direct API)', isDev ? directError : 'CORS/Network hatası');
-    }
-    
-    // Strateji 3: Public CORS Proxy'leri dene (sadece GET için)
-    if (method === 'GET') {
-      logInfo('Strateji 3: Public CORS Proxy deneniyor...');
-      for (const proxy of CORS_PROXIES) {
-        try {
-          const proxyUrl = proxy + encodeURIComponent(baseUrl);
-          if (isDev) {
-            console.log('🔄 Public Proxy:', proxy);
-          }
-          
-          const publicProxyResponse = await fetch(proxyUrl, {
-            headers: {
-              'X-API-Key': API_CONFIG.apiKey,
-            },
-          });
-          
-          if (publicProxyResponse.ok) {
-            const publicProxyData = await publicProxyResponse.json();
-            
-            // API success kontrolü
-            if (publicProxyData.success === false) {
-              logWarning('Public Proxy API Error:', publicProxyData);
-              continue;
-            }
-            
-            logSuccess('Strateji 3 başarılı (Public Proxy)', publicProxyData);
-            return publicProxyData;
-          }
-        } catch (publicProxyError) {
-          logWarning(`Public Proxy ${proxy} başarısız`, isDev ? publicProxyError : 'Bağlantı hatası');
-          continue;
-        }
+
+      return data;
+    } else {
+      // Production: Netlify proxy
+      const url = '/.netlify/functions/api-proxy';
+      const requestOptions: RequestInit = {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          path,
+          method: options.method || 'GET',
+          body: options.body ? JSON.parse(options.body as string) : undefined,
+        }),
+      };
+
+      console.log('🚀 Proxy API Request:', { url, path });
+      
+      const response = await fetch(url, requestOptions);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || `HTTP error! status: ${response.status}`);
       }
+
+      return data;
     }
-    
-    // Strateji 4: Mock response döndür (dokümantasyona göre güncellendi)
-    console.log('🔴 ALL STRATEGIES FAILED, RETURNING MOCK');
-    logInfo('Tüm stratejiler başarısız, güvenli mock response döndürülüyor');
-    return getMockResponse(endpoint, method);
+  } catch (error) {
+    console.error('API Request Error:', error);
+    throw error;
   }
 };
 

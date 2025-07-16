@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { useCapitalization } from '../../../hooks/useCapitalization';
 import { SuccessNotification } from '../../../components/ui/Notification';
 import TanimliAlanlar from './TanimliAlanlar';
+import { apiRequest } from '../../../lib/api';
 
 const colorMap = {
   '#DC2626': 'Kırmızı',
@@ -49,12 +50,15 @@ interface DayState {
 
 interface Area {
   id: number;
-  name: string;
-  description: string;
-  color: string;
-  dailyWorkHours: number;
-  shifts: Record<string, DayState>;
-  nobetler: { saat: number; name: string; hours: string; gunler: string[] }[];
+  alan_adi: string;
+  aciklama: string;
+  renk: string;
+  gunluk_mesai_saati: number;
+  vardiya_bilgileri: string;
+  aktif_mi: boolean;
+  kurum_id: string;
+  departman_id: string;
+  birim_id: string;
 }
 
 const vardiyalar = [
@@ -84,35 +88,27 @@ interface ToastProps {
   onClose: () => void;
 }
 
-const Toast = React.memo(({ message, show, onClose }: ToastProps) => {
-  if (!show) return null;
-
-  React.useEffect(() => {
-    const timer = setTimeout(() => {
-      onClose();
-    }, 3000);
-    return () => clearTimeout(timer);
+const Toast: React.FC<ToastProps> = ({ message, show, onClose }) => {
+  useEffect(() => {
+    if (show) {
+      const timer = setTimeout(() => {
+        onClose();
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
   }, [show, onClose]);
 
+  if (!show) return null;
+
   return (
-    <div className="fixed top-4 right-4 z-50 animate-fade-in">
-      <div className="bg-red-50 border-l-4 border-red-500 p-4 flex items-start shadow-lg rounded">
-        <div className="flex-shrink-0">
-          <AlertTriangle className="h-5 w-5 text-red-500" />
-        </div>
-        <div className="ml-3">
-          <p className="text-sm text-red-700">{message}</p>
-        </div>
-        <button 
-          onClick={onClose}
-          className="ml-4 flex-shrink-0 text-red-500 hover:text-red-700"
-        >
-          <X className="h-5 w-5" />
-        </button>
+    <div className="fixed top-4 right-4 z-50 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg">
+      <div className="flex items-center gap-2">
+        <AlertTriangle className="w-5 h-5" />
+        <span>{message}</span>
       </div>
     </div>
   );
-});
+};
 
 Toast.displayName = 'Toast';
 
@@ -129,6 +125,13 @@ const AlanTanimlama: React.FC = () => {
   const [isFormValid, setIsFormValid] = useState(false);
   const [usedColors, setUsedColors] = useState<string[]>([]);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  // Kullanıcı bilgilerini localStorage'dan al
+  const getCurrentUser = () => {
+    const userStr = localStorage.getItem('currentUser');
+    return userStr ? JSON.parse(userStr) : null;
+  };
 
   // Textarea için ayrı handler
   const handleDescriptionTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -149,14 +152,69 @@ const AlanTanimlama: React.FC = () => {
   );
 
   useEffect(() => {
-    const savedAreas = localStorage.getItem('tanimliAlanlar');
-    if (savedAreas) {
-      const areas = JSON.parse(savedAreas);
-      setAreas(areas);
-      const colors = areas.map((area: Area) => area.color);
-      setUsedColors(colors);
-    }
+    loadAreas();
   }, []);
+
+  // localStorage temizleme fonksiyonu
+  const clearLocalStorage = () => {
+    const confirmed = window.confirm(
+      'Tüm localStorage verileri silinecek. Bu işlem geri alınamaz. Devam etmek istiyor musunuz?'
+    );
+    
+    if (confirmed) {
+      // Alan ile ilgili localStorage'ları temizle
+      localStorage.removeItem('tanimliAlanlar');
+      localStorage.removeItem('kayitliGenelNobetler');
+      localStorage.removeItem('kayitliOzelNobetler');
+      
+      // State'leri sıfırla
+      setUsedColors([]);
+      setAreas([]);
+      setSelectedColor('');
+      
+      // Başarı mesajı
+      setErrorMessage('localStorage temizlendi!');
+      setShowError(true);
+      setTimeout(() => setShowError(false), 2000);
+    }
+  };
+
+  const loadAreas = async () => {
+    setLoading(true);
+    try {
+      const response = await apiRequest('/api/v1/data/table/18');
+      if (response.success) {
+        const areaData = response.data.rows.map((row: any) => ({
+          id: row.id,
+          alan_adi: row.alan_adi,
+          aciklama: row.aciklama || '',
+          renk: row.renk,
+          gunluk_mesai_saati: row.gunluk_mesai_saati || 40,
+          vardiya_bilgileri: row.vardiya_bilgileri || '{}',
+          aktif_mi: row.aktif_mi !== false,
+          kurum_id: row.kurum_id,
+          departman_id: row.departman_id,
+          birim_id: row.birim_id
+        }));
+        setAreas(areaData);
+        const colors = areaData.map((area: Area) => area.renk);
+        setUsedColors(colors);
+      } else {
+        // API başarısız olursa, usedColors'ı temizle
+        setUsedColors([]);
+        setAreas([]);
+      }
+    } catch (error) {
+      console.error('Alanlar yükleme hatası:', error);
+      setErrorMessage('Alanlar yüklenirken hata oluştu');
+      setShowError(true);
+      // Hata durumunda da usedColors'ı temizle
+      setUsedColors([]);
+      setAreas([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     setDayStates(prev => {
@@ -282,8 +340,7 @@ const AlanTanimlama: React.FC = () => {
     }));
   };
 
-  const handleSaveArea = () => {
-    // Güvenli string kontrolleri
+  const handleSaveArea = async () => {
     const safeName = name || '';
     const safeDescription = description || '';
     
@@ -311,6 +368,14 @@ const AlanTanimlama: React.FC = () => {
       return;
     }
 
+    const user = getCurrentUser();
+    if (!user) {
+      setErrorMessage('Kullanıcı bilgisi bulunamadı');
+      setShowError(true);
+      return;
+    }
+
+    // Vardiya bilgilerini JSON string olarak hazırla
     const nobetler: { saat: number; name: string; hours: string; gunler: string[] }[] = [];
     Object.entries(dayStates).forEach(([day, state]) => {
       if (state.isActive && state.shifts && state.shifts.length > 0) {
@@ -325,38 +390,67 @@ const AlanTanimlama: React.FC = () => {
       }
     });
 
-    const newArea: Area = {
-      id: Date.now(),
-      name: safeName.trim(),
-      color: selectedColor,
-      description: safeDescription.trim(),
-      dailyWorkHours,
+    const vardiyaBilgileri = {
       shifts: dayStates,
-      nobetler
+      nobetler: nobetler
     };
 
-    const updatedAreas = [...areas, newArea];
-    setAreas(updatedAreas);
-    localStorage.setItem('tanimliAlanlar', JSON.stringify(updatedAreas));
-    
-    handleNameChange({ target: { value: '' } } as React.ChangeEvent<HTMLInputElement>);
-    setDescription('');
-    setSelectedColor('');
-    setDailyWorkHours(40);
-    setDayStates(weekDays.reduce((acc, day) => ({
-      ...acc,
-      [day.value]: {
-        totalHours: 40,
-        remainingHours: 40,
-        shifts: [],
-        isSaved: false,
-        isActive: true
+    const newArea = {
+      alan_adi: safeName.trim(),
+      aciklama: safeDescription.trim(),
+      renk: selectedColor,
+      gunluk_mesai_saati: dailyWorkHours,
+      vardiya_bilgileri: JSON.stringify(vardiyaBilgileri),
+      aktif_mi: true,
+      kurum_id: user.kurum_id,
+      departman_id: user.departman_id,
+      birim_id: user.birim_id
+    };
+
+    try {
+      setLoading(true);
+      const response = await apiRequest('/api/v1/data/table/18/rows', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newArea),
+      });
+      
+      if (response.success) {
+        setShowSuccess(true);
+        setTimeout(() => setShowSuccess(false), 2000);
+        
+        // Form reset
+        handleNameChange({ target: { value: '' } } as React.ChangeEvent<HTMLInputElement>);
+        setDescription('');
+        setSelectedColor('');
+        setDailyWorkHours(40);
+        setDayStates(weekDays.reduce((acc, day) => ({
+          ...acc,
+          [day.value]: {
+            totalHours: 40,
+            remainingHours: 40,
+            shifts: [],
+            isSaved: false,
+            isActive: true
+          }
+        }), {}));
+        setSelectedDays(weekDays.map(day => day.value));
+        
+        // Listeyi yenile
+        loadAreas();
+      } else {
+        setErrorMessage(response.error || 'Alan kaydedilirken hata oluştu');
+        setShowError(true);
       }
-    }), {}));
-    
-    setSelectedDays(weekDays.map(day => day.value));
-    setShowSuccess(true);
-    setTimeout(() => setShowSuccess(false), 2000);
+    } catch (error) {
+      console.error('Alan kaydetme hatası:', error);
+      setErrorMessage('Alan kaydedilirken hata oluştu');
+      setShowError(true);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleRemoveArea = (id: number) => {
@@ -375,13 +469,23 @@ const AlanTanimlama: React.FC = () => {
 
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-xl sm:text-2xl font-bold">Alan Tanımla</h1>
-        <Link
-          to="/programlar/vardiyali-nobet/alan-yonetimi"
-          className="flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm sm:text-base"
-        >
-          <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
-          <span className="hidden sm:inline">Geri Dön</span>
-        </Link>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={clearLocalStorage}
+            className="flex items-center gap-2 px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-sm"
+            title="localStorage'ı temizle"
+          >
+            <Trash2 className="w-4 h-4" />
+            <span className="hidden sm:inline">Temizle</span>
+          </button>
+          <Link
+            to="/programlar/vardiyali-nobet/alan-yonetimi"
+            className="flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm sm:text-base"
+          >
+            <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+            <span className="hidden sm:inline">Geri Dön</span>
+          </Link>
+        </div>
       </div>
       
       <div className="space-y-4 sm:space-y-6">
@@ -643,9 +747,9 @@ const AlanTanimlama: React.FC = () => {
 
         <button
           onClick={handleSaveArea}
-          disabled={!isFormValid}
+          disabled={!isFormValid || loading}
           className={`w-full mt-6 py-3 rounded-lg transition-colors ${
-            isFormValid
+            isFormValid && !loading
               ? 'bg-blue-600 hover:bg-blue-700 text-white'
               : 'bg-gray-200 text-gray-500 cursor-not-allowed'
           }`}
