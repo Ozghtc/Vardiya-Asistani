@@ -1,105 +1,171 @@
-# HZM API Bilgileri ve Dokümantasyon
+# Vardiyali Nobet Asistani - API Dokümantasyonu (%100 DOĞRU - TEST EDİLDİ)
 
+## 🔗 Temel Bilgiler
 - **Base URL:** `https://hzmbackandveritabani-production-c660.up.railway.app`
+- **Proje ID:** `5`
 - **API Key:** `hzm_1ce98c92189d4a109cd604b22bfd86b7`
-- **Project ID:** `5`
-- **Table ID:** `10` (Kurumlar tablosu)
 
-## Temel API Kullanımı
+## 🔐 KİMLİK DOĞRULAMA SİSTEMİ (GERÇEKLİK)
 
-### 1. Tabloları Listele
+### ✅ API Key ile ÇALIŞAN Endpoint'ler (GENİŞ YETKİLER):
+API Key ile **neredeyse tüm veri işlemlerini** yapabilirsiniz:
 
-```bash
-curl -X GET \
-  "https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/tables/project/5" \
-  -H "X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7"
-```
+#### 📊 Tüm Veri CRUD İşlemleri:
+- **GET** `/api/v1/data/table/{tableId}` - Tablo verilerini listele ✅
+- **GET** `/api/v1/data/table/{tableId}/rows/{rowId}` - Tekil veri oku ✅
+- **POST** `/api/v1/data/table/{tableId}/rows` - Yeni veri ekle ✅
+- **PUT** `/api/v1/data/table/{tableId}/rows/{rowId}` - Veri güncelle ✅
+- **DELETE** `/api/v1/data/table/{tableId}/rows/{rowId}` - Veri sil ✅
+- **POST** `/api/v1/data/table/{tableId}/bulk` - Toplu veri işlemleri ✅
 
-### 2. Tablo Oluştur
+#### 📋 Tablo Yönetimi:
+- **GET** `/api/v1/tables/project/5` - Proje tablolarını listele ✅
+- **POST** `/api/v1/tables/project/5` - Yeni tablo oluştur ✅
+- **GET** `/api/v1/tables/api-key-info` - API Key bilgilerini al ✅
 
-```bash
-curl -X POST \
-  "https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/tables/project/5" \
-  -H "X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "test_table",
-    "description": "Test tablosu"
-  }'
-```
+#### ⚡ Field Yönetimi:
+- **POST** `/api/v1/tables/project/5/{tableId}/fields` - Tabloya field ekle ✅
+
+### ❌ SADECE JWT Token ile ÇALIŞAN Endpoint'ler:
+Bu endpoint'ler Authorization: Bearer <token> header'ı gerektirir:
+
+#### 🔧 Gelişmiş Tablo Yönetimi:
+- **GET** `/api/v1/tables/{projectId}/{tableId}` - Tablo detayları ⚠️ JWT GEREKLI
+- **PUT** `/api/v1/tables/{tableId}` - Tablo güncelle ⚠️ JWT GEREKLI
+- **DELETE** `/api/v1/tables/{tableId}` - Tablo sil ⚠️ JWT GEREKLI
+
+#### ⚙️ Gelişmiş Field Yönetimi:
+- **PUT** `/api/v1/tables/{tableId}/fields/{fieldId}` - Field güncelle ⚠️ JWT GEREKLI
+- **DELETE** `/api/v1/tables/{tableId}/fields/{fieldId}` - Field sil ⚠️ JWT GEREKLI
+
+#### 📁 Proje Yönetimi:
+- **GET** `/api/v1/projects` - Projeleri listele ⚠️ JWT GEREKLI
+- **GET** `/api/v1/projects/{id}` - Proje detayı ⚠️ JWT GEREKLI
+- **POST** `/api/v1/projects` - Yeni proje oluştur ⚠️ JWT GEREKLI
+- **PUT** `/api/v1/projects/{id}` - Proje güncelle ⚠️ JWT GEREKLI
+- **DELETE** `/api/v1/projects/{id}` - Proje sil ⚠️ JWT GEREKLI
+
+#### 🏠 Admin İşlemleri:
+- **Tüm** `/api/v1/admin/*` - Admin endpoint'leri ⚠️ JWT GEREKLI
+
+## 🚀 API Key'in Gücü
+API Key'iniz ile yapabilecekleriniz:
+- ✅ Tüm veri CRUD işlemleri (ekleme, okuma, güncelleme, silme)
+- ✅ Tablo oluşturma ve field ekleme
+- ✅ Toplu veri işlemleri
+- ✅ Pagination ve filtreleme
+- ❌ Sadece proje yönetimi ve admin işlemleri JWT token gerektirir
 
 ## 📋 HTTP Headers
+
+### API Key ile çalışan endpoint'ler için:
 ```
 Content-Type: application/json
 X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7
 ```
 
-## 🔧 API Endpoints
+### JWT Token gereken endpoint'ler için:
+```
+Content-Type: application/json
+Authorization: Bearer <JWT_TOKEN>
+```
 
-### Tablo Yönetimi
-- **GET** `/api/v1/tables/project/5` - Proje tablolarını listele
-- **POST** `/api/v1/tables/project/5` - Yeni tablo oluştur
+## 📞 Test Edilmiş Örnekler (%100 ÇALIŞAN)
 
-### Field Yönetimi  
-- **POST** `/api/v1/tables/project/5/{tableId}/fields` - Tabloya field ekle
-- **PUT** `/api/v1/tables/{tableId}/fields/{fieldId}` - Field güncelle
-- **DELETE** `/api/v1/tables/{tableId}/fields/{fieldId}` - Field sil
+### ✅ API Key ile TÜM CRUD İŞLEMLERİ (TEST EDİLDİ):
 
-### Veri Yönetimi
-- **GET** `/api/v1/data/table/{tableId}` - Tablo verisini oku
-- **POST** `/api/v1/data/table/{tableId}/rows` - Yeni veri ekle
-- **PUT** `/api/v1/data/table/{tableId}/rows/{rowId}` - Veri güncelle
-- **DELETE** `/api/v1/data/table/{tableId}/rows/{rowId}` - Veri sil
-- **GET** `/api/v1/data/table/{tableId}/rows/{rowId}` - Tekil veri oku
-- **POST** `/api/v1/data/table/{tableId}/bulk` - Toplu işlemler
-
-## 📞 Hızlı Test
+#### Veri Okuma:
 ```bash
-# Proje tablolarını listele
 curl -X GET \
-  "https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/tables/project/5" \
+  "https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/data/table/18" \
   -H "X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7"
+```
 
-# Yeni tablo oluştur
+#### Veri Ekleme:
+```bash
+curl -X POST \
+  "https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/data/table/18/rows" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7" \
+  -d '{
+    "alan_adi": "TEST ALAN",
+    "aciklama": "Test için oluşturulan alan",
+    "renk": "#dc2626",
+    "gunluk_mesai_saati": 40,
+    "vardiya_bilgileri": "{}",
+    "aktif_mi": true,
+    "kurum_id": "6",
+    "departman_id": "6_ACİL SERVİS",
+    "birim_id": "6_HEMSİRE"
+  }'
+```
+
+#### Veri Güncelleme:
+```bash
+curl -X PUT \
+  "https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/data/table/18/rows/7" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7" \
+  -d '{
+    "alan_adi": "GÜNCELLENMİŞ ALAN",
+    "aciklama": "Bu alan güncellendi"
+  }'
+```
+
+#### Veri Silme:
+```bash
+curl -X DELETE \
+  "https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/data/table/18/rows/7" \
+  -H "X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7"
+```
+
+#### Tablo Oluşturma:
+```bash
 curl -X POST \
   "https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/tables/project/5" \
   -H "Content-Type: application/json" \
   -H "X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7" \
-  -d '{"name": "test_tablosu", "description": "Test için tablo"}'
+  -d '{
+    "name": "test_tablosu",
+    "description": "Test için tablo"
+  }'
 ```
 
----
-*Vardiyali Nobet Asistani - API Bilgileri*
-*Oluşturulma: 11.07.2025 08:49:15*
+#### Field Ekleme:
+```bash
+curl -X POST \
+  "https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/tables/project/5/10/fields" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7" \
+  -d '{
+    "name": "yeni_alan",
+    "type": "string",
+    "isRequired": false,
+    "description": "Yeni alan"
+  }'
+```
 
----
+#### Tablo Listesi:
+```bash
+curl -X GET \
+  "https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/tables/project/5" \
+  -H "X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7"
+```
 
-# Vardiyali Nobet Asistani - API Dokümantasyonu
-
-## 🔐 Kimlik Doğrulama
-API'miz **iki farklı kimlik doğrulama yöntemi** destekler:
-
-### 1. API Key Authentication (Önerilen)
-Tüm API isteklerinde `X-API-Key` header'ı kullanın:
-**API Key:** `hzm_1ce98c92189d4a109cd604b22bfd86b7`
-
-### 2. JWT Token Authentication  
-`Authorization: Bearer <token>` header'ı ile giriş yapılmış kullanıcılar için
-
-⚠️ **Önemli:** API Key ile sadece **kendi projenize** erişebilirsiniz (Proje ID: 5)
-
-## 📋 Temel Bilgiler
-- **Base URL:** `https://hzmbackandveritabani-production-c660.up.railway.app`
-- **Proje ID:** `5`
-- **Rate Limit:** 300 istek/15 dakika (admin kullanıcılar için bypass)
-- **API Key Kısıtı:** Bu key sadece "Vardiyali Nobet Asistani" projesine erişim sağlar
+#### API Key Bilgisi:
+```bash
+curl -X GET \
+  "https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/tables/api-key-info" \
+  -H "X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7"
+```
 
 ## 🔄 Temel Workflow
 1. API Key ile kimlik doğrulaması yapın
 2. Proje'de tablo oluşturun
 3. Tabloya field'lar ekleyin
 4. Field'lara veri ekleyin
-5. Veriyi okuyun/güncelleyin
+5. Veriyi okuyun/güncelleyin/silin
+6. Sadece gelişmiş proje yönetimi için JWT token gerekir
 
 ## 🛠️ Field Türleri
 - **string:** Metin veriler (maxLength belirlenmezse sınırsız)
@@ -108,7 +174,7 @@ Tüm API isteklerinde `X-API-Key` header'ı kullanın:
 - **date:** Tarih ve saat (ISO format)
 - **currency:** Para birimi (JSONB format: {amount, currency, symbol})
 
-## 📊 CRUD Operasyonları
+## 📊 CRUD Operasyonları (API Key ile Çalışır)
 
 ### 📋 Tablo Oluşturma
 ```http
@@ -119,23 +185,6 @@ X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7
 {
   "name": "hastaneler",
   "description": "Hastane bilgileri tablosu"
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "table": {
-      "id": 11,
-      "name": "hastaneler",
-      "projectId": 5,
-      "fields": [],
-      "physicalTableName": "user_data.project_5_hastaneler_1641234567890",
-      "createdAt": "2025-01-11T10:30:00Z"
-    }
-  }
 }
 ```
 
@@ -153,23 +202,6 @@ X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7
 }
 ```
 
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "field": {
-      "id": "1752214830211",
-      "name": "hastane_adi",
-      "type": "string",
-      "columnName": "hastane_adi",
-      "isRequired": true
-    },
-    "totalFields": 1
-  }
-}
-```
-
 ### 💾 Veri Ekleme
 ```http
 POST /api/v1/data/table/{tableId}/rows
@@ -184,63 +216,10 @@ X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7
 }
 ```
 
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "row": {
-      "id": 1,
-      "hastane_adi": "Acıbadem Hastanesi",
-      "il": "İstanbul",
-      "aktif_mi": true,
-      "kurulis_tarihi": "2010-05-15T00:00:00Z",
-      "created_at": "2025-01-11T10:35:00Z",
-      "updated_at": "2025-01-11T10:35:00Z"
-    }
-  }
-}
-```
-
 ### 📖 Veri Okuma
 ```http
 GET /api/v1/data/table/{tableId}?page=1&limit=50&sort=id&order=ASC
 X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7
-```
-
-**Query Parameters:**
-- `page=1` - Sayfa numarası (default: 1)
-- `limit=50` - Sayfa başına kayıt (max: 100)
-- `sort=id` - Sıralama alanı (herhangi bir field)
-- `order=ASC` - Sıralama yönü (ASC/DESC)
-
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "rows": [
-      {
-        "id": 1,
-        "hastane_adi": "Acıbadem Hastanesi",
-        "il": "İstanbul",
-        "aktif_mi": true,
-        "created_at": "2025-01-11T10:35:00Z"
-      }
-    ],
-    "pagination": {
-      "page": 1,
-      "limit": 50,
-      "total": 1,
-      "totalPages": 1
-    },
-    "table": {
-      "id": 11,
-      "name": "hastaneler",
-      "fields": [...]
-    }
-  }
-}
 ```
 
 ### ✏️ Veri Güncelleme
@@ -255,39 +234,10 @@ X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7
 }
 ```
 
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "row": {
-      "id": 1,
-      "hastane_adi": "Acıbadem Maslak Hastanesi",
-      "aktif_mi": false,
-      "updated_at": "2025-01-11T11:00:00Z"
-    }
-  }
-}
-```
-
 ### 🗑️ Veri Silme
 ```http
 DELETE /api/v1/data/table/{tableId}/rows/{rowId}
 X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "message": "Row deleted successfully",
-    "deletedRow": {
-      "id": 1,
-      "hastane_adi": "Acıbadem Maslak Hastanesi"
-    }
-  }
-}
 ```
 
 ## 🌐 CORS ve Browser Kullanımı
@@ -296,12 +246,14 @@ X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7
 - `https://vardiyaasistani.netlify.app`
 - `https://hzmfrontendveritabani.netlify.app`
 - `https://hzmsoft.com`
+- `http://localhost:5173` (development)
+- `http://localhost:5174` (development)
 
 ### JavaScript/Fetch Örneği:
 ```javascript
 // Veri okuma
 const response = await fetch(
-  'https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/data/table/10',
+  'https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/data/table/18',
   {
     method: 'GET',
     headers: {
@@ -311,16 +263,9 @@ const response = await fetch(
   }
 );
 
-if (!response.ok) {
-  throw new Error(`HTTP error! status: ${response.status}`);
-}
-
-const data = await response.json();
-console.log(data.data.rows);
-
 // Veri ekleme
 const addResponse = await fetch(
-  'https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/data/table/10/rows',
+  'https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/data/table/18/rows',
   {
     method: 'POST',
     headers: {
@@ -328,20 +273,45 @@ const addResponse = await fetch(
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      "kurum_adi": "Yeni Hastane",
-      "kurum_turu": "Özel",
-      "il": "İstanbul",
-      "aktif_mi": true
+      "alan_adi": "Yeni Alan",
+      "aciklama": "API ile eklendi",
+      "renk": "#007bff",
+      "gunluk_mesai_saati": 40,
+      "vardiya_bilgileri": "{}",
+      "aktif_mi": true,
+      "kurum_id": "6",
+      "departman_id": "6_ACİL SERVİS",
+      "birim_id": "6_HEMSİRE"
     })
   }
 );
 
-const result = await addResponse.json();
-if (result.success) {
-  console.log('Veri eklendi:', result.data.row);
-} else {
-  console.error('Hata:', result.error);
-}
+// Veri güncelleme
+const updateResponse = await fetch(
+  'https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/data/table/18/rows/7',
+  {
+    method: 'PUT',
+    headers: {
+      'X-API-Key': 'hzm_1ce98c92189d4a109cd604b22bfd86b7',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      "alan_adi": "Güncellenen Alan",
+      "aciklama": "Bu alan güncellendi"
+    })
+  }
+);
+
+// Veri silme
+const deleteResponse = await fetch(
+  'https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/data/table/18/rows/7',
+  {
+    method: 'DELETE',
+    headers: {
+      'X-API-Key': 'hzm_1ce98c92189d4a109cd604b22bfd86b7'
+    }
+  }
+);
 ```
 
 ## ⚠️ Hata Kodları ve Çözümleri
@@ -361,20 +331,7 @@ if (result.success) {
 ### Sunucu Hataları:
 - **500 INTERNAL_SERVER_ERROR:** Sunucu hatası
 - **503 SERVICE_UNAVAILABLE:** Servis geçici olarak kullanılamıyor
-- **429 TOO_MANY_REQUESTS:** Rate limit aşıldı (300 req/15dk)
-
-### Örnek Hata Response:
-```json
-{
-  "success": false,
-  "error": "Table not found",
-  "code": "NOT_FOUND",
-  "details": {
-    "tableId": "123",
-    "projectId": "5"
-  }
-}
-```
+- **429 TOO_MANY_REQUESTS:** Rate limit aşıldı (100 req/15dk)
 
 ## 🔒 Güvenlik ve Limitler
 
@@ -383,6 +340,11 @@ if (result.success) {
 - Server-side proxy kullanın veya environment variables'da saklayın
 - API key'i yalnızca HTTPS üzerinden gönderin
 
+### Rate Limiting:
+- **100 istek/15 dakika** (admin kullanıcılar için bypass)
+- Rate limit aşıldığında 429 hatası alırsınız
+- Sayaç her 15 dakikada sıfırlanır
+
 ### Veri Limitleri:
 - **String field:** maxLength belirtilmezse sınırsız (TEXT)
 - **Number field:** PostgreSQL NUMERIC limitlerinde
@@ -390,17 +352,23 @@ if (result.success) {
 - **Date field:** ISO 8601 format gerekli
 - **File upload:** Şu anda desteklenmiyor
 
-### Performans Önerileri:
-- Pagination kullanın (limit=50 önerilir, max=100)
-- Gereksiz field'ları sorgularmayın
-- Rate limit'i aşmamaya dikkat edin
-- Connection pooling otomatik (max 20 connection)
+## 📋 Mevcut Proje Tabloları (Proje ID: 5)
+
+### Tablo ID'leri:
+- **ID: 10** - `kurumlar` - Kurum bilgileri
+- **ID: 13** - `kullanicilar` - Kullanıcı bilgileri
+- **ID: 14** - `tanimlamalar` - Tanım bilgileri
+- **ID: 15** - `personel_unvan_tanimlama` - Ünvan tanımları
+- **ID: 16** - `izin_istek_tanimlama` - İzin türleri
+- **ID: 17** - `vardiya_tanimlama` - Vardiya tanımları
+- **ID: 18** - `tanimli_alanlar` - Alan tanımları
+- **ID: 19** - `test_table` - Test tablosu
 
 ## 📞 Destek İletişim
 - **Email:** ozgurhzm@gmail.com
 - **Proje:** Vardiyali Nobet Asistani
 - **Proje ID:** 5
-- **API Key:** hzm_1ce98c92189d4a10...
+- **API Key:** hzm_1ce98c92189d4a109cd604b22bfd86b7
 - **Base URL:** https://hzmbackandveritabani-production-c660.up.railway.app
 
 ## 🚀 Versiyonlama
@@ -409,5 +377,6 @@ if (result.success) {
 - **Backward Compatibility:** Garantili (major versiyon değişikliği dışında)
 
 ---
-*Bu dokümantasyon 11.07.2025 tarihinde oluşturulmuştur.*
-*Son güncelleme: 11.07.2025 08:49:31 - Yanıltıcı bilgiler düzeltildi* 
+*Bu dokümantasyon 16.07.2025 tarihinde güncellendi.*
+*Son güncelleme: 16.07.2025 19:35:00 - Test sonuçlarına göre %100 doğru bilgiler*
+*Durum: TEST EDİLDİ ✅ - Tüm CRUD işlemleri API Key ile çalışır* 
