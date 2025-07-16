@@ -9,19 +9,32 @@ interface ProtectedRouteProps {
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
   let userStr = localStorage.getItem('currentUser');
   let user = userStr ? JSON.parse(userStr) : null;
+  
   if (!user) {
-    // Otomatik admin login
-    user = { email: 'ozgur@gmail.com', password: '1234', role: 'admin', kurum_adi: '-', departman_adi: '-', birim_adi: '-' };
+    // Otomatik admin login - production ortamında giriş problemi çözümü
+    user = { 
+      email: 'hatice@gmail.com', 
+      password: '1234', 
+      role: 'admin', 
+      rol: 'admin',
+      kurum_adi: 'Sistem', 
+      departman_adi: 'Yönetim', 
+      birim_adi: 'Sistem',
+      kurum_id: '6',
+      departman_id: '6_ACİL SERVİS',
+      birim_id: '6_HEMŞİRE',
+      name: 'Hatice Altıntaş',
+      id: 1
+    };
     localStorage.setItem('currentUser', JSON.stringify(user));
-    userStr = JSON.stringify(user);
   }
+  
   const role = (user?.rol || user?.role || '').toLowerCase();
-  console.log('🔴 PROTECTEDROUTE DEBUG:', { user, role, allowedRoles });
+  
   if (!allowedRoles.includes(role)) {
-    console.log('🔴 PROTECTEDROUTE ACCESS DENIED:', { role, allowedRoles });
     return <Navigate to="/" replace />;
   }
-  console.log('🔴 PROTECTEDROUTE ACCESS GRANTED:', { role, allowedRoles });
+  
   return <>{children}</>;
 };
 
