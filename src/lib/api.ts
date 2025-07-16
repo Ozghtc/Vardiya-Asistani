@@ -148,8 +148,8 @@ const getMockResponse = (endpoint: string, method: string) => {
           page: 1,
           limit: 50,
           total: 2,
-          totalPages: 0
-        },
+                      totalPages: 1
+          },
         table: {
           id: 10,
           name: "kurumlar",
