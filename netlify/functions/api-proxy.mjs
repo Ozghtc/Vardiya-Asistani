@@ -34,7 +34,7 @@ export const handler = async (event, context) => {
     // Build API URL with correct Railway backend
     const apiUrl = `https://rare-courage-production.up.railway.app${path}`;
     
-    // JWT Token öncelikli, sonra API Key
+    // API Key öncelikli - JWT token karmaşık olduğu için
     const apiKey = bodyApiKey || event.headers['x-hzm-api-key'] || 'hzm_1ce98c92189d4a109cd604b22bfd86b7';
     
     console.log('🔄 Proxy Request Details:', {
@@ -46,21 +46,20 @@ export const handler = async (event, context) => {
       jwtTokenFirst10: jwtToken ? jwtToken.substring(0, 10) : 'NONE'
     });
 
-    // Prepare request options - JWT token öncelikli
+    // Prepare request options - API Key öncelikli
     const requestOptions = {
       method: method || 'GET',
       headers: {
         'Content-Type': 'application/json',
+        'X-API-Key': apiKey, // Her zaman API key gönder
       },
     };
     
-    // JWT token varsa Bearer header kullan
-    if (jwtToken) {
+    // JWT token varsa ek olarak Bearer header da ekle
+    if (jwtToken && jwtToken !== apiKey) {
       requestOptions.headers['Authorization'] = `Bearer ${jwtToken}`;
-      console.log('🔐 JWT Token ile authentication');
+      console.log('🔐 Hem JWT Token hem API Key ile authentication');
     } else {
-      // Fallback olarak API key kullan
-      requestOptions.headers['X-API-Key'] = apiKey;
       console.log('🔑 API Key ile authentication');
     }
     
