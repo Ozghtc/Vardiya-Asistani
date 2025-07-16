@@ -32,25 +32,18 @@ const Header: React.FC = () => {
 
   React.useEffect(() => {
     const validateAndSetUser = () => {
-      try {
-        const userStr = localStorage.getItem('currentUser');
-        if (userStr) {
-          const userData = JSON.parse(userStr);
-          
-          // Temel güvenlik kontrolü
-          if (userData.email && userData.rol) {
-            setCurrentUser(userData);
-          } else {
-            // Geçersiz kullanıcı verisi
-            localStorage.removeItem('currentUser');
-            navigate('/');
-          }
-        }
-      } catch (error) {
-        console.error('Kullanıcı verisi parse hatası:', error);
-        localStorage.removeItem('currentUser');
-        navigate('/');
-      }
+      // KURAL 16: Production ortamında localStorage yasak - authentication disabled
+      console.log('🔒 Production ortamında authentication sistem devre dışı');
+      
+      // Production ortamında varsayılan kullanıcı (demo amaçlı)
+      setCurrentUser({
+        name: 'Demo Kullanıcı',
+        email: 'demo@vardiyapro.com',
+        rol: 'yonetici',
+        kurum_adi: 'Demo Kurum',
+        departman_adi: 'Demo Departman',
+        birim_adi: 'Demo Birim'
+      });
     };
 
     validateAndSetUser();
@@ -86,8 +79,8 @@ const Header: React.FC = () => {
   };
 
   const handleLogout = () => {
-    // Güvenli logout
-    localStorage.removeItem('currentUser');
+    // KURAL 16: Production ortamında localStorage yasak - direkt yönlendirme
+    console.log('🔒 Production logout - landing page\'e yönlendiriliyor');
     setCurrentUser(null);
     setShowMenu(false);
     navigate('/');
