@@ -91,18 +91,21 @@ const TanimliAlanlar: React.FC = () => {
       
       // 2. Kalıcı çözüm: Eğer hiç alan yoksa otomatik kırmızı alan oluştur
       if (alanData.length === 0 && user) {
-        const otomatikKirmiziAlan: Alan = {
-          id: Date.now(),
-          alan_adi: 'KIRMIZI ALAN',
-          aciklama: 'Kırmızı Gözlem Alanı - Otomatik Oluşturuldu',
-          renk: '#dc2626',
-          gunluk_mesai_saati: 40,
-          vardiya_bilgileri: { nobetler: [] },
-          aktif_mi: true,
-          kurum_id: user.kurum_id,
-          departman_id: user.departman_id,
-          birim_id: user.birim_id
-        };
+                 const otomatikKirmiziAlan: Alan = {
+           id: Date.now(),
+           alan_adi: 'KIRMIZI ALAN',
+           aciklama: 'Kırmızı Gözlem Alanı - Otomatik Oluşturuldu',
+           renk: '#dc2626',
+           gunluk_mesai_saati: 40,
+           vardiya_bilgileri: '{}',
+           aktif_mi: true,
+           kurum_id: user.kurum_id,
+           departman_id: user.departman_id,
+           birim_id: user.birim_id,
+           totalHours: 0,
+           totalVardiya: 0,
+           activeDays: 0
+         };
         
         alanData.push(otomatikKirmiziAlan);
         console.log('✅ Otomatik kırmızı alan oluşturuldu');
@@ -116,7 +119,7 @@ const TanimliAlanlar: React.FC = () => {
               aciklama: otomatikKirmiziAlan.aciklama,
               renk: otomatikKirmiziAlan.renk,
               gunluk_mesai_saati: otomatikKirmiziAlan.gunluk_mesai_saati,
-              vardiya_bilgileri: JSON.stringify(otomatikKirmiziAlan.vardiya_bilgileri),
+                             vardiya_bilgileri: otomatikKirmiziAlan.vardiya_bilgileri,
               aktif_mi: otomatikKirmiziAlan.aktif_mi,
               kurum_id: otomatikKirmiziAlan.kurum_id,
               departman_id: otomatikKirmiziAlan.departman_id,
