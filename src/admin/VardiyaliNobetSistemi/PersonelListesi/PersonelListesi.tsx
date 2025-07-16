@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Pencil, Trash2, MoreVertical, Mail, Phone, Building2, ArrowRight, Clock, Calendar, User2, Users, FileText } from 'lucide-react';
+import { Plus, Pencil, Trash2, MoreVertical, Mail, Phone, Building2, ArrowRight, Clock, Calendar, User2, Users, FileText, X, Check } from 'lucide-react';
 import DeleteConfirmDialog from '../../../components/ui/DeleteConfirmDialog';
 import { useAuthContext } from '../../../contexts/AuthContext';
 import PersonelIstek from '../PersonelEkle/PersonelIstek';
@@ -23,6 +23,23 @@ interface Personnel {
   guncelleme_tarihi: string;
 }
 
+interface TanimliAlan {
+  id: number;
+  alan_adi: string;
+  alan_kodu: string;
+  kurum_id: string;
+  departman_id: string;
+  birim_id: string;
+  aktif_mi: boolean;
+  olusturma_tarihi: string;
+  guncelleme_tarihi: string;
+}
+
+interface NobetTanimlamaPopup {
+  isOpen: boolean;
+  personel: Personnel | null;
+}
+
 const PersonelListesi: React.FC = () => {
   const [activeTab, setActiveTab] = useState('liste');
   const [personnel, setPersonnel] = useState<Personnel[]>([]);
@@ -32,6 +49,15 @@ const PersonelListesi: React.FC = () => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [nobetTanimlamaPopup, setNobetTanimlamaPopup] = useState<NobetTanimlamaPopup>({
+    isOpen: false,
+    personel: null
+  });
+  const [tanimliAlanlar, setTanimliAlanlar] = useState<TanimliAlan[]>([]);
+  const [selectedGunler, setSelectedGunler] = useState<string[]>([]);
+  const [selectedAlanlar, setSelectedAlanlar] = useState<number[]>([]);
+  const [tumunuSec, setTumunuSec] = useState(false);
+  const [tanimliAlanlarLoading, setTanimliAlanlarLoading] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuthContext();
 
@@ -78,9 +104,114 @@ const PersonelListesi: React.FC = () => {
     }
   };
 
+  const loadTanimliAlanlar = async () => {
+    if (!user) return;
+    
+    try {
+      setTanimliAlanlarLoading(true);
+      
+      const response = await fetch('/.netlify/functions/api-proxy', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          path: '/api/v1/data/table/18',
+          method: 'GET'
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data?.rows) {
+          // Kullanıcının kurum/departman/birim'ine göre filtreleme
+          const filteredAlanlar = result.data.rows.filter((alan: TanimliAlan) => 
+            alan.kurum_id === user.kurum_id &&
+            alan.departman_id === user.departman_id &&
+            alan.birim_id === user.birim_id &&
+            alan.aktif_mi
+          );
+          
+          setTanimliAlanlar(filteredAlanlar);
+        }
+      }
+    } catch (error) {
+      console.error('Tanımlı alanlar yükleme hatası:', error);
+    } finally {
+      setTanimliAlanlarLoading(false);
+    }
+  };
+
   useEffect(() => {
     loadPersonnel();
+    loadTanimliAlanlar();
   }, [user]);
+
+  const gunler = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
+
+  const handleNobetTanimlamaOpen = (personel: Personnel) => {
+    setNobetTanimlamaPopup({
+      isOpen: true,
+      personel: personel
+    });
+    setSelectedGunler([]);
+    setSelectedAlanlar([]);
+    setTumunuSec(false);
+  };
+
+  const handleNobetTanimlamaClose = () => {
+    setNobetTanimlamaPopup({
+      isOpen: false,
+      personel: null
+    });
+    setSelectedGunler([]);
+    setSelectedAlanlar([]);
+    setTumunuSec(false);
+  };
+
+  const handleGunToggle = (gun: string) => {
+    setSelectedGunler(prev => 
+      prev.includes(gun) 
+        ? prev.filter(g => g !== gun)
+        : [...prev, gun]
+    );
+  };
+
+  const handleAlanToggle = (alanId: number) => {
+    setSelectedAlanlar(prev => {
+      const newSelected = prev.includes(alanId) 
+        ? prev.filter(id => id !== alanId)
+        : [...prev, alanId];
+      
+      // Tümünü seç durumunu güncelle
+      setTumunuSec(newSelected.length === tanimliAlanlar.length);
+      
+      return newSelected;
+    });
+  };
+
+  const handleTumunuSecToggle = () => {
+    const newTumunuSec = !tumunuSec;
+    setTumunuSec(newTumunuSec);
+    
+    if (newTumunuSec) {
+      setSelectedAlanlar(tanimliAlanlar.map(alan => alan.id));
+    } else {
+      setSelectedAlanlar([]);
+    }
+  };
+
+  const handleNobetEkle = () => {
+    // Şimdilik konsola yazdıralım
+    console.log('Nöbet Tanımlama:', {
+      personel: nobetTanimlamaPopup.personel,
+      gunler: selectedGunler,
+      alanlar: selectedAlanlar
+    });
+    
+    // Popup'ı kapat
+    handleNobetTanimlamaClose();
+  };
 
   const handleDelete = async (id: number) => {
     try {
@@ -350,6 +481,7 @@ const PersonelListesi: React.FC = () => {
                 <th className="text-left px-6 py-4 text-sm font-semibold text-gray-600">TC Kimlik No</th>
                 <th className="text-left px-6 py-4 text-sm font-semibold text-gray-600">Ünvan</th>
                 <th className="text-left px-6 py-4 text-sm font-semibold text-gray-600">Durum</th>
+                <th className="text-right px-6 py-4 text-sm font-semibold text-gray-600">İşlem</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -376,6 +508,15 @@ const PersonelListesi: React.FC = () => {
                       {person.aktif_mi ? 'Aktif' : 'Pasif'}
                     </span>
                   </td>
+                  <td className="px-6 py-4 text-right">
+                    <button
+                      onClick={() => handleNobetTanimlamaOpen(person)}
+                      className="inline-flex items-center gap-1 px-3 py-1 text-sm bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
+                    >
+                      <Calendar className="w-4 h-4" />
+                      Nöbet Tanımla
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -394,6 +535,137 @@ const PersonelListesi: React.FC = () => {
               </button>
             </div>
           )}
+        </div>
+      </div>
+    );
+  };
+
+  const renderNobetTanimlamaPopup = () => {
+    if (!nobetTanimlamaPopup.isOpen || !nobetTanimlamaPopup.personel) return null;
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto m-4">
+          {/* Header */}
+          <div className="flex items-center justify-between p-6 border-b border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-800">
+              {nobetTanimlamaPopup.personel.ad} {nobetTanimlamaPopup.personel.soyad} - Nöbet Tanımlama
+            </h3>
+            <button
+              onClick={handleNobetTanimlamaClose}
+              className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Content */}
+          <div className="p-6 space-y-8">
+            {/* Üst Kısım - Günler */}
+            <div>
+              <h4 className="text-md font-medium text-gray-800 mb-4">Günler</h4>
+              <div className="grid grid-cols-7 gap-2">
+                {gunler.map((gun) => (
+                  <div
+                    key={gun}
+                    className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                      selectedGunler.includes(gun)
+                        ? 'bg-blue-50 border-blue-300 text-blue-700'
+                        : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'
+                    }`}
+                    onClick={() => handleGunToggle(gun)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">{gun}</span>
+                      <input
+                        type="checkbox"
+                        checked={selectedGunler.includes(gun)}
+                        onChange={() => handleGunToggle(gun)}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Alt Kısım - Tanımlı Alanlar */}
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="text-md font-medium text-gray-800">Tanımlı Alanlar</h4>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={tumunuSec}
+                    onChange={handleTumunuSecToggle}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="text-sm text-gray-600">Tümünü Seç</span>
+                </div>
+              </div>
+              
+              {tanimliAlanlarLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                  <span className="ml-2 text-gray-500">Tanımlı alanlar yükleniyor...</span>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {tanimliAlanlar.map((alan) => (
+                    <div
+                      key={alan.id}
+                      className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                        selectedAlanlar.includes(alan.id)
+                          ? 'bg-blue-50 border-blue-300 text-blue-700'
+                          : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'
+                      }`}
+                      onClick={() => handleAlanToggle(alan.id)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">{alan.alan_adi}</span>
+                        <input
+                          type="checkbox"
+                          checked={selectedAlanlar.includes(alan.id)}
+                          onChange={() => handleAlanToggle(alan.id)}
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {!tanimliAlanlarLoading && tanimliAlanlar.length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  Tanımlı alan bulunmuyor
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200">
+            <button
+              onClick={handleNobetTanimlamaClose}
+              className="px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              İptal
+            </button>
+            <button
+              onClick={handleNobetEkle}
+              disabled={selectedGunler.length === 0 || selectedAlanlar.length === 0}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                selectedGunler.length === 0 || selectedAlanlar.length === 0
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
+              }`}
+            >
+              <Check className="w-4 h-4" />
+              Ekle
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -456,6 +728,9 @@ const PersonelListesi: React.FC = () => {
 
       {/* Content */}
       {renderContent()}
+
+      {/* Nöbet Tanımlama Popup */}
+      {renderNobetTanimlamaPopup()}
 
       <DeleteConfirmDialog
         isOpen={deleteDialog.isOpen}
