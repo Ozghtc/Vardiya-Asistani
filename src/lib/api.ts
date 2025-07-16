@@ -1,5 +1,5 @@
 const API_CONFIG = {
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'https://rare-courage-production.up.railway.app',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'https://hzmbackandveritabani-production-c660.up.railway.app',
   apiKey: import.meta.env.VITE_API_KEY || 'hzm_1ce98c92189d4a109cd604b22bfd86b7',
   projectId: import.meta.env.VITE_PROJECT_ID || '5',
   tableId: import.meta.env.VITE_TABLE_ID || '10',
@@ -32,7 +32,7 @@ const logError = (message: string, error?: any) => {
 
 const API_BASE_URL = import.meta.env.PROD 
   ? '/.netlify/functions/api-proxy'
-  : 'https://rare-courage-production.up.railway.app';
+  : 'https://hzmbackandveritabani-production-c660.up.railway.app';
 
 const HZM_API_KEY = 'hzm_1ce98c92189d4a109cd604b22bfd86b7';
 const isDev = false; // Production ortamında her zaman false

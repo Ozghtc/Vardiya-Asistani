@@ -32,7 +32,7 @@ export const handler = async (event, context) => {
     }
     
     // Build API URL with correct Railway backend
-    const apiUrl = `https://rare-courage-production.up.railway.app${path}`;
+    const apiUrl = `https://hzmbackandveritabani-production-c660.up.railway.app${path}`;
     
     // API Key öncelikli - JWT token karmaşık olduğu için
     const apiKey = bodyApiKey || event.headers['x-hzm-api-key'] || 'hzm_1ce98c92189d4a109cd604b22bfd86b7';

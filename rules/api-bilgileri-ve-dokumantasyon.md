@@ -1,6 +1,6 @@
 # HZM API Bilgileri ve Dokümantasyon
 
-- **Base URL:** `https://rare-courage-production.up.railway.app`
+- **Base URL:** `https://hzmbackandveritabani-production-c660.up.railway.app`
 - **API Key:** `hzm_1ce98c92189d4a109cd604b22bfd86b7`
 - **Project ID:** `5`
 - **Table ID:** `10` (Kurumlar tablosu)
@@ -11,7 +11,7 @@
 
 ```bash
 curl -X GET \
-  "https://rare-courage-production.up.railway.app/api/v1/tables/project/5" \
+  "https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/tables/project/5" \
   -H "X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7"
 ```
 

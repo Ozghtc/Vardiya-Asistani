@@ -9,7 +9,7 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'https://rare-courage-production.up.railway.app',
+        target: 'https://hzmbackandveritabani-production-c660.up.railway.app',
         changeOrigin: true,
         secure: true,
         rewrite: (path) => path.replace(/^\/api/, '/api'),
@@ -17,7 +17,7 @@ export default defineConfig({
     },
   },
   define: {
-    'import.meta.env.VITE_API_BASE_URL': JSON.stringify('https://rare-courage-production.up.railway.app'),
+    'import.meta.env.VITE_API_BASE_URL': JSON.stringify('https://hzmbackandveritabani-production-c660.up.railway.app'),
     'import.meta.env.VITE_API_KEY': JSON.stringify('hzm_1ce98c92189d4a109cd604b22bfd86b7'),
     'import.meta.env.VITE_PROJECT_ID': JSON.stringify('5'),
     'import.meta.env.VITE_TABLE_ID': JSON.stringify('10'),
