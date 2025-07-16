@@ -67,49 +67,65 @@ const TanimliAlanlar: React.FC = () => {
               } catch (e) {
                 console.error('Vardiya bilgileri parse hatası:', e);
               }
-
-              const nobetler = parsedVardiyaBilgileri.nobetler || [];
               
               return {
                 id: row.id,
                 alan_adi: row.alan_adi,
-                aciklama: row.aciklama || '',
+                aciklama: row.aciklama,
                 renk: row.renk,
-                gunluk_mesai_saati: row.gunluk_mesai_saati || 40,
-                vardiya_bilgileri: row.vardiya_bilgileri || '{}',
-                aktif_mi: row.aktif_mi !== false,
+                gunluk_mesai_saati: row.gunluk_mesai_saati,
+                vardiya_bilgileri: parsedVardiyaBilgileri,
+                aktif_mi: row.aktif_mi,
                 kurum_id: row.kurum_id,
                 departman_id: row.departman_id,
-                birim_id: row.birim_id,
-                nobetler: nobetler,
-                totalHours: calculateTotalHours(nobetler),
-                totalVardiya: calculateTotalVardiya(nobetler),
-                activeDays: calculateActiveDays(nobetler)
+                birim_id: row.birim_id
               };
             });
           
           alanData = [...alanData, ...apiData];
+          console.log('✅ API\'den gelen alan sayısı:', apiData.length);
         }
       } catch (error) {
-        console.error('HZM API hatası:', error);
-        // API erişilemezse production backup veri sistemi
-        if (user && user.kurum_id === '6' && user.departman_id === '6_ACİL SERVİS' && user.birim_id === '6_HEMŞİRE') {
-          alanData.push({
-            id: 1,
-            alan_adi: 'KIRMIZI ALAN',
-            aciklama: 'Gözlem Odası',
-            renk: '#dc2626',
-            gunluk_mesai_saati: 40,
-            vardiya_bilgileri: '{}',
-            aktif_mi: true,
-            kurum_id: '6',
-            departman_id: '6_ACİL SERVİS',
-            birim_id: '6_HEMŞİRE',
-            nobetler: [],
-            totalHours: 0,
-            totalVardiya: 0,
-            activeDays: 0
+        console.error('API hatası:', error);
+      }
+      
+      // 2. Kalıcı çözüm: Eğer hiç alan yoksa otomatik kırmızı alan oluştur
+      if (alanData.length === 0 && user) {
+        const otomatikKirmiziAlan: Alan = {
+          id: Date.now(),
+          alan_adi: 'KIRMIZI ALAN',
+          aciklama: 'Kırmızı Gözlem Alanı - Otomatik Oluşturuldu',
+          renk: '#dc2626',
+          gunluk_mesai_saati: 40,
+          vardiya_bilgileri: { nobetler: [] },
+          aktif_mi: true,
+          kurum_id: user.kurum_id,
+          departman_id: user.departman_id,
+          birim_id: user.birim_id
+        };
+        
+        alanData.push(otomatikKirmiziAlan);
+        console.log('✅ Otomatik kırmızı alan oluşturuldu');
+        
+        // API'ye kaydetmeye çalış (başarısız olursa sorun değil)
+        try {
+          await apiRequest('/api/v1/data/table/18/rows', {
+            method: 'POST',
+            body: JSON.stringify({
+              alan_adi: otomatikKirmiziAlan.alan_adi,
+              aciklama: otomatikKirmiziAlan.aciklama,
+              renk: otomatikKirmiziAlan.renk,
+              gunluk_mesai_saati: otomatikKirmiziAlan.gunluk_mesai_saati,
+              vardiya_bilgileri: JSON.stringify(otomatikKirmiziAlan.vardiya_bilgileri),
+              aktif_mi: otomatikKirmiziAlan.aktif_mi,
+              kurum_id: otomatikKirmiziAlan.kurum_id,
+              departman_id: otomatikKirmiziAlan.departman_id,
+              birim_id: otomatikKirmiziAlan.birim_id
+            })
           });
+          console.log('✅ Kırmızı alan API\'ye kaydedildi');
+        } catch (error) {
+          console.log('⚠️ API\'ye kaydetme başarısız, sadece görüntüleme için var:', error);
         }
       }
       

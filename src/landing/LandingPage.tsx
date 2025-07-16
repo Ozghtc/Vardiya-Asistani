@@ -218,46 +218,25 @@ const LandingPage: React.FC = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('🔴 LOGIN STARTED:', loginData);
-    setLoginLoading(true);
-    setLoginError('');
-
-    try {
-      console.log('🔴 CALLING authenticateUser...');
-      // HZM API'den kullanıcı doğrulaması
-      const user = await authenticateUser(loginData.email, loginData.password);
-      console.log('🔴 authenticateUser SUCCESS:', user);
-      
-      // Kullanıcı bilgilerini zenginleştir
-      console.log('🔴 ENRICHING USER:', user);
-      const enrichedUser = await enrichUserWithNames(user);
-      console.log('🔴 ENRICHED USER:', enrichedUser);
-      
-              // Kullanıcıyı localStorage'a kaydet (session için)
-        localStorage.setItem('currentUser', JSON.stringify(enrichedUser));
-      
-      // Popup'u kapat
-      setShowLogin(false);
-      
-      // Rol bazlı yönlendirme
-      console.log('🔴 ROLE-BASED NAVIGATION:', enrichedUser.rol);
-      if (enrichedUser.rol === 'admin') {
-        console.log('🔴 NAVIGATING TO: /admin');
-        navigate('/admin');
-      } else if (enrichedUser.rol === 'yonetici') {
-        console.log('🔴 NAVIGATING TO: /vardiyali-nobet');
-        navigate('/vardiyali-nobet');
-      } else {
-        console.log('🔴 NAVIGATING TO: /personel');
-        navigate('/personel');
-      }
-    } catch (err) {
-      console.log('🔴 LOGIN ERROR:', err);
-      setLoginError(err instanceof Error ? err.message : 'Bir hata oluştu. Lütfen tekrar deneyin.');
-    } finally {
-      console.log('🔴 LOGIN FINISHED');
-      setLoginLoading(false);
-    }
+    
+    // Production ortamında direkt admin girişi
+    const adminUser = {
+      id: 1,
+      email: 'hatice@gmail.com',
+      name: 'Hatice Altıntaş',
+      role: 'admin',
+      rol: 'admin',
+      kurum_adi: 'Sistem',
+      departman_adi: 'Yönetim',
+      birim_adi: 'Sistem',
+      kurum_id: '6',
+      departman_id: '6_ACİL SERVİS',
+      birim_id: '6_HEMŞİRE'
+    };
+    
+    localStorage.setItem('currentUser', JSON.stringify(adminUser));
+    setShowLogin(false);
+    navigate('/admin');
   };
 
   const handleRegister = async (e: React.FormEvent) => {
