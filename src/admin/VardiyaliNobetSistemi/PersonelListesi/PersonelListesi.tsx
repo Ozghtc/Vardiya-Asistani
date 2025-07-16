@@ -81,6 +81,7 @@ const PersonelListesi: React.FC = () => {
   const [nobetKombinasyonlari, setNobetKombinasyonlari] = useState<NobetKombinasyonu[]>([]);
   const [kayitliNobetTanimlama, setKayitliNobetTanimlama] = useState<KayitliNobetTanimlamasi[]>([]);
   const [kayitliNobetLoading, setKayitliNobetLoading] = useState(false);
+  const [nobetFilter, setNobetFilter] = useState<'tum' | 'tanimli' | 'tanimsiz'>('tum');
   const navigate = useNavigate();
   const { user } = useAuthContext();
 
@@ -217,6 +218,37 @@ const PersonelListesi: React.FC = () => {
 
   const getPersonelNobetTanimlama = (personelId: number) => {
     return kayitliNobetTanimlama.filter(nobet => parseInt(nobet.personel_id) === personelId);
+  };
+
+  const getFilteredPersonnel = () => {
+    return personnel.filter(person => {
+      const personelNobetler = getPersonelNobetTanimlama(person.id);
+      const hasNobet = personelNobetler.length > 0;
+      
+      switch (nobetFilter) {
+        case 'tanimli':
+          return hasNobet;
+        case 'tanimsiz':
+          return !hasNobet;
+        case 'tum':
+        default:
+          return true;
+      }
+    });
+  };
+
+  const getPersonelIstatistikleri = () => {
+    const toplamPersonel = personnel.length;
+    const nobetTanimliPersonel = personnel.filter(person => getPersonelNobetTanimlama(person.id).length > 0).length;
+    const nobetTanimsizPersonel = toplamPersonel - nobetTanimliPersonel;
+    const toplamNobetTanimlama = kayitliNobetTanimlama.length;
+    
+    return {
+      toplamPersonel,
+      nobetTanimliPersonel,
+      nobetTanimsizPersonel,
+      toplamNobetTanimlama
+    };
   };
 
   const handleNobetTanimlamaOpen = (personel: Personnel) => {
@@ -633,15 +665,89 @@ const PersonelListesi: React.FC = () => {
       );
     }
 
+    const filteredPersonnel = getFilteredPersonnel();
+    const istatistikler = getPersonelIstatistikleri();
+
     return (
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-blue-600" />
-            Nöbet Tanımlama - Personel Listesi
-          </h3>
-          <p className="text-sm text-gray-600 mt-1">Nöbet tanımlaması yapılacak personellerin listesi</p>
+      <div className="space-y-6">
+        {/* Rapor Özeti */}
+        <div className="bg-gradient-to-r from-blue-50 to-green-50 rounded-xl p-6 border border-gray-100">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-blue-600" />
+              Nöbet Tanımlama Raporu
+            </h3>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-white rounded-lg p-4 text-center">
+              <div className="text-2xl font-bold text-blue-600">{istatistikler.toplamPersonel}</div>
+              <div className="text-sm text-gray-600">Toplam Personel</div>
+            </div>
+            <div className="bg-white rounded-lg p-4 text-center">
+              <div className="text-2xl font-bold text-green-600">{istatistikler.nobetTanimliPersonel}</div>
+              <div className="text-sm text-gray-600">Nöbet Tanımlı</div>
+            </div>
+            <div className="bg-white rounded-lg p-4 text-center">
+              <div className="text-2xl font-bold text-red-600">{istatistikler.nobetTanimsizPersonel}</div>
+              <div className="text-sm text-gray-600">Nöbet Tanımsız</div>
+            </div>
+            <div className="bg-white rounded-lg p-4 text-center">
+              <div className="text-2xl font-bold text-purple-600">{istatistikler.toplamNobetTanimlama}</div>
+              <div className="text-sm text-gray-600">Toplam Tanımlama</div>
+            </div>
+          </div>
         </div>
+
+        {/* Filtre Butonları */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-gray-800">Personel Listesi</h3>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600">Filtrele:</span>
+              <div className="flex bg-gray-100 rounded-lg p-1">
+                <button
+                  onClick={() => setNobetFilter('tum')}
+                  className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                    nobetFilter === 'tum'
+                      ? 'bg-blue-600 text-white'
+                      : 'text-gray-600 hover:text-gray-800'
+                  }`}
+                >
+                  Tüm Personel ({istatistikler.toplamPersonel})
+                </button>
+                <button
+                  onClick={() => setNobetFilter('tanimli')}
+                  className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                    nobetFilter === 'tanimli'
+                      ? 'bg-green-600 text-white'
+                      : 'text-gray-600 hover:text-gray-800'
+                  }`}
+                >
+                  Nöbet Tanımlı ({istatistikler.nobetTanimliPersonel})
+                </button>
+                <button
+                  onClick={() => setNobetFilter('tanimsiz')}
+                  className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                    nobetFilter === 'tanimsiz'
+                      ? 'bg-red-600 text-white'
+                      : 'text-gray-600 hover:text-gray-800'
+                  }`}
+                >
+                  Nöbet Tanımsız ({istatistikler.nobetTanimsizPersonel})
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <p className="text-sm text-gray-600">
+              {filteredPersonnel.length} personel görüntüleniyor
+              {nobetFilter === 'tanimli' && ' (nöbet tanımlı)'}
+              {nobetFilter === 'tanimsiz' && ' (nöbet tanımsız)'}
+            </p>
+          </div>
         
         <div className="overflow-hidden">
           <table className="w-full">
@@ -655,7 +761,7 @@ const PersonelListesi: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {personnel.map((person) => {
+              {filteredPersonnel.map((person) => {
                 const personelNobetler = getPersonelNobetTanimlama(person.id);
                 
                 return (
@@ -741,17 +847,23 @@ const PersonelListesi: React.FC = () => {
             </tbody>
           </table>
 
-          {personnel.length === 0 && (
+          {filteredPersonnel.length === 0 && (
             <div className="text-center py-12">
               <User2 className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500">Henüz personel kaydı bulunmuyor</p>
-              <button
-                onClick={() => navigate('/personel-ekle')}
-                className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
-              >
-                <Plus className="w-5 h-5" />
-                <span>İlk Personeli Ekle</span>
-              </button>
+              <p className="text-gray-500">
+                {nobetFilter === 'tum' && 'Henüz personel kaydı bulunmuyor'}
+                {nobetFilter === 'tanimli' && 'Nöbet tanımlı personel bulunmuyor'}
+                {nobetFilter === 'tanimsiz' && 'Nöbet tanımsız personel bulunmuyor'}
+              </p>
+              {nobetFilter === 'tum' && (
+                <button
+                  onClick={() => navigate('/personel-ekle')}
+                  className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
+                >
+                  <Plus className="w-5 h-5" />
+                  <span>İlk Personeli Ekle</span>
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -946,8 +1058,7 @@ const PersonelListesi: React.FC = () => {
               <Check className="w-4 h-4" />
               Kaydet
             </button>
-          </div>
-        </div>
+                  </div>
       </div>
     );
   };
