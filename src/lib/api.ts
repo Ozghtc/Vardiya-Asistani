@@ -51,26 +51,37 @@ const getJWTToken = async (): Promise<string> => {
   try {
     console.log('🔐 JWT Token alınıyor...');
     
-    // API Key ile JWT token almayı dene
-    const response = await fetch('https://rare-courage-production.up.railway.app/api/v1/auth/login', {
+    // API Key ile JWT token almayı dene - Netlify proxy üzerinden
+    const response = await fetch('/.netlify/functions/api-proxy', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        email: 'ozgurhzm@gmail.com',
+        path: '/api/v1/auth/login',
+        method: 'POST',
+        body: {
+          email: 'ozgurhzm@gmail.com',
+          apiKey: HZM_API_KEY
+        },
         apiKey: HZM_API_KEY
       })
     });
     
-    if (response.ok) {
+        if (response.ok) {
       const data = await response.json();
-              if (data.token) {
-          jwtToken = data.token;
-          tokenExpiry = Date.now() + (24 * 60 * 60 * 1000); // 24 saat
-          console.log('✅ JWT Token alındı');
-          return data.token;
-        }
+      // Netlify proxy response format'ı kontrol et
+      if (data.success && data.token) {
+        jwtToken = data.token;
+        tokenExpiry = Date.now() + (24 * 60 * 60 * 1000); // 24 saat
+        console.log('✅ JWT Token alındı');
+        return data.token;
+      } else if (data.data && data.data.token) {
+        jwtToken = data.data.token;
+        tokenExpiry = Date.now() + (24 * 60 * 60 * 1000); // 24 saat
+        console.log('✅ JWT Token alındı (data.data format)');
+        return data.data.token;
+      }
     }
     
     throw new Error('JWT Token alınamadı');
@@ -111,32 +122,25 @@ const apiRequest = async (path: string, options: RequestInit = {}) => {
     const data = await response.json();
 
     if (!response.ok) {
-      // API hatası durumunda mock response döndür
-      console.log('❌ API hatası - Mock response\'a geçiliyor:', data.error);
-      const mockResponse = getMockResponse(path, options.method || 'GET');
-      if (mockResponse) {
-        return mockResponse;
-      }
+      // API hatası durumunda gerçek hata fırlat
+      console.log('❌ API hatası:', data.error);
+      console.log('🔄 Gerçek API hatası - mock response devre dışı');
       throw new Error(data.error || `HTTP error! status: ${response.status}`);
     }
 
     return data;
   } catch (error) {
     console.error('API Request Error:', error);
-    // Hata durumunda mock response dene
-    const mockResponse = getMockResponse(path, options.method || 'GET');
-    if (mockResponse) {
-      console.log('🎭 Hata durumu - Mock response döndürülüyor');
-      return mockResponse;
-    }
+    // Hata durumunda gerçek hata fırlat - mock response devre dışı
+    console.log('❌ API Request tamamen başarısız - gerçek hata fırlatılıyor');
     throw error;
   }
 };
 
-// Mock response fonksiyonu - DOKÜMANTASYON FORMATINDA (KURAL 16: Production ortamında GEÇİCİ AKTIF)
+// Mock response fonksiyonu - DOKÜMANTASYON FORMATINDA (KURAL 16: Production ortamında DEVRE DIŞI)
 const getMockResponse = (endpoint: string, method: string) => {
-  if (true) {
-    console.log('🎭 Mock Response Oluşturuluyor (GEÇİCİ ÇÖZÜMʹ:', { endpoint, method });
+  if (false) {
+    console.log('🎭 Mock Response Devre Dışı:', { endpoint, method });
   }
   
   if (endpoint.includes('/tables/api-key-info')) {
