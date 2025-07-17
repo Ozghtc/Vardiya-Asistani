@@ -17,7 +17,7 @@ interface Vardiya {
   startTime: string;
   endTime: string;
   duration: number;
-  gunler?: string[];
+  gunler: string[]; // Yeni format
 }
 
 interface Alan {
@@ -53,7 +53,16 @@ const AlanDetayModal: React.FC<{
   // Vardiya verilerini parse et
   let parsedVardiyalar: Vardiya[] = [];
   try {
-    parsedVardiyalar = JSON.parse(alan.vardiyalar || '[]');
+    const rawVardiyalar = JSON.parse(alan.vardiyalar || '[]');
+    // API'den gelen yapıyı dönüştür
+    parsedVardiyalar = rawVardiyalar.map((vardiya: any) => ({
+      id: vardiya.id,
+      name: vardiya.name,
+      startTime: vardiya.hours ? vardiya.hours.split(' - ')[0] : '',
+      endTime: vardiya.hours ? vardiya.hours.split(' - ')[1] : '',
+      duration: vardiya.duration || 0,
+      gunler: vardiya.days || [] // API'de 'days' olarak geliyor
+    }));
   } catch (e) {
     console.error('Vardiya parse hatası:', e);
   }
@@ -262,7 +271,17 @@ const TanimliAlanlar: React.FC = () => {
               try {
                 parsedGunlukSaatler = JSON.parse(row.gunluk_saatler || '{}');
                 parsedAktifGunler = JSON.parse(row.aktif_gunler || '[]');
-                parsedVardiyalar = JSON.parse(row.vardiyalar || '[]');
+                const rawVardiyalar = JSON.parse(row.vardiyalar || '[]');
+                
+                // API'den gelen yapıyı dönüştür
+                parsedVardiyalar = rawVardiyalar.map((vardiya: any) => ({
+                  id: vardiya.id,
+                  name: vardiya.name,
+                  startTime: vardiya.hours ? vardiya.hours.split(' - ')[0] : '',
+                  endTime: vardiya.hours ? vardiya.hours.split(' - ')[1] : '',
+                  duration: vardiya.duration || 0,
+                  gunler: vardiya.days || [] // API'de 'days' olarak geliyor
+                }));
               } catch (e) {
                 console.error('JSON parse hatası:', e);
               }
