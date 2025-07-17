@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Calendar, Palette } from 'lucide-react';
+import { Plus, Trash2, Calendar, Palette, ChevronDown } from 'lucide-react';
 import { useCapitalization } from '../../../hooks/useCapitalization';
 import { SuccessNotification } from '../../../components/ui/Notification';
 import { useDepartmanBirim } from './DepartmanBirimContext';
@@ -19,25 +19,26 @@ const IzinTanimlama: React.FC = () => {
   const [izinAdi, setIzinAdi] = useState('');
   const [kisaltma, setKisaltma] = useState('');
   const [seciliRenk, setSeciliRenk] = useState('#3B82F6');
+  const [renkDropdownAcik, setRenkDropdownAcik] = useState(false);
   const [personnelRequests, setPersonnelRequests] = useState<IzinIstek[]>([]);
   const [showSuccess, setShowSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const { kurum_id, departman_id, birim_id } = useDepartmanBirim();
 
-  // 12'li renk kombinasyonu
+  // Canlı 12'li renk kombinasyonu
   const renkPaleti = [
-    '#3B82F6', // Blue
-    '#EF4444', // Red
-    '#10B981', // Green
-    '#F59E0B', // Amber
-    '#8B5CF6', // Purple
-    '#EC4899', // Pink
-    '#06B6D4', // Cyan
-    '#84CC16', // Lime
-    '#F97316', // Orange
-    '#6366F1', // Indigo
-    '#14B8A6', // Teal
-    '#F43F5E'  // Rose
+    { kod: '#3B82F6', ad: 'Canlı Mavi' },
+    { kod: '#EF4444', ad: 'Canlı Kırmızı' },
+    { kod: '#10B981', ad: 'Canlı Yeşil' },
+    { kod: '#F59E0B', ad: 'Canlı Turuncu' },
+    { kod: '#8B5CF6', ad: 'Canlı Mor' },
+    { kod: '#EC4899', ad: 'Canlı Pembe' },
+    { kod: '#06B6D4', ad: 'Canlı Cyan' },
+    { kod: '#84CC16', ad: 'Canlı Lime' },
+    { kod: '#F97316', ad: 'Canlı Amber' },
+    { kod: '#6366F1', ad: 'Canlı İndigo' },
+    { kod: '#14B8A6', ad: 'Canlı Teal' },
+    { kod: '#F43F5E', ad: 'Canlı Rose' }
   ];
 
   useEffect(() => {
@@ -136,111 +137,134 @@ const IzinTanimlama: React.FC = () => {
   }
 
   return (
-    <div className="max-w-2xl mx-auto bg-white rounded-xl shadow-sm p-6 mt-8">
+    <div className="max-w-6xl mx-auto bg-white rounded-xl shadow-sm p-6 mt-8">
       <div className="flex items-center gap-2 mb-6">
         <Calendar className="w-5 h-5 text-blue-600" />
         <h2 className="text-lg font-semibold">İzin/İstek Tanımları</h2>
       </div>
 
-      {/* Form */}
-      <div className="space-y-4 mb-6">
-        {/* İzin Adı */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            İzin/İstek Adı <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            value={izinAdi}
-            onChange={(e) => setIzinAdi(e.target.value)}
-            placeholder="Örn: Yıllık İzin, Hastalık İzni"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
-        </div>
-
-        {/* Kısaltma */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Tabloda Görünecek Kısaltma <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            value={kisaltma}
-            onChange={(e) => setKisaltma(e.target.value.toUpperCase())}
-            placeholder="Örn: YIL, HAST"
-            maxLength={5}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent uppercase"
-          />
-        </div>
-
-        {/* Renk Seçimi */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Renk Seçimi
-          </label>
-          <div className="flex items-center gap-4">
-            <div className="flex gap-2 flex-wrap">
-              {renkPaleti.map((renk) => (
-                <button
-                  key={renk}
-                  onClick={() => setSeciliRenk(renk)}
-                  className={`w-8 h-8 rounded-full border-2 transition-all ${
-                    seciliRenk === renk ? 'border-gray-800 scale-110' : 'border-gray-300 hover:border-gray-500'
-                  }`}
-                  style={{ backgroundColor: renk }}
-                  title={`Renk: ${renk}`}
-                />
-              ))}
-            </div>
-            <div className="flex items-center gap-2">
-              <Palette className="w-4 h-4 text-gray-500" />
-              <span className="text-sm text-gray-600">Seçili: {seciliRenk}</span>
-            </div>
+      {/* Kompakt Form - Yan Yana */}
+      <div className="bg-gray-50 rounded-lg p-4 mb-6">
+        <div className="flex items-end gap-4">
+          {/* İzin Adı */}
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              İzin/İstek Adı <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={izinAdi}
+              onChange={(e) => setIzinAdi(e.target.value)}
+              placeholder="Örn: Yıllık İzin"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
           </div>
-        </div>
 
-        {/* Ekle Butonu */}
-        <button
-          onClick={handleAddRequest}
-          disabled={!izinAdi.trim() || !kisaltma.trim()}
-          className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          <span>İzin/İstek Ekle</span>
-        </button>
+          {/* Kısaltma */}
+          <div className="w-32">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Kısaltma <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={kisaltma}
+              onChange={(e) => setKisaltma(e.target.value.toUpperCase())}
+              placeholder="YIL"
+              maxLength={5}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent uppercase text-center font-bold"
+            />
+          </div>
+
+          {/* Renk Seçimi - Dropdown */}
+          <div className="w-48 relative">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Renk
+            </label>
+            <button
+              onClick={() => setRenkDropdownAcik(!renkDropdownAcik)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white flex items-center justify-between hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <div className="flex items-center gap-2">
+                <div 
+                  className="w-4 h-4 rounded-full border border-gray-300 shadow-sm"
+                  style={{ backgroundColor: seciliRenk }}
+                />
+                <span className="text-sm font-medium">
+                  {renkPaleti.find(r => r.kod === seciliRenk)?.ad || 'Renk Seç'}
+                </span>
+              </div>
+              <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${renkDropdownAcik ? 'rotate-180' : ''}`} />
+            </button>
+
+            {/* Dropdown Menu */}
+            {renkDropdownAcik && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
+                {renkPaleti.map((renk) => (
+                  <button
+                    key={renk.kod}
+                    onClick={() => {
+                      setSeciliRenk(renk.kod);
+                      setRenkDropdownAcik(false);
+                    }}
+                    className="w-full px-3 py-2 flex items-center gap-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 transition-colors"
+                  >
+                    <div 
+                      className="w-4 h-4 rounded-full border border-gray-300 shadow-sm"
+                      style={{ backgroundColor: renk.kod }}
+                    />
+                    <span className="text-sm font-medium">{renk.ad}</span>
+                    <span className="text-xs text-gray-500 ml-auto">{renk.kod}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Ekle Butonu */}
+          <button
+            onClick={handleAddRequest}
+            disabled={!izinAdi.trim() || !kisaltma.trim()}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Ekle</span>
+          </button>
+        </div>
       </div>
 
       {/* Liste */}
       <div className="space-y-3">
         <h3 className="text-md font-semibold text-gray-800 mb-3">Tanımlı İzin/İstekler</h3>
-        {personnelRequests.map((item) => (
-          <div key={item.id} className="flex justify-between items-center p-4 bg-gray-50 rounded-lg border border-gray-200">
-            <div className="flex items-center gap-3">
-              <div 
-                className="w-4 h-4 rounded-full border border-gray-300"
-                style={{ backgroundColor: item.renk || '#3B82F6' }}
-              />
-              <div>
-                <div className="font-medium text-gray-900">{item.izin_turu}</div>
-                <div className="text-sm text-gray-500">
-                  Kısaltma: <span className="font-mono bg-gray-200 px-1 rounded">{item.kisaltma || 'N/A'}</span>
+        <div className="grid gap-3">
+          {personnelRequests.map((item) => (
+            <div key={item.id} className="flex justify-between items-center p-4 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors">
+              <div className="flex items-center gap-4">
+                <div 
+                  className="w-6 h-6 rounded-full border-2 border-white shadow-sm"
+                  style={{ backgroundColor: item.renk || '#3B82F6' }}
+                />
+                <div>
+                  <div className="font-medium text-gray-900">{item.izin_turu}</div>
+                  <div className="text-sm text-gray-500">
+                    Kısaltma: <span className="font-mono bg-white px-2 py-1 rounded border font-bold">{item.kisaltma || 'N/A'}</span>
+                  </div>
                 </div>
               </div>
+              <button
+                onClick={() => handleRemoveRequest(item.id)}
+                className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
             </div>
-            <button
-              onClick={() => handleRemoveRequest(item.id)}
-              className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-          </div>
-        ))}
-        
-        {personnelRequests.length === 0 && (
-          <div className="text-center py-8 text-gray-500">
-            Henüz izin/istek tanımı bulunmuyor
-          </div>
-        )}
+          ))}
+          
+          {personnelRequests.length === 0 && (
+            <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg">
+              Henüz izin/istek tanımı bulunmuyor
+            </div>
+          )}
+        </div>
       </div>
 
       {showSuccess && <SuccessNotification message="Başarıyla eklendi" />}
