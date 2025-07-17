@@ -79,6 +79,22 @@ const AlanDetayModal: React.FC<{
     return gunVardiyalari.reduce((toplam, vardiya) => toplam + (vardiya.duration || 0), 0);
   };
 
+  // Haftalık toplam hesaplamaları
+  const getHaftalikToplamSaat = () => {
+    return gunler.reduce((toplam, gunAdi) => {
+      return toplam + getGunToplamSaat(gunAdi);
+    }, 0);
+  };
+
+  const getHaftalikToplamVardiya = () => {
+    return gunler.reduce((toplam, gunAdi) => {
+      return toplam + getGunVardiyalari(gunAdi).length;
+    }, 0);
+  };
+
+  const haftalikToplamSaat = getHaftalikToplamSaat();
+  const haftalikToplamVardiya = getHaftalikToplamVardiya();
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
@@ -104,11 +120,11 @@ const AlanDetayModal: React.FC<{
           {/* Özet Bilgiler */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <div className="p-4 bg-blue-50 rounded-lg text-center">
-              <div className="text-2xl font-bold text-blue-600">{alan.totalHours || 0}</div>
+              <div className="text-2xl font-bold text-blue-600">{haftalikToplamSaat}</div>
               <div className="text-sm text-gray-600">Haftalık Toplam Saat</div>
             </div>
             <div className="p-4 bg-green-50 rounded-lg text-center">
-              <div className="text-2xl font-bold text-green-600">{alan.totalVardiya || 0}</div>
+              <div className="text-2xl font-bold text-green-600">{haftalikToplamVardiya}</div>
               <div className="text-sm text-gray-600">Toplam Vardiya</div>
             </div>
             <div className="p-4 bg-purple-50 rounded-lg text-center">
@@ -117,7 +133,7 @@ const AlanDetayModal: React.FC<{
             </div>
             <div className="p-4 bg-orange-50 rounded-lg text-center">
               <div className="text-2xl font-bold text-orange-600">
-                {Math.round(((alan.totalHours || 0) * 30/7) * 100) / 100}
+                {Math.round(((haftalikToplamSaat) * 30/7) * 100) / 100}
               </div>
               <div className="text-sm text-gray-600">30 Günlük Saat</div>
             </div>
@@ -286,9 +302,28 @@ const TanimliAlanlar: React.FC = () => {
                 console.error('JSON parse hatası:', e);
               }
               
-              // Computed fields'i hesapla
-              const totalHours = parsedVardiyalar.reduce((sum: number, vardiya: any) => sum + (vardiya.duration || 0), 0);
-              const totalVardiya = parsedVardiyalar.length;
+              // Computed fields'i hesapla - Haftalık toplamlar
+              const gunler = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
+              
+              // Her gün için vardiya sayısını ve saatini hesapla
+              const gunlukVardiyaSayilari = gunler.map(gunAdi => {
+                return parsedVardiyalar.filter((vardiya: Vardiya) => 
+                  vardiya.gunler && vardiya.gunler.includes(gunAdi)
+                ).length;
+              });
+              
+              const gunlukSaatler = gunler.map(gunAdi => {
+                const gunVardiyalari = parsedVardiyalar.filter((vardiya: Vardiya) => 
+                  vardiya.gunler && vardiya.gunler.includes(gunAdi)
+                );
+                return gunVardiyalari.reduce((toplam: number, vardiya: Vardiya) => toplam + (vardiya.duration || 0), 0);
+              });
+              
+              // Haftalık toplam saat = her günün toplam saatlerinin toplamı
+              const totalHours = gunlukSaatler.reduce((toplam, gunSaat) => toplam + gunSaat, 0);
+              
+              // Haftalık toplam vardiya sayısı
+              const totalVardiya = gunlukVardiyaSayilari.reduce((toplam, sayi) => toplam + sayi, 0);
               const activeDays = parsedAktifGunler.length;
               
               const mappedRow = {
