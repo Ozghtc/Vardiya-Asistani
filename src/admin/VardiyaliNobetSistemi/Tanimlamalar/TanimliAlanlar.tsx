@@ -240,15 +240,15 @@ const TanimliAlanlar: React.FC = () => {
       setLoading(true);
       console.log('🗑️ Alan siliniyor, ID:', alanId);
       
-      // Netlify proxy üzerinden silme işlemi
+      // Netlify proxy üzerinden silme işlemi - Doğru endpoint
       const response = await fetch('/.netlify/functions/api-proxy', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          path: `/api/v1/data/table/25/rows/${alanId}`,
-          method: 'DELETE',
+          path: `/api/v1/data/table/25/rows/${alanId}/delete`,
+          method: 'POST',
           apiKey: 'hzm_1ce98c92189d4a109cd604b22bfd86b7'
         })
       });
@@ -268,7 +268,15 @@ const TanimliAlanlar: React.FC = () => {
           errorMessage = result.message;
         } else if (result.error) {
           errorMessage = result.error;
+        } else if (result.data && result.data.message) {
+          errorMessage = result.data.message;
         }
+        
+        console.log('🔍 Detaylı hata bilgisi:', {
+          status: response.status,
+          statusText: response.statusText,
+          result: result
+        });
         
         alert('Alan silinirken hata oluştu: ' + errorMessage);
       }
