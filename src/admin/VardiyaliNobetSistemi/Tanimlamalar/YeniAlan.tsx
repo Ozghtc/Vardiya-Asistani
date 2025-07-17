@@ -170,8 +170,9 @@ const YeniAlan: React.FC = () => {
       return updatedAreas;
     });
 
-    // Seçili günleri temizle
-    setSelectedShiftDays([]);
+    // Kalan mesai saati olan tüm günleri otomatik seç
+    const remainingDays = selectedDays.filter(day => getRemainingHoursForDay(day) > 0);
+    setSelectedShiftDays(remainingDays);
   };
 
   const toggleDay = (day: string) => {
