@@ -296,60 +296,57 @@ const PersonelListesi: React.FC = () => {
     return kisaltmalar[gun] || gun;
   };
 
-  // Günler render fonksiyonu - gün bazlı gruplama
-  const renderGunler = (gunlerArray: string[], alanlarArray: string[]) => {
+  // Günler render fonksiyonu - sadece eksik günleri göster
+  const renderGunler = (gunlerArray: string[]) => {
     const tumGunler = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
     
-    // Atanmış günleri göster
+    // Eksik günleri bul
+    const eksikGunler = tumGunler.filter(gun => !gunlerArray.includes(gun));
+    
+    if (eksikGunler.length === 0) {
+      return <span className="text-xs text-green-600">Tüm günler atanmış</span>;
+    }
+    
+    return (
+      <span className="text-xs text-red-600">
+        {eksikGunler.join(', ')}
+      </span>
+    );
+  };
+
+  // Alanlar render fonksiyonu - gün bazlı gruplama ile
+  const renderAlanlar = (gunlerArray: string[], alanlarArray: string[]) => {
+    const tumGunler = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
+    
+    // Atanmış günleri bul
     const atanmisGunler = tumGunler.filter(gun => gunlerArray.includes(gun));
     
     if (atanmisGunler.length === 0) {
       return <span className="text-xs text-red-600">Hiç gün atanmamış</span>;
     }
     
-    // Alanları kısalt ve renklendir
-    const alanlarMetni = alanlarArray.slice(0, 3).map((alan, idx) => (
-      <span key={idx}>
-        <span style={{ color: getAlanYaziRengi(alan) }} className="font-medium">
+    // Günleri kısalt ve birleştir
+    const gunlerMetni = atanmisGunler.map(gun => getGunKisaltma(gun)).join('-');
+    
+    // Alanları renklendir
+    const alanlarMetni = alanlarArray.map((alan, index) => (
+      <span key={index}>
+        <span 
+          className="font-medium"
+          style={{ color: getAlanYaziRengi(alan) }}
+        >
           {alan}
         </span>
-        {idx < Math.min(alanlarArray.length, 3) - 1 && <span className="text-gray-400">-</span>}
+        {index < alanlarArray.length - 1 && <span className="text-gray-400">-</span>}
       </span>
     ));
     
     return (
       <span className="text-xs">
-        {atanmisGunler.map((gun, index) => (
-          <span key={gun}>
-            <span className="font-medium text-gray-700">
-              {getGunKisaltma(gun)}
-            </span>
-            <span className="text-gray-500"> (</span>
-            {alanlarMetni}
-            {alanlarArray.length > 3 && <span className="text-gray-400">...</span>}
-            <span className="text-gray-500">)</span>
-            {index < atanmisGunler.length - 1 && <span className="text-gray-400">, </span>}
-          </span>
-        ))}
-      </span>
-    );
-  };
-
-  // Alanlar render fonksiyonu
-  const renderAlanlar = (alanlarArray: string[]) => {
-    return (
-      <span className="text-xs">
-        {alanlarArray.map((alan, index) => (
-          <span key={index}>
-            <span 
-              className="font-medium"
-              style={{ color: getAlanYaziRengi(alan) }}
-            >
-              {alan}
-            </span>
-            {index < alanlarArray.length - 1 && <span className="text-gray-500">, </span>}
-          </span>
-        ))}
+        <span className="font-medium text-gray-700">{gunlerMetni}</span>
+        <span className="text-gray-500"> (</span>
+        {alanlarMetni}
+        <span className="text-gray-500">)</span>
       </span>
     );
   };
@@ -779,7 +776,7 @@ const PersonelListesi: React.FC = () => {
                                   </div>
                                 </td>
                                 <td className="px-6 py-2 text-xs text-gray-700" colSpan={4}>
-                                  {renderGunler(gunlerArray, alanlarArray)}
+                                  {renderGunler(gunlerArray)}
                                 </td>
                               </tr>
                               
@@ -792,7 +789,7 @@ const PersonelListesi: React.FC = () => {
                                   </div>
                                 </td>
                                 <td className="px-6 py-2 text-xs text-gray-700" colSpan={4}>
-                                  {renderAlanlar(alanlarArray)}
+                                  {renderAlanlar(gunlerArray, alanlarArray)}
                                 </td>
                               </tr>
                             </React.Fragment>
@@ -1007,7 +1004,7 @@ const PersonelListesi: React.FC = () => {
                                   </div>
                                 </td>
                                 <td className="px-6 py-2 text-xs text-gray-700" colSpan={2}>
-                                  {renderGunler(gunlerArray, alanlarArray)}
+                                  {renderGunler(gunlerArray)}
                                 </td>
                                 <td className="px-6 py-2"></td>
                                 <td className="px-6 py-2"></td>
@@ -1022,7 +1019,7 @@ const PersonelListesi: React.FC = () => {
                         </div>
                       </td>
                                 <td className="px-6 py-2 text-xs text-gray-700" colSpan={2}>
-                                  {renderAlanlar(alanlarArray)}
+                                  {renderAlanlar(gunlerArray, alanlarArray)}
                                 </td>
                                 <td className="px-6 py-2"></td>
                                 <td className="px-6 py-2"></td>
