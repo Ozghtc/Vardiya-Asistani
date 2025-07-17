@@ -836,46 +836,92 @@ const PersonelIzinIstekleri: React.FC = () => {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {talepler.map((talep) => (
-                      <div key={talep.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
-                        <div className="flex items-center gap-3">
-                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                            talep.tip === 'nobet' ? 'bg-blue-100' : 'bg-green-100'
-                          }`}>
-                            {talep.tip === 'nobet' ? (
-                              <Clock className="w-4 h-4 text-blue-600" />
-                            ) : (
-                              <CalendarDays className="w-4 h-4 text-green-600" />
-                            )}
-                          </div>
-                          <div>
-                            <div className="font-medium text-gray-900">
-                              {talep.tip === 'nobet' ? 'Nöbet İsteği' : 'İzin/Bosluk Talebi'}
+                    {talepler.map((talep) => {
+                      // Alan bilgilerini al
+                      const alanBilgisi = talep.alan ? alanTanimlamalari.find(alan => alan.alan_adi === talep.alan) : null;
+                      
+                      // Mesai saati bilgilerini al
+                      const mesaiBilgisi = talep.mesai_saati ? vardiyaTanimlamalari.find(vardiya => 
+                        `${vardiya.baslangic_saati}-${vardiya.bitis_saati}` === talep.mesai_saati
+                      ) : null;
+                      
+                      // İzin türü bilgilerini al
+                      const izinBilgisi = talep.izin_turu ? izinTanimlamalari.find(izin => izin.izin_turu === talep.izin_turu) : null;
+                      
+                      return (
+                        <div key={talep.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                              talep.tip === 'nobet' ? 'bg-blue-100' : 'bg-green-100'
+                            }`}>
+                              {talep.tip === 'nobet' ? (
+                                <Clock className="w-4 h-4 text-blue-600" />
+                              ) : (
+                                <CalendarDays className="w-4 h-4 text-green-600" />
+                              )}
                             </div>
-                            <div className="text-sm text-gray-500">
-                              {talep.bitis_tarih 
-                                ? `${talep.tarih.toLocaleDateString('tr-TR')} - ${talep.bitis_tarih.toLocaleDateString('tr-TR')}`
-                                : talep.tarih.toLocaleDateString('tr-TR')
-                              }
-                              {talep.alan && ` • ${talep.alan}`}
-                              {talep.izin_turu && ` • ${talep.izin_turu}`}
-                              {talep.mesai_saati && ` • ${talep.mesai_saati}`}
-                            </div>
-                            {talep.aciklama && (
-                              <div className="text-xs text-gray-400 mt-1">
-                                {talep.aciklama}
+                            <div className="flex-1">
+                              <div className="font-medium text-gray-900">
+                                {talep.tip === 'nobet' ? 'Nöbet İsteği' : 'İzin/Bosluk Talebi'}
                               </div>
-                            )}
+                              
+                              {/* Tarih Bilgisi */}
+                              <div className="text-sm text-gray-500 mb-1">
+                                📅 {talep.bitis_tarih 
+                                  ? `${talep.tarih.toLocaleDateString('tr-TR')} - ${talep.bitis_tarih.toLocaleDateString('tr-TR')}`
+                                  : talep.tarih.toLocaleDateString('tr-TR')
+                                }
+                              </div>
+                              
+                              {/* Alan Bilgisi (Nöbet için) */}
+                              {talep.alan && alanBilgisi && (
+                                <div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
+                                  <div 
+                                    className="w-3 h-3 rounded-full" 
+                                    style={{ backgroundColor: alanBilgisi.renk }}
+                                  ></div>
+                                  <span>📍 {talep.alan}</span>
+                                </div>
+                              )}
+                              
+                              {/* Mesai Saati Bilgisi (Nöbet için) */}
+                              {talep.mesai_saati && mesaiBilgisi && (
+                                <div className="text-sm text-gray-600 mb-1">
+                                  ⏰ {talep.mesai_saati} ({mesaiBilgisi.vardiya_adi} - {mesaiBilgisi.calisma_saati} saat)
+                                </div>
+                              )}
+                              
+                              {/* İzin Türü Bilgisi (İzin için) */}
+                              {talep.izin_turu && izinBilgisi && (
+                                <div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
+                                  <div 
+                                    className="w-3 h-3 rounded-full" 
+                                    style={{ backgroundColor: izinBilgisi.renk }}
+                                  ></div>
+                                  <span>🏖️ {talep.izin_turu} ({izinBilgisi.kisaltma})</span>
+                                  {izinBilgisi.mesai_dusumu && (
+                                    <span className="text-orange-600 text-xs">• Mesai düşümü</span>
+                                  )}
+                                </div>
+                              )}
+                              
+                              {/* Açıklama */}
+                              {talep.aciklama && (
+                                <div className="text-xs text-gray-400 mt-1">
+                                  💬 {talep.aciklama}
+                                </div>
+                              )}
+                            </div>
                           </div>
+                          <button
+                            onClick={() => handleTalepSil(talep.id)}
+                            className="text-red-400 hover:text-red-600 transition-colors"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
                         </div>
-                        <button
-                          onClick={() => handleTalepSil(talep.id)}
-                          className="text-red-400 hover:text-red-600 transition-colors"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
