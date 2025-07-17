@@ -16,6 +16,16 @@ interface MesaiTanimi {
   mesaiSaati: number;
 }
 
+interface KaydedilenMesai {
+  id: number;
+  mesai_adi: string;
+  gunler: string;
+  mesai_saati: number;
+  kurum_id: string;
+  departman_id: string;
+  birim_id: string;
+}
+
 const UnvanTanimlama: React.FC = () => {
   const { user } = useAuthContext();
   const [unvanlar, setUnvanlar] = useState<Unvan[]>([]);
@@ -30,8 +40,39 @@ const UnvanTanimlama: React.FC = () => {
   const [mesaiSaati, setMesaiSaati] = useState<number>(8);
   const [mesaiTanımları, setMesaiTanımları] = useState<MesaiTanimi[]>([]);
   const [kaydedilenMesai, setKaydedilenMesai] = useState<any>(null);
+  
+  // Tüm kaydedilen mesai türleri için state
+  const [kaydedilenMesaiTurleri, setKaydedilenMesaiTurleri] = useState<KaydedilenMesai[]>([]);
+  const [mesaiLoading, setMesaiLoading] = useState(false);
 
   const gunler = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
+
+  // Mesai türlerini yükle
+  const loadMesaiTurleri = async () => {
+    if (!user?.kurum_id || !user?.departman_id || !user?.birim_id) return;
+    
+    setMesaiLoading(true);
+    try {
+      console.log('🔍 Mesai türleri yükleniyor...');
+      
+      const response = await apiRequest(`/api/v1/data/table/24?kurum_id=${user.kurum_id}&departman_id=${user.departman_id}&birim_id=${user.birim_id}`, {
+        method: 'GET'
+      });
+      
+      console.log('📦 Mesai API Response:', response);
+      
+      if (response.success) {
+        console.log('✅ Mesai türleri başarıyla yüklendi:', response.data.rows);
+        setKaydedilenMesaiTurleri(response.data.rows);
+      } else {
+        console.error('❌ Mesai API Error:', response.error);
+      }
+    } catch (error) {
+      console.error('🚨 Mesai türleri yüklenemedi:', error);
+    } finally {
+      setMesaiLoading(false);
+    }
+  };
 
   useEffect(() => {
     // Load unvanlar from HZM API
@@ -72,6 +113,7 @@ const UnvanTanimlama: React.FC = () => {
     };
     
     loadUnvanlar();
+    loadMesaiTurleri();
   }, [user?.kurum_id, user?.departman_id, user?.birim_id]);
 
   const handleUnvanEkle = async () => {
@@ -194,6 +236,8 @@ const UnvanTanimlama: React.FC = () => {
         if (response.success) {
           setKaydedilenMesai(response.data.row);
           console.log('✅ Kayıt başarılı:', response.data.row);
+          // Kaydetme başarılı olduktan sonra tüm mesai türlerini yeniden yükle
+          await loadMesaiTurleri();
         } else {
           console.error('❌ API Hatası:', response.error);
           alert('Kayıt başarısız: ' + (response.error || 'Bilinmeyen hata'));
@@ -345,17 +389,52 @@ const UnvanTanimlama: React.FC = () => {
         </div>
       )}
 
-      {/* Kaydedilen Mesai Başarı Kutusu */}
-      {kaydedilenMesai && (
-        <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg shadow flex flex-col gap-1 animate-fade-in">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="inline-block w-3 h-3 bg-green-500 rounded-full"></span>
-            <span className="font-semibold text-green-700">Mesai başarıyla kaydedildi!</span>
+      {/* Kaydedilen Mesai Türleri Listesi */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+          <Clock className="w-5 h-5" />
+          Kaydedilen Mesai Türleri
+        </h2>
+        
+        {mesaiLoading ? (
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-2 text-gray-600">Mesai türleri yükleniyor...</p>
           </div>
-          <div className="text-gray-800 font-medium">{kaydedilenMesai.mesai_adi}</div>
-          <div className="text-gray-600 text-sm">Günler: {JSON.parse(kaydedilenMesai.gunler).join(', ')} | {kaydedilenMesai.mesai_saati} saat</div>
-        </div>
-      )}
+        ) : kaydedilenMesaiTurleri.length === 0 ? (
+          <div className="text-center py-8">
+            <p className="text-gray-500">Henüz kaydedilmiş mesai türü bulunmuyor</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {kaydedilenMesaiTurleri.map((mesai) => (
+              <div key={mesai.id} className="bg-gray-50 p-4 rounded-lg">
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-gray-800 text-lg">{mesai.mesai_adi}</h3>
+                    <div className="text-gray-600 text-sm mt-1">
+                      <span className="font-medium">Günler:</span> {JSON.parse(mesai.gunler).join(', ')}
+                    </div>
+                    <div className="text-gray-600 text-sm">
+                      <span className="font-medium">Saat:</span> {mesai.mesai_saati} saat
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      // Mesai silme fonksiyonu buraya eklenebilir
+                      console.log('Mesai silme:', mesai.id);
+                    }}
+                    className="text-red-500 hover:text-red-700 transition-colors ml-4"
+                    title="Mesai türünü sil"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Mevcut Unvan Tanımları */}
       <div className="bg-white rounded-lg shadow p-6">
