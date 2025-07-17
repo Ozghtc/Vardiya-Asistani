@@ -617,18 +617,43 @@ const TanimliAlanlar: React.FC = () => {
                       <p className="text-sm text-gray-600">Aktif Günler: {alan.activeDays} gün</p>
                     </div>
                     
-                    {alan.nobetler && alan.nobetler.length > 0 && (
+                    {alan.parsedVardiyalar && alan.parsedVardiyalar.length > 0 && (
                       <div>
                         <h4 className="font-medium text-gray-900 mb-2">Nöbet Grupları</h4>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                          {alan.nobetler.map((nobet, index) => (
-                            <div key={index} className="p-3 bg-gray-50 rounded-lg">
-                              <div className="font-medium text-sm">{nobet.saat} Saat</div>
-                              <div className="text-xs text-gray-600 mt-1">
-                                {nobet.gunler && Array.isArray(nobet.gunler) ? nobet.gunler.join(', ') : 'Gün bilgisi yok'}
+                          {(() => {
+                            // Vardiyaları tip ve saatlerine göre grupla
+                            const vardiyaGruplari = new Map<string, {name: string, hours: string, duration: number, count: number, gunler: Set<string>}>();
+                            
+                            alan.parsedVardiyalar.forEach((vardiya) => {
+                              const key = `${vardiya.name}_${vardiya.startTime}_${vardiya.endTime}`;
+                              if (vardiyaGruplari.has(key)) {
+                                const grup = vardiyaGruplari.get(key)!;
+                                grup.count++;
+                                vardiya.gunler.forEach(gun => grup.gunler.add(gun));
+                              } else {
+                                vardiyaGruplari.set(key, {
+                                  name: vardiya.name,
+                                  hours: `${vardiya.startTime} - ${vardiya.endTime}`,
+                                  duration: vardiya.duration,
+                                  count: 1,
+                                  gunler: new Set(vardiya.gunler)
+                                });
+                              }
+                            });
+                            
+                            return Array.from(vardiyaGruplari.values()).map((grup, index) => (
+                              <div key={index} className="p-3 bg-gray-50 rounded-lg">
+                                <div className="font-medium text-sm">{grup.count} adet {grup.name}</div>
+                                <div className="text-xs text-gray-600 mt-1">
+                                  {grup.hours} • {grup.duration} saat
+                                </div>
+                                <div className="text-xs text-gray-500 mt-1">
+                                  {Array.from(grup.gunler).join(', ')}
+                                </div>
                               </div>
-                            </div>
-                          ))}
+                            ));
+                          })()}
                         </div>
                       </div>
                     )}
