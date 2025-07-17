@@ -1,5 +1,5 @@
 // Netlify Functions - API Proxy (ES MODULES) - OPTIMIZED
-const CACHE_DURATION = 10 * 60 * 1000; // 10 dakika cache
+const CACHE_DURATION = 30 * 60 * 1000; // 30 dakika cache - Performance Boost
 const cache = new Map();
 
 export const handler = async (event, context) => {
@@ -101,7 +101,7 @@ export const handler = async (event, context) => {
     
     // Timeout ile fetch işlemi
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 saniye timeout
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 saniye timeout - Performance Boost
     
     try {
       const response = await fetch(apiUrl, {
@@ -148,7 +148,7 @@ export const handler = async (event, context) => {
     } catch (fetchError) {
       clearTimeout(timeoutId);
       if (fetchError.name === 'AbortError') {
-        console.error('⏰ Request timeout after 25 seconds');
+        console.error('⏰ Request timeout after 5 seconds');
         return {
           statusCode: 408,
           headers: {
@@ -157,13 +157,12 @@ export const handler = async (event, context) => {
           },
           body: JSON.stringify({
             error: 'Request Timeout',
-            message: 'API request timed out after 25 seconds'
+            message: 'API request timed out after 5 seconds'
           }),
         };
       }
       throw fetchError;
     }
-
   } catch (error) {
     console.error('🚨 Proxy Function Error:', error);
     
@@ -172,6 +171,8 @@ export const handler = async (event, context) => {
       headers: {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
       },
       body: JSON.stringify({
         error: 'Internal Server Error',

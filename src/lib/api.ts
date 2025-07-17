@@ -7,6 +7,10 @@ const API_CONFIG = {
   proxyURL: '/.netlify/functions/api-proxy'
 };
 
+// 🚀 Simple Cache System - 5 minutes
+const CACHE_DURATION = 5 * 60 * 1000;
+const cache = new Map();
+
 // Production logging - sadece kritik hatalar
 const logError = (message: string, error?: any) => {
   console.error(`❌ ${message}`, error || '');
@@ -17,12 +21,10 @@ let jwtToken: string | null = null;
 let tokenExpiry: number | null = null;
 
 const getJWTToken = async (): Promise<string> => {
-  // Token mevcut ve henüz expire olmadıysa kullan
   if (jwtToken && tokenExpiry && Date.now() < tokenExpiry) {
-    console.log('🔄 Cached JWT token kullanılıyor');
     return jwtToken;
   }
-  
+
   try {
     const response = await fetch('/.netlify/functions/api-proxy', {
       method: 'POST',
@@ -51,21 +53,33 @@ const getJWTToken = async (): Promise<string> => {
       }
     }
     
-    // Fallback to API key
     return API_CONFIG.apiKey;
   } catch (error) {
     return API_CONFIG.apiKey;
   }
 };
 
-// Optimized API Request function with timeout
+// 🚀 Fast API Request with Cache
 const apiRequest = async (path: string, options: RequestInit = {}) => {
+  const method = options.method || 'GET';
+  const cacheKey = `${method}:${path}:${JSON.stringify(options.body || {})}`;
+  
+  // Check cache for GET requests
+  if (method === 'GET' && cache.has(cacheKey)) {
+    const cachedData = cache.get(cacheKey);
+    if (Date.now() - cachedData.timestamp < CACHE_DURATION) {
+      return cachedData.data;
+    } else {
+      cache.delete(cacheKey);
+    }
+  }
+  
   try {
     const token = await getJWTToken();
     
-    // Timeout ile request
+    // 🚀 Fast timeout - 3 seconds
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 saniye timeout
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
     
     try {
       const response = await fetch('/.netlify/functions/api-proxy', {
@@ -85,8 +99,17 @@ const apiRequest = async (path: string, options: RequestInit = {}) => {
       
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.error || `HTTP error! status: ${response.status}`);
+        throw new Error(data.message || 'API Error');
       }
+      
+      // Cache successful GET requests
+      if (method === 'GET') {
+        cache.set(cacheKey, {
+          data,
+          timestamp: Date.now()
+        });
+      }
+      
       return data;
     } catch (fetchError: any) {
       clearTimeout(timeoutId);
