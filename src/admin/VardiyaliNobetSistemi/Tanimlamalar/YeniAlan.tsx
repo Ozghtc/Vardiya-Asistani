@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Check, X, Clock } from 'lucide-react';
+import { Check, X, Clock, Save } from 'lucide-react';
 import { useCapitalization } from '../../../hooks/useCapitalization';
+import { useAuthContext } from '../../../contexts/AuthContext';
 
 const colorMap = {
   '#DC2626': 'Kırmızı',
@@ -74,6 +75,7 @@ const vardiyalar = [
 ];
 
 const YeniAlan: React.FC = () => {
+  const { user } = useAuthContext();
   const [name, handleNameChange] = useCapitalization('');
   const [description, setDescription] = useState('');
   const [selectedColor, setSelectedColor] = useState('');
@@ -88,6 +90,7 @@ const YeniAlan: React.FC = () => {
   );
   const [selectedShift, setSelectedShift] = useState(vardiyalar[0].name);
   const [selectedShiftDays, setSelectedShiftDays] = useState<string[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Textarea için ayrı handler
   const handleDescriptionTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -170,10 +173,65 @@ const YeniAlan: React.FC = () => {
       return updatedAreas;
     });
 
-    // Kalan mesai saati olan tüm günleri otomatik seç
-    const remainingDays = selectedDays.filter(day => getRemainingHoursForDay(day) > 0);
-    setSelectedShiftDays(remainingDays);
-  };
+      // Kalan mesai saati olan tüm günleri otomatik seç
+  const remainingDays = selectedDays.filter(day => getRemainingHoursForDay(day) > 0);
+  setSelectedShiftDays(remainingDays);
+};
+
+const handleSaveToDatabase = async () => {
+  if (areas.length === 0) {
+    alert('Kaydedilecek alan bulunamadı!');
+    return;
+  }
+
+  setIsSaving(true);
+  try {
+    const area = areas[areas.length - 1];
+    
+    const data = {
+      alan_adi: area.name,
+      renk: area.color,
+      aciklama: area.description,
+      gunluk_saatler: JSON.stringify(area.dayHours),
+      aktif_gunler: JSON.stringify(area.activeDays),
+      vardiyalar: JSON.stringify(area.shifts),
+      kullanici_id: user?.id || 1,
+      kurum_id: user?.kurum_id || "6",
+      departman_id: user?.departman_id || "6_ACİL SERVİS",
+      birim_id: user?.birim_id || "6_HEMSİRE"
+    };
+
+    const response = await fetch('https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/data/table/25/rows', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': 'hzm_1ce98c92189d4a109cd604b22bfd86b7'
+      },
+      body: JSON.stringify(data)
+    });
+
+    if (response.ok) {
+      alert('Alan başarıyla kaydedildi!');
+      // Sayfayı eski haline döndür
+      setAreas([]);
+      setShowShiftSettings(false);
+      setShowShiftAddition(false);
+      setSelectedDays(weekDays.map(day => day.value));
+      setDayHours(weekDays.reduce((acc, day) => ({ ...acc, [day.value]: 40 }), {}));
+      setDailyWorkHours(40);
+      setSelectedShiftDays([]);
+      setSelectedShift(vardiyalar[0].name);
+    } else {
+      const errorData = await response.json();
+      alert(`Kaydetme hatası: ${errorData.message || 'Bilinmeyen hata'}`);
+    }
+  } catch (error) {
+    console.error('Kaydetme hatası:', error);
+    alert('Kaydetme sırasında bir hata oluştu!');
+  } finally {
+    setIsSaving(false);
+  }
+};
 
   const toggleDay = (day: string) => {
     setSelectedDays(prev => 
@@ -590,6 +648,22 @@ const YeniAlan: React.FC = () => {
               <h3 className="text-green-800 font-semibold">Tüm günlere vardiya eklendi!</h3>
             </div>
             <p className="text-green-700 mt-2">Bu alan için tüm günlere vardiya tanımlaması tamamlandı.</p>
+            
+            {/* Kaydet Butonu */}
+            <div className="mt-4">
+              <button
+                onClick={handleSaveToDatabase}
+                disabled={isSaving}
+                className={`w-full py-3 rounded-lg transition-colors flex items-center justify-center gap-2 ${
+                  isSaving
+                    ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                    : 'bg-red-600 hover:bg-red-700 text-white'
+                }`}
+              >
+                <Save className="w-4 h-4" />
+                {isSaving ? 'Kaydediliyor...' : 'Kaydet'}
+              </button>
+            </div>
           </div>
         )}
       </div>
