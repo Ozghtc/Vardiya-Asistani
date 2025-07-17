@@ -32,6 +32,11 @@ interface TanimliAlan {
   olusturma_tarihi: string;
   guncelleme_tarihi: string;
   renk?: string;
+  // Yeni alan detayları
+  gunluk_saatler?: string;
+  aktif_gunler?: string;
+  vardiyalar?: string;
+  parsedVardiyalar?: any[];
 }
 
 interface NobetTanimlamaPopup {
@@ -140,7 +145,7 @@ const PersonelNobetTanimlama: React.FC = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          path: '/api/v1/data/table/18',
+          path: '/api/v1/data/table/25',
           method: 'GET'
         })
       });
@@ -148,12 +153,46 @@ const PersonelNobetTanimlama: React.FC = () => {
       if (response.ok) {
         const result = await response.json();
         if (result.success && result.data?.rows) {
-          const filteredAlanlar = result.data.rows.filter((alan: TanimliAlan) => 
-            alan.kurum_id === user.kurum_id &&
-            alan.departman_id === user.departman_id &&
-            alan.birim_id === user.birim_id &&
-            alan.aktif_mi
-          );
+          const filteredAlanlar = result.data.rows
+            .filter((alan: any) => 
+              alan.kurum_id === user.kurum_id &&
+              alan.departman_id === user.departman_id &&
+              alan.birim_id === user.birim_id
+            )
+            .map((alan: any) => {
+              // Vardiya verilerini parse et
+              let parsedVardiyalar = [];
+              try {
+                const rawVardiyalar = JSON.parse(alan.vardiyalar || '[]');
+                parsedVardiyalar = rawVardiyalar.map((vardiya: any) => ({
+                  id: vardiya.id,
+                  name: vardiya.name,
+                  startTime: vardiya.hours ? vardiya.hours.split(' - ')[0] : '',
+                  endTime: vardiya.hours ? vardiya.hours.split(' - ')[1] : '',
+                  duration: vardiya.duration || 0,
+                  gunler: vardiya.days || []
+                }));
+              } catch (e) {
+                console.error('Vardiya parse hatası:', e);
+              }
+
+              return {
+                id: alan.id,
+                alan_adi: alan.alan_adi,
+                alan_kodu: alan.alan_adi, // Alan kodu yoksa alan adını kullan
+                kurum_id: alan.kurum_id,
+                departman_id: alan.departman_id,
+                birim_id: alan.birim_id,
+                aktif_mi: true,
+                olusturma_tarihi: alan.created_at,
+                guncelleme_tarihi: alan.updated_at,
+                renk: alan.renk,
+                gunluk_saatler: alan.gunluk_saatler,
+                aktif_gunler: alan.aktif_gunler,
+                vardiyalar: alan.vardiyalar,
+                parsedVardiyalar: parsedVardiyalar
+              };
+            });
           
           setTanimliAlanlar(filteredAlanlar);
         }
@@ -934,10 +973,10 @@ const PersonelNobetTanimlama: React.FC = () => {
               {nobetKombinasyonlari.length > 0 && (
                 <div>
                   <h4 className="text-md font-medium text-gray-800 mb-4">Eklenecek Alan Tanımlamaları</h4>
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     {nobetKombinasyonlari.map((kombinasyon, index) => (
                       <div key={index} className="p-4 border border-gray-200 rounded-lg bg-gray-50">
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between mb-3">
                           <div className="space-y-2">
                             <div className="flex items-center gap-2">
                               <Calendar className="w-4 h-4 text-blue-600" />
@@ -956,6 +995,59 @@ const PersonelNobetTanimlama: React.FC = () => {
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
+                        </div>
+                        
+                        {/* Alan Detayları */}
+                        <div className="space-y-3">
+                          {kombinasyon.alanlar.map((alanId) => {
+                            const alan = tanimliAlanlar.find(a => a.id === alanId);
+                            if (!alan) return null;
+                            
+                            return (
+                              <div key={alanId} className="p-3 bg-white rounded-lg border-l-4" style={{ borderLeftColor: alan.renk || '#6B7280' }}>
+                                <div className="flex items-center gap-2 mb-2">
+                                  <div 
+                                    className="w-3 h-3 rounded-full" 
+                                    style={{ backgroundColor: alan.renk || '#6B7280' }}
+                                  />
+                                  <h5 className="font-medium text-gray-900">{alan.alan_adi}</h5>
+                                </div>
+                                
+                                {/* Vardiya Detayları */}
+                                {alan.parsedVardiyalar && alan.parsedVardiyalar.length > 0 && (
+                                  <div className="space-y-2">
+                                    <div className="text-xs text-gray-600 font-medium">Vardiyalar:</div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                      {alan.parsedVardiyalar.map((vardiya: any, vardiyaIndex: number) => (
+                                        <div key={vardiyaIndex} className="text-xs bg-gray-50 rounded p-2 border">
+                                          <div className="font-medium">{vardiya.name}</div>
+                                          <div className="text-gray-600">{vardiya.startTime} - {vardiya.endTime} ({vardiya.duration} saat)</div>
+                                          <div className="text-gray-500">Günler: {vardiya.gunler.join(', ')}</div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                                
+                                {/* Aktif Günler */}
+                                {alan.aktif_gunler && (
+                                  <div className="mt-2">
+                                    <div className="text-xs text-gray-600 font-medium">Aktif Günler:</div>
+                                    <div className="text-xs text-gray-700">
+                                      {(() => {
+                                        try {
+                                          const aktifGunler = JSON.parse(alan.aktif_gunler);
+                                          return Array.isArray(aktifGunler) ? aktifGunler.join(', ') : alan.aktif_gunler;
+                                        } catch (e) {
+                                          return alan.aktif_gunler;
+                                        }
+                                      })()}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                     ))}
