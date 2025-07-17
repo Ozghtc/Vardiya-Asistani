@@ -80,14 +80,28 @@ const PersonelIstek: React.FC = () => {
         if (response.ok) {
           const result = await response.json();
           if (result.success && result.data?.rows) {
-            // Kullanıcının kurum/departman/birim'ine göre filtreleme
-            const filteredPersonnel = result.data.rows.filter((person: PersonelBilgisi) => 
-              person.kurum_id === user.kurum_id &&
-              person.departman_id === user.departman_id &&
-              person.birim_id === user.birim_id &&
-              person.aktif_mi
-            );
+            let filteredPersonnel = result.data.rows;
             
+            // Kullanıcı bilgileri varsa filtreleme yap
+            if (user.kurum_id && user.departman_id && user.birim_id) {
+              filteredPersonnel = result.data.rows.filter((person: PersonelBilgisi) => 
+                person.kurum_id === user.kurum_id &&
+                person.departman_id === user.departman_id &&
+                person.birim_id === user.birim_id &&
+                person.aktif_mi
+              );
+            } else {
+              // Demo kullanıcısı için sabit filtre uygula
+              console.log('Demo kullanıcısı - sabit filtre uygulanıyor');
+              filteredPersonnel = result.data.rows.filter((person: PersonelBilgisi) => 
+                person.kurum_id === "6" &&
+                person.departman_id === "6_ACİL SERVİS" &&
+                person.birim_id === "6_HEMSİRE" &&
+                person.aktif_mi
+              );
+            }
+            
+            console.log('Filtrelenmiş personel listesi:', filteredPersonnel);
             setPersonelListesi(filteredPersonnel);
           }
         }
@@ -133,6 +147,18 @@ const PersonelIstek: React.FC = () => {
             Geri
           </button>
         </div>
+
+        {/* Debug bilgileri */}
+        {!user?.kurum_id && (
+          <div className="mb-4 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <div className="flex items-center gap-2">
+              <span className="text-yellow-600">⚠️</span>
+              <p className="text-sm text-yellow-800">
+                Demo kullanıcısı - Sabit filtre uygulanıyor: Kurum ID: 6, Departman: 6_ACİL SERVİS, Birim: 6_HEMSİRE
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Başlık ve Tarih Seçici */}
         <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
@@ -251,7 +277,10 @@ const PersonelIstek: React.FC = () => {
                 ) : (
                   <tr>
                     <td colSpan={dateRange.length + 1} className="px-6 py-8 text-center text-gray-500">
-                      Personel bulunamadı
+                      {!user?.kurum_id ? 
+                        "Demo kullanıcısı için personel bulunamadı. Lütfen gerçek kurum bilgileri ile giriş yapın." :
+                        "Personel bulunamadı"
+                      }
                     </td>
                   </tr>
                 )}
