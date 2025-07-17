@@ -241,6 +241,29 @@ const PersonelListesi: React.FC = () => {
     return 'bg-gray-100 text-gray-800 border-gray-200';
   };
 
+  // Sadece yazı rengi için alan fonksiyonu
+  const getAlanYaziRengi = (alanAdi: string) => {
+    const renkler: { [key: string]: string } = {
+      'CERRAHİ': 'text-red-600',
+      'AŞI': 'text-green-600',
+      'YEŞİL ALAN': 'text-emerald-600',
+      'ENJEKSİYON': 'text-blue-600',
+      'TRİYAJ': 'text-purple-600',
+      'GÖZLEM': 'text-yellow-600',
+      'MÜDAHALE': 'text-orange-600'
+    };
+    
+    // Alan adında anahtar kelime arama
+    for (const [kelime, renk] of Object.entries(renkler)) {
+      if (alanAdi.toUpperCase().includes(kelime)) {
+        return renk;
+      }
+    }
+    
+    // Varsayılan renk
+    return 'text-gray-600';
+  };
+
   // Günler render fonksiyonu
   const renderGunler = (gunlerArray: string[]) => {
     const tumGunler = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
@@ -262,16 +285,16 @@ const PersonelListesi: React.FC = () => {
   // Alanlar render fonksiyonu
   const renderAlanlar = (alanlarArray: string[]) => {
     return (
-      <div className="flex flex-wrap gap-1">
+      <span className="text-xs">
         {alanlarArray.map((alan, index) => (
-          <span
-            key={index}
-            className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium border ${getAlanRengi(alan)}`}
-          >
-            {alan}
+          <span key={index}>
+            <span className={`${getAlanYaziRengi(alan)} font-medium`}>
+              {alan}
+            </span>
+            {index < alanlarArray.length - 1 && <span className="text-gray-500">, </span>}
           </span>
         ))}
-      </div>
+      </span>
     );
   };
 
