@@ -520,7 +520,7 @@ const PersonelIzinIstekleri: React.FC = () => {
       {/* Popup Modal */}
       {showPopup && (
         <div 
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto"
           onClick={(e) => {
             if (e.target === e.currentTarget) {
               setShowPopup(false);
@@ -530,7 +530,7 @@ const PersonelIzinIstekleri: React.FC = () => {
           }}
         >
           <div 
-            className="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden"
+            className="bg-white rounded-xl shadow-xl w-full max-w-4xl min-h-fit my-8"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
@@ -548,7 +548,7 @@ const PersonelIzinIstekleri: React.FC = () => {
               </button>
             </div>
             
-            <div className="flex flex-col h-full">
+            <div className="flex flex-col">
               {/* Üst Bölüm - Form */}
               <div className="p-6 border-b border-gray-200">
                 {/* Tip Seçimi */}
@@ -731,7 +731,7 @@ const PersonelIzinIstekleri: React.FC = () => {
               </div>
 
               {/* Alt Bölüm - Liste */}
-              <div className="flex-1 p-6 overflow-y-auto">
+              <div className="p-6">
                 <h4 className="text-lg font-semibold text-gray-900 mb-4">Eklenen Talepler</h4>
                 
                 {talepler.length === 0 ? (
