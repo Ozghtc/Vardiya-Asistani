@@ -216,6 +216,84 @@ const PersonelListesi: React.FC = () => {
 
   const gunler = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
 
+  // Gün kısaltma fonksiyonu
+  const getGunKisaltma = (gun: string) => {
+    const kisaltmalar: { [key: string]: string } = {
+      'Pazartesi': 'Pzt',
+      'Salı': 'Sal',
+      'Çarşamba': 'Çar',
+      'Perşembe': 'Per',
+      'Cuma': 'Cum',
+      'Cumartesi': 'Cmt',
+      'Pazar': 'Paz'
+    };
+    return kisaltmalar[gun] || gun;
+  };
+
+  // Alan rengi fonksiyonu
+  const getAlanRengi = (alanAdi: string) => {
+    const renkler: { [key: string]: string } = {
+      'CERRAHİ': 'bg-red-100 text-red-800 border-red-200',
+      'AŞI': 'bg-green-100 text-green-800 border-green-200',
+      'YEŞİL ALAN': 'bg-emerald-100 text-emerald-800 border-emerald-200',
+      'ENJEKSİYON': 'bg-blue-100 text-blue-800 border-blue-200',
+      'TRİYAJ': 'bg-purple-100 text-purple-800 border-purple-200',
+      'GÖZLEM': 'bg-yellow-100 text-yellow-800 border-yellow-200',
+      'MÜDAHALE': 'bg-orange-100 text-orange-800 border-orange-200'
+    };
+    
+    // Alan adında anahtar kelime arama
+    for (const [kelime, renk] of Object.entries(renkler)) {
+      if (alanAdi.toUpperCase().includes(kelime)) {
+        return renk;
+      }
+    }
+    
+    // Varsayılan renk
+    return 'bg-gray-100 text-gray-800 border-gray-200';
+  };
+
+  // Günler render fonksiyonu
+  const renderGunler = (gunlerArray: string[]) => {
+    const tumGunler = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
+    
+    return (
+      <div className="flex flex-wrap gap-1">
+        {tumGunler.map((gun) => {
+          const atanmis = gunlerArray.includes(gun);
+          return (
+            <span
+              key={gun}
+              className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium border ${
+                atanmis
+                  ? 'bg-blue-100 text-blue-800 border-blue-200'
+                  : 'bg-red-100 text-red-800 border-red-200'
+              }`}
+            >
+              {getGunKisaltma(gun)}
+            </span>
+          );
+        })}
+      </div>
+    );
+  };
+
+  // Alanlar render fonksiyonu
+  const renderAlanlar = (alanlarArray: string[]) => {
+    return (
+      <div className="flex flex-wrap gap-1">
+        {alanlarArray.map((alan, index) => (
+          <span
+            key={index}
+            className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium border ${getAlanRengi(alan)}`}
+          >
+            {alan}
+          </span>
+        ))}
+      </div>
+    );
+  };
+
   const getPersonelNobetTanimlama = (personelId: number) => {
     return kayitliNobetTanimlama.filter(nobet => parseInt(nobet.personel_id) === personelId);
   };
@@ -397,7 +475,7 @@ const PersonelListesi: React.FC = () => {
       if (allSuccess) {
         // Kayıtlı nöbet tanımlamalarını yeniden yükle
         await loadKayitliNobetTanimlama();
-        
+    
         // Popup'ı kapat
         handleNobetTanimlamaClose();
         
@@ -467,116 +545,218 @@ const PersonelListesi: React.FC = () => {
   ];
 
   const renderPersonelListesi = () => {
-    if (loading) {
-      return (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-3"></div>
-          <p className="text-gray-500">Personel listesi yükleniyor...</p>
-        </div>
-      );
-    }
-
-    if (error) {
-      return (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center">
-          <div className="text-red-500 text-6xl mb-4">⚠️</div>
-          <p className="text-gray-500 mb-4">{error}</p>
-          <button
-            onClick={loadPersonnel}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-          >
-            Yeniden Dene
-          </button>
-        </div>
-      );
-    }
+    const filteredPersonnel = getFilteredPersonnel();
+    const istatistikler = getPersonelIstatistikleri();
 
     return (
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Personnel List */}
-        <div className="lg:col-span-2">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100">
-            <div className="overflow-hidden">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-gray-50 border-b border-gray-100">
-                    <th className="text-left px-6 py-4 text-sm font-semibold text-gray-600">TC / Ad Soyad</th>
-                    <th className="text-left px-6 py-4 text-sm font-semibold text-gray-600">İletişim</th>
-                    <th className="text-left px-6 py-4 text-sm font-semibold text-gray-600">Durum</th>
-                    <th className="text-right px-6 py-4 text-sm font-semibold text-gray-600">İşlemler</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50">
-                  {personnel.map((person) => (
-                    <tr 
-                      key={person.id} 
-                      className={`hover:bg-gray-50 cursor-pointer transition-colors ${selectedPerson?.id === person.id ? 'bg-blue-50' : ''}`}
-                      onClick={() => setSelectedPerson(person)}
-                    >
-                      <td className="px-6 py-4">
-                        <div>
-                          <div className="font-medium text-gray-900">{person.ad} {person.soyad}</div>
-                          <div className="text-sm text-gray-500">{person.tcno}</div>
-                          <div className="text-sm text-blue-600">{person.unvan}</div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2 text-sm text-gray-600">
-                            <Mail className="w-4 h-4" />
-                            <span>{person.email || 'E-posta yok'}</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-sm text-gray-600">
-                            <Phone className="w-4 h-4" />
-                            <span>{person.telefon || 'Telefon yok'}</span>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          person.aktif_mi 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-red-100 text-red-800'
-                        }`}>
-                          {person.aktif_mi ? 'Aktif' : 'Pasif'}
-                        </span>
-                        {person.kullanici_sayfasi_aktif && (
-                          <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                            Giriş Aktif
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center justify-end gap-2">
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigate(`/personel-ekle/${person.id}`);
-                            }}
-                            className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                          >
-                            <Pencil className="w-4 h-4" />
-                          </button>
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setDeleteDialog({ isOpen: true, personId: person.id });
-                            }}
-                            className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+      <div className="space-y-6">
+        {/* Filtre Butonları ve İstatistikler */}
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-semibold text-gray-800">Personel Filtreleri</h3>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setNobetFilter('tum')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  nobetFilter === 'tum'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Tüm Personel ({istatistikler.toplamPersonel})
+              </button>
+              <button
+                onClick={() => setNobetFilter('tanimli')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  nobetFilter === 'tanimli'
+                    ? 'bg-green-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Nöbet Tanımlı ({istatistikler.nobetTanimliPersonel})
+              </button>
+              <button
+                onClick={() => setNobetFilter('tanimsiz')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  nobetFilter === 'tanimsiz'
+                    ? 'bg-red-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Nöbet Tanımsız ({istatistikler.nobetTanimsizPersonel})
+              </button>
+            </div>
+          </div>
 
-              {personnel.length === 0 && (
-                <div className="text-center py-12">
-                  <User2 className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                  <p className="text-gray-500">Henüz personel kaydı bulunmuyor</p>
+          {/* İstatistik Kartları */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-blue-600 font-medium">Toplam Personel</p>
+                  <p className="text-2xl font-bold text-blue-900">{istatistikler.toplamPersonel}</p>
+                </div>
+                <Users className="w-8 h-8 text-blue-600" />
+              </div>
+            </div>
+
+            <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-green-600 font-medium">Nöbet Tanımlı</p>
+                  <p className="text-2xl font-bold text-green-900">{istatistikler.nobetTanimliPersonel}</p>
+                </div>
+                <Calendar className="w-8 h-8 text-green-600" />
+              </div>
+            </div>
+
+            <div className="bg-red-50 rounded-lg p-4 border border-red-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-red-600 font-medium">Nöbet Tanımsız</p>
+                  <p className="text-2xl font-bold text-red-900">{istatistikler.nobetTanimsizPersonel}</p>
+                </div>
+                <User2 className="w-8 h-8 text-red-600" />
+              </div>
+            </div>
+
+            <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-purple-600 font-medium">Toplam Tanımlama</p>
+                  <p className="text-2xl font-bold text-purple-900">{istatistikler.toplamNobetTanimlama}</p>
+                </div>
+                <Clock className="w-8 h-8 text-purple-600" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Personel Tablosu */}
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-800">
+              {filteredPersonnel.length} personel görüntüleniyor
+            </h3>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Ad Soyad
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    TC Kimlik No
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Ünvan
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Durum
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    İşlem
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredPersonnel.map((person) => {
+                  const personelNobetler = getPersonelNobetTanimlama(person.id);
+                  
+                  return (
+                    <React.Fragment key={person.id}>
+                      {/* Ana personel satırı */}
+                      <tr className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900">
+                            {person.ad} {person.soyad}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">{person.tcno}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            {person.unvan}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            person.aktif_mi 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {person.aktif_mi ? 'Aktif' : 'Pasif'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <button
+                            onClick={() => handleNobetTanimlamaOpen(person)}
+                            className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-sm"
+                          >
+                            <Calendar className="w-4 h-4" />
+                            Nöbet Tanımla
+                          </button>
+                        </td>
+                      </tr>
+
+                      {/* Kayıtlı nöbet tanımlamaları */}
+                      {personelNobetler.map((nobet) => {
+                        try {
+                          const gunlerArray = JSON.parse(nobet.gunler);
+                          const alanlarArray = JSON.parse(nobet.alan_adlari);
+                          
+                          return (
+                            <React.Fragment key={nobet.id}>
+                              {/* Günler satırı */}
+                              <tr className="bg-blue-50">
+                                <td className="px-6 py-2 text-xs text-gray-600">
+                                  <div className="flex items-center gap-1">
+                                    <Calendar className="w-3 h-3" />
+                                    <span className="font-medium">Günler:</span>
+                                  </div>
+                                </td>
+                                <td className="px-6 py-2 text-xs text-gray-700" colSpan={4}>
+                                  {renderGunler(gunlerArray)}
+                                </td>
+                              </tr>
+                              
+                              {/* Alanlar satırı */}
+                              <tr className="bg-green-50">
+                                <td className="px-6 py-2 text-xs text-gray-600">
+                                  <div className="flex items-center gap-1">
+                                    <Building2 className="w-3 h-3" />
+                                    <span className="font-medium">Alanlar:</span>
+                                  </div>
+                                </td>
+                                <td className="px-6 py-2 text-xs text-gray-700" colSpan={4}>
+                                  {renderAlanlar(alanlarArray)}
+                                </td>
+                              </tr>
+                            </React.Fragment>
+                          );
+                        } catch (error) {
+                          console.error('JSON parse hatası:', error, nobet);
+                          return null;
+                        }
+                      })}
+                    </React.Fragment>
+                  );
+                })}
+              </tbody>
+            </table>
+
+            {filteredPersonnel.length === 0 && (
+              <div className="text-center py-12">
+                <User2 className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                <p className="text-gray-500">
+                  {nobetFilter === 'tum' && 'Henüz personel kaydı bulunmuyor'}
+                  {nobetFilter === 'tanimli' && 'Nöbet tanımlı personel bulunmuyor'}
+                  {nobetFilter === 'tanimsiz' && 'Nöbet tanımsız personel bulunmuyor'}
+                </p>
+                {nobetFilter === 'tum' && (
                   <button
                     onClick={() => navigate('/personel-ekle')}
                     className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
@@ -584,57 +764,10 @@ const PersonelListesi: React.FC = () => {
                     <Plus className="w-5 h-5" />
                     <span>İlk Personeli Ekle</span>
                   </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Details Panel */}
-        <div className="lg:col-span-1">
-          {selectedPerson ? (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-6 sticky top-6">
-              <div className="flex items-center gap-3 pb-4 border-b">
-                <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center">
-                  <User2 className="w-6 h-6 text-blue-600" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900">{selectedPerson.ad} {selectedPerson.soyad}</h3>
-                  <p className="text-sm text-gray-500">{selectedPerson.unvan}</p>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Mail className="w-4 h-4" />
-                  <span>{selectedPerson.email || 'E-posta yok'}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Phone className="w-4 h-4" />
-                  <span>{selectedPerson.telefon || 'Telefon yok'}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Building2 className="w-4 h-4" />
-                  <span>{user?.kurum_adi || 'Kurum bilgisi yok'}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Calendar className="w-4 h-4" />
-                  <span>Kayıt: {new Date(selectedPerson.olusturma_tarihi).toLocaleDateString('tr-TR')}</span>
-                </div>
-                {selectedPerson.giris_email && (
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <User2 className="w-4 h-4" />
-                    <span>Giriş: {selectedPerson.giris_email}</span>
-                  </div>
                 )}
               </div>
-            </div>
-          ) : (
-            <div className="bg-gray-50 rounded-xl border border-gray-100 p-8 text-center">
-              <Clock className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500">Detayları görüntülemek için personel seçin</p>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     );
@@ -814,7 +947,7 @@ const PersonelListesi: React.FC = () => {
                                   </div>
                                 </td>
                                 <td className="px-6 py-2 text-xs text-gray-700" colSpan={2}>
-                                  {gunlerArray.join(', ')}
+                                  {renderGunler(gunlerArray)}
                                 </td>
                                 <td className="px-6 py-2"></td>
                                 <td className="px-6 py-2"></td>
@@ -829,7 +962,7 @@ const PersonelListesi: React.FC = () => {
                                   </div>
                                 </td>
                                 <td className="px-6 py-2 text-xs text-gray-700" colSpan={2}>
-                                  {alanlarArray.join(', ')}
+                                  {renderAlanlar(alanlarArray)}
                                 </td>
                                 <td className="px-6 py-2"></td>
                                 <td className="px-6 py-2"></td>
@@ -999,30 +1132,29 @@ const PersonelListesi: React.FC = () => {
                     : 'bg-blue-600 text-white hover:bg-blue-700'
                 }`}
               >
-                <Plus className="w-5 h-5" />
-                Ekle
+                <Plus className="w-4 h-4" />
+                Listeye Ekle
               </button>
             </div>
 
             {/* Eklenen Kombinasyonlar */}
             {nobetKombinasyonlari.length > 0 && (
-              <div className="border-t pt-6">
-                <h4 className="text-md font-medium text-gray-800 mb-4">Eklenen Nöbet Tanımlamaları</h4>
+              <div>
+                <h4 className="text-md font-medium text-gray-800 mb-4">Eklenecek Nöbet Tanımlamaları</h4>
                 <div className="space-y-3">
                   {nobetKombinasyonlari.map((kombinasyon, index) => (
-                    <div
-                      key={index}
-                      className="bg-green-50 border border-green-200 rounded-lg p-4"
-                    >
+                    <div key={index} className="p-4 border border-gray-200 rounded-lg bg-gray-50">
                       <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <span className="text-sm font-medium text-green-800">Günler:</span>
-                            <span className="text-sm text-green-700">{kombinasyon.gunler.join(', ')}</span>
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <Calendar className="w-4 h-4 text-blue-600" />
+                            <span className="text-sm font-medium text-gray-700">Günler:</span>
+                            <span className="text-sm text-gray-600">{kombinasyon.gunler.join(', ')}</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium text-green-800">Alanlar:</span>
-                            <span className="text-sm text-green-700">{kombinasyon.alanAdlari.join(', ')}</span>
+                            <Building2 className="w-4 h-4 text-green-600" />
+                            <span className="text-sm font-medium text-gray-700">Alanlar:</span>
+                            <span className="text-sm text-gray-600">{kombinasyon.alanAdlari.join(', ')}</span>
                           </div>
                         </div>
                         <button
@@ -1043,7 +1175,7 @@ const PersonelListesi: React.FC = () => {
           <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200">
             <button
               onClick={handleNobetTanimlamaClose}
-              className="px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+              className="px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
             >
               İptal
             </button>
@@ -1072,22 +1204,27 @@ const PersonelListesi: React.FC = () => {
       case 'nobet':
         return renderNobetTanimlama();
       case 'istek':
-        return (
-          <PersonelIstek 
-            data={{
-              istekTuru: '',
-              baslangicTarihi: '',
-              bitisTarihi: '',
-              tekrarlaniyorMu: false,
-              aciklama: ''
-            }}
-            onChange={() => {}}
-          />
-        );
+        return <PersonelIstek />;
       default:
         return null;
     }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <p className="text-red-700">{error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
