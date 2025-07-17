@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Plus, ArrowLeft, Save, User, UserPlus } from 'lucide-react';
 import { safeStringOperation } from '../../../hooks/useCapitalization';
 import { apiRequest } from '../../../lib/api';
+import { useAuthContext } from '../../../contexts/AuthContext';
 
 interface Unvan {
   id: number;
@@ -21,6 +22,7 @@ interface PersonelFormData {
 
 const PersonelEkle: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuthContext();
   const [formData, setFormData] = useState<PersonelFormData>({
     ad: '',
     soyad: '',
@@ -40,20 +42,26 @@ const PersonelEkle: React.FC = () => {
     const loadUnvanlar = async () => {
       try {
         setLoading(true);
+        setError(null);
+        
         const response = await apiRequest('/api/v1/data/table/15');
         if (response.success && response.data?.rows) {
           setUnvanlar(response.data.rows);
+        } else {
+          setError('Ünvanlar yüklenemedi');
         }
       } catch (error) {
         console.error('Unvanlar yüklenirken hata:', error);
-        setError('Unvanlar yüklenemedi');
+        setError('Ünvanlar yüklenirken bir hata oluştu');
       } finally {
         setLoading(false);
       }
     };
 
-    loadUnvanlar();
-  }, []);
+    if (user) {
+      loadUnvanlar();
+    }
+  }, [user]);
 
   const handleInputChange = (field: keyof PersonelFormData, value: string) => {
     let processedValue = value;
@@ -82,6 +90,11 @@ const PersonelEkle: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!user) {
+      setError('Kullanıcı bilgileri bulunamadı');
+      return;
+    }
+    
     // Validasyon
     if (!formData.ad || !formData.soyad || !formData.tc || !formData.unvan_id) {
       setError('Lütfen tüm zorunlu alanları doldurun');
@@ -98,20 +111,28 @@ const PersonelEkle: React.FC = () => {
       setError(null);
 
       const personelData = {
+        tcno: formData.tc, // API'de tcno olarak geçiyor
         ad: formData.ad,
         soyad: formData.soyad,
-        tc: formData.tc,
-        unvan_id: formData.unvan_id,
-        email: formData.email || null,
-        telefon: formData.telefon || null,
+        unvan: formData.unvan_id, // API'de unvan olarak geçiyor
+        email: formData.email || '',
+        telefon: formData.telefon || '',
+        kurum_id: user.kurum_id,
+        departman_id: user.departman_id,
+        birim_id: user.birim_id,
         aktif_mi: true,
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       };
+
+      console.log('Personel verisi gönderiliyor:', personelData);
 
       const response = await apiRequest('/api/v1/data/table/21/rows', {
         method: 'POST',
         body: JSON.stringify(personelData)
       });
+
+      console.log('API yanıtı:', response);
 
       if (response.success) {
         setSuccess(true);
@@ -119,11 +140,11 @@ const PersonelEkle: React.FC = () => {
           navigate('/personel-listesi');
         }, 2000);
       } else {
-        setError('Personel eklenirken bir hata oluştu');
+        setError(response.message || 'Personel eklenirken bir hata oluştu');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Personel ekleme hatası:', error);
-      setError('Personel eklenirken bir hata oluştu');
+      setError(error.message || 'Personel eklenirken bir hata oluştu');
     } finally {
       setSaving(false);
     }
@@ -132,6 +153,15 @@ const PersonelEkle: React.FC = () => {
   const handleBack = () => {
     navigate('/personel-listesi');
   };
+
+    // Kullanıcı yoksa loading göster
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">

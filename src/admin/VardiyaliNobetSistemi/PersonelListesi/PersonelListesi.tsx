@@ -53,7 +53,8 @@ const PersonelListesi: React.FC = () => {
         },
         body: JSON.stringify({
           path: '/api/v1/data/table/21',
-          method: 'GET'
+          method: 'GET',
+          apiKey: 'hzm_1ce98c92189d4a109cd604b22bfd86b7'
         })
       });
 
@@ -123,7 +124,8 @@ const PersonelListesi: React.FC = () => {
         },
         body: JSON.stringify({
           path: `/api/v1/data/table/21/rows/${deleteDialog.personId}`,
-          method: 'DELETE'
+          method: 'DELETE',
+          apiKey: 'hzm_1ce98c92189d4a109cd604b22bfd86b7'
         })
       });
 
