@@ -33,6 +33,7 @@ interface TanimliAlan {
   aktif_mi: boolean;
   olusturma_tarihi: string;
   guncelleme_tarihi: string;
+  renk?: string; // Veri tabanından gelen renk bilgisi
 }
 
 interface NobetTanimlamaPopup {
@@ -241,16 +242,33 @@ const PersonelListesi: React.FC = () => {
     return 'bg-gray-100 text-gray-800 border-gray-200';
   };
 
+  // Veri tabanından alan rengini bulma fonksiyonu
+  const getAlanRengiFromDB = (alanAdi: string) => {
+    const alan = tanimliAlanlar.find(a => a.alan_adi === alanAdi);
+    if (alan && alan.renk) {
+      return alan.renk;
+    }
+    return null;
+  };
+
   // Sadece yazı rengi için alan fonksiyonu
   const getAlanYaziRengi = (alanAdi: string) => {
+    // Önce veri tabanından renk bilgisini dene
+    const dbRenk = getAlanRengiFromDB(alanAdi);
+    if (dbRenk) {
+      // Hex renk kodunu CSS style olarak döndür
+      return `#${dbRenk.replace('#', '')}`;
+    }
+    
+    // Veri tabanında renk yoksa varsayılan renkleri kullan
     const renkler: { [key: string]: string } = {
-      'CERRAHİ': 'text-red-600',
-      'AŞI': 'text-green-600',
-      'YEŞİL ALAN': 'text-emerald-600',
-      'ENJEKSİYON': 'text-blue-600',
-      'TRİYAJ': 'text-purple-600',
-      'GÖZLEM': 'text-yellow-600',
-      'MÜDAHALE': 'text-orange-600'
+      'CERRAHİ': '#DC2626',
+      'AŞI': '#059669',
+      'YEŞİL ALAN': '#059669',
+      'ENJEKSİYON': '#2563EB',
+      'TRİYAJ': '#7C3AED',
+      'GÖZLEM': '#EAB308',
+      'MÜDAHALE': '#EA580C'
     };
     
     // Alan adında anahtar kelime arama
@@ -261,7 +279,7 @@ const PersonelListesi: React.FC = () => {
     }
     
     // Varsayılan renk
-    return 'text-gray-600';
+    return '#6B7280';
   };
 
   // Günler render fonksiyonu
@@ -288,7 +306,10 @@ const PersonelListesi: React.FC = () => {
       <span className="text-xs">
         {alanlarArray.map((alan, index) => (
           <span key={index}>
-            <span className={`${getAlanYaziRengi(alan)} font-medium`}>
+            <span 
+              className="font-medium"
+              style={{ color: getAlanYaziRengi(alan) }}
+            >
               {alan}
             </span>
             {index < alanlarArray.length - 1 && <span className="text-gray-500">, </span>}
