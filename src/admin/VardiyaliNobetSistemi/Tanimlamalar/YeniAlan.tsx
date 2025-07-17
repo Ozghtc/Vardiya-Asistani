@@ -38,6 +38,10 @@ interface Area {
   activeDays: string[];
 }
 
+interface DayHours {
+  [key: string]: number;
+}
+
 const weekDays = [
   { value: 'Pazartesi', name: 'Pazartesi', short: 'Pzt' },
   { value: 'Salı', name: 'Salı', short: 'Sal' },
@@ -57,6 +61,9 @@ const YeniAlan: React.FC = () => {
   const [areas, setAreas] = useState<Area[]>([]);
   const [dailyWorkHours, setDailyWorkHours] = useState(40);
   const [selectedDays, setSelectedDays] = useState<string[]>(weekDays.map(day => day.value));
+  const [dayHours, setDayHours] = useState<DayHours>(
+    weekDays.reduce((acc, day) => ({ ...acc, [day.value]: 40 }), {})
+  );
 
   // Textarea için ayrı handler
   const handleDescriptionTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -93,14 +100,27 @@ const YeniAlan: React.FC = () => {
     );
   };
 
+  const toggleAllDays = () => {
+    if (selectedDays.length === weekDays.length) {
+      setSelectedDays([]);
+    } else {
+      setSelectedDays(weekDays.map(day => day.value));
+    }
+  };
+
   const updateAllDaysHours = () => {
-    // Tüm aktif günlerin saatlerini güncelle
-    setAreas(prevAreas => 
-      prevAreas.map(area => ({
-        ...area,
-        dailyHours: dailyWorkHours
-      }))
-    );
+    const newDayHours = { ...dayHours };
+    weekDays.forEach(day => {
+      newDayHours[day.value] = dailyWorkHours;
+    });
+    setDayHours(newDayHours);
+  };
+
+  const updateDayHour = (day: string, hours: number) => {
+    setDayHours(prev => ({
+      ...prev,
+      [day]: hours
+    }));
   };
 
   if (showShiftSettings) {
@@ -146,7 +166,7 @@ const YeniAlan: React.FC = () => {
             <h2 className="text-base sm:text-lg font-semibold">Vardiya ve Mesai Ayarları</h2>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div className="flex items-center gap-4">
               <div className="flex-1">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -170,23 +190,82 @@ const YeniAlan: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Aktif Günler
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {weekDays.map((day) => (
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Günler</h3>
+                <div className="flex items-center gap-2">
                   <button
-                    key={day.value}
-                    onClick={() => toggleDay(day.value)}
-                    className={`px-4 py-2 rounded-lg transition-colors text-sm font-medium ${
-                      selectedDays.includes(day.value)
-                        ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                        : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+                    onClick={toggleAllDays}
+                    className={`flex items-center gap-2 px-3 py-1 rounded-lg transition-colors text-sm ${
+                      selectedDays.length === weekDays.length
+                        ? 'bg-blue-100 text-blue-800'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                     }`}
                   >
-                    {day.name}
+                    <div className={`w-4 h-4 border-2 rounded flex items-center justify-center ${
+                      selectedDays.length === weekDays.length
+                        ? 'bg-blue-600 border-blue-600'
+                        : 'border-gray-400'
+                    }`}>
+                      {selectedDays.length === weekDays.length && (
+                        <Check className="w-3 h-3 text-white" />
+                      )}
+                    </div>
+                    Tümünü Seç
                   </button>
-                ))}
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {weekDays.map((day) => {
+                  const isSelected = selectedDays.includes(day.value);
+                  const dayHour = dayHours[day.value] || 0;
+                  
+                  return (
+                    <div 
+                      key={day.value}
+                      className={`p-4 rounded-lg border-2 transition-all ${
+                        isSelected
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-gray-200 bg-gray-50'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <button
+                          onClick={() => toggleDay(day.value)}
+                          className={`flex items-center gap-2 w-full text-left ${
+                            isSelected ? 'text-blue-800' : 'text-gray-600'
+                          }`}
+                        >
+                          <div className={`w-5 h-5 border-2 rounded flex items-center justify-center ${
+                            isSelected
+                              ? 'bg-blue-600 border-blue-600'
+                              : 'border-gray-400'
+                          }`}>
+                            {isSelected && (
+                              <Check className="w-3 h-3 text-white" />
+                            )}
+                          </div>
+                          <span className="font-semibold">{day.name}</span>
+                        </button>
+                      </div>
+                      
+                      {isSelected && (
+                        <div className="space-y-2">
+                          <label className="block text-xs font-medium text-gray-600">
+                            Saat
+                          </label>
+                          <input
+                            type="number"
+                            value={dayHour}
+                            onChange={(e) => updateDayHour(day.value, Number(e.target.value))}
+                            className="w-full px-3 py-2 text-sm rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200"
+                            placeholder="40"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
