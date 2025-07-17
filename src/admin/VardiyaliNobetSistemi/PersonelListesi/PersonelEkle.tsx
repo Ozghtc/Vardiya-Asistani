@@ -102,6 +102,39 @@ const PersonelEkle: React.FC = () => {
     }
   }, [user]);
 
+  // Birim hemşire ise otomatik ünvan seçimi ve tam mesai seçimi
+  useEffect(() => {
+    if (unvanlar.length > 0 && mesaiTurleri.length > 0 && user) {
+      // Birim hemşire ise otomatik hemşire ünvanı seç
+      if (user.birim_id && user.birim_id.toLowerCase().includes('hemşire')) {
+        const hemşireUnvan = unvanlar.find(unvan => 
+          unvan.unvan_adi.toLowerCase().includes('hemşire') ||
+          unvan.unvan_adi.toLowerCase().includes('hemşire')
+        );
+        
+        if (hemşireUnvan) {
+          setFormData(prev => ({
+            ...prev,
+            unvan_id: hemşireUnvan.id.toString()
+          }));
+        }
+      }
+
+      // Tam Mesai'yi otomatik seç
+      const tamMesai = mesaiTurleri.find(mesai => 
+        mesai.mesai_adi.toLowerCase().includes('tam') ||
+        mesai.mesai_adi.toLowerCase().includes('full')
+      );
+      
+      if (tamMesai) {
+        setFormData(prev => ({
+          ...prev,
+          mesai_hesap: tamMesai.id.toString()
+        }));
+      }
+    }
+  }, [unvanlar, mesaiTurleri, user]);
+
   const handleInputChange = (field: keyof PersonelFormData, value: string) => {
     let processedValue = value;
     
