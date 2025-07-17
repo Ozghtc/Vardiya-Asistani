@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Calendar, Palette, ChevronDown } from 'lucide-react';
+import { Plus, Trash2, Calendar, Palette, ChevronDown, Clock } from 'lucide-react';
 import { useCapitalization } from '../../../hooks/useCapitalization';
 import { SuccessNotification } from '../../../components/ui/Notification';
 import { useDepartmanBirim } from './DepartmanBirimContext';
@@ -20,6 +20,7 @@ const IzinTanimlama: React.FC = () => {
   const [kisaltma, setKisaltma] = useState('');
   const [seciliRenk, setSeciliRenk] = useState('#3B82F6');
   const [renkDropdownAcik, setRenkDropdownAcik] = useState(false);
+  const [mesaiDusumu, setMesaiDusumu] = useState(false);
   const [personnelRequests, setPersonnelRequests] = useState<IzinIstek[]>([]);
   const [showSuccess, setShowSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -40,6 +41,12 @@ const IzinTanimlama: React.FC = () => {
     { kod: '#14B8A6', ad: 'Canlı Teal' },
     { kod: '#F43F5E', ad: 'Canlı Rose' }
   ];
+
+  // Yıllık izin kontrolü
+  useEffect(() => {
+    const isYillikIzin = izinAdi.toLowerCase().includes('yıllık') || izinAdi.toLowerCase().includes('yillik');
+    setMesaiDusumu(isYillikIzin);
+  }, [izinAdi]);
 
   useEffect(() => {
     // Load izin istekleri from HZM API
@@ -105,6 +112,7 @@ const IzinTanimlama: React.FC = () => {
         setIzinAdi('');
         setKisaltma('');
         setSeciliRenk('#3B82F6');
+        setMesaiDusumu(false);
       } else {
         setErrorMsg('İzin türü eklenemedi: ' + response.error);
       }
@@ -217,6 +225,30 @@ const IzinTanimlama: React.FC = () => {
                   </button>
                 ))}
               </div>
+            )}
+          </div>
+
+          {/* Mesai Düşümü Checkbox */}
+          <div className="w-48">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Mesai Düşümü
+            </label>
+            <div className="flex items-center gap-2 p-2 bg-white border border-gray-300 rounded-lg">
+              <input
+                type="checkbox"
+                checked={mesaiDusumu}
+                onChange={(e) => setMesaiDusumu(e.target.checked)}
+                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+              />
+              <Clock className="w-4 h-4 text-gray-500" />
+              <span className="text-sm text-gray-700">
+                {mesaiDusumu ? 'Aktif' : 'Pasif'}
+              </span>
+            </div>
+            {mesaiDusumu && (
+              <p className="text-xs text-gray-500 mt-1">
+                Yıllık izin mesaiden düşülecek
+              </p>
             )}
           </div>
 
