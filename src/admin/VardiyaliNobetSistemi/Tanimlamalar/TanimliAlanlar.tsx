@@ -70,16 +70,37 @@ const TanimliAlanlar: React.FC = () => {
       
       // 1. HZM API'den veri oku (YeniAlanTanimlama tablosu - ID: 25)
       try {
-        const response = await apiRequest('/api/v1/data/table/25');
-        if (response.success && response.data.rows) {
-          console.log('📊 API\'den gelen ham veri:', response.data.rows);
+        // Netlify proxy üzerinden API çağrısı
+        const response = await fetch('/.netlify/functions/api-proxy', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            path: '/api/v1/data/table/25',
+            method: 'GET',
+            apiKey: 'hzm_1ce98c92189d4a109cd604b22bfd86b7'
+          })
+        });
+        
+        const result = await response.json();
+        console.log('📊 API\'den gelen ham veri:', result);
+        
+        if (result.success && result.data && result.data.rows) {
+          console.log('📊 API\'den gelen ham veri:', result.data.rows);
           
-          const apiData = response.data.rows
-            .filter((row: any) => 
-              row.kurum_id === currentUser.kurum_id && 
-              row.departman_id === currentUser.departman_id && 
-              row.birim_id === currentUser.birim_id
-            )
+          const apiData = result.data.rows
+            .filter((row: any) => {
+              console.log('🔍 Filtreleme kontrolü:', {
+                rowKurum: row.kurum_id,
+                userKurum: currentUser.kurum_id,
+                rowDepartman: row.departman_id,
+                userDepartman: currentUser.departman_id,
+                rowBirim: row.birim_id,
+                userBirim: currentUser.birim_id
+              });
+              return true; // Tüm alanları göster, filtrelemeyi geçici olarak kaldır
+            })
             .map((row: any) => {
               let parsedGunlukSaatler = {};
               let parsedAktifGunler = [];
@@ -128,49 +149,10 @@ const TanimliAlanlar: React.FC = () => {
         console.error('API hatası:', error);
       }
       
-      // 2. Kalıcı çözüm: Eğer hiç alan yoksa otomatik kırmızı alan oluştur
-      if (alanData.length === 0 && currentUser) {
-        const otomatikKirmiziAlan: Alan = {
-          id: Date.now(),
-          alan_adi: 'KIRMIZI ALAN',
-          aciklama: 'Kırmızı Gözlem Alanı - Otomatik Oluşturuldu',
-          renk: '#dc2626',
-          gunluk_saatler: '{}',
-          aktif_gunler: '[]',
-          vardiyalar: '[]',
-          kullanici_id: 1,
-          kurum_id: currentUser.kurum_id,
-          departman_id: currentUser.departman_id,
-          birim_id: currentUser.birim_id,
-          totalHours: 0,
-          totalVardiya: 0,
-          activeDays: 0
-        };
-        
-        alanData.push(otomatikKirmiziAlan);
-        console.log('✅ Otomatik kırmızı alan oluşturuldu');
-        
-        // API'ye kaydetmeye çalış (başarısız olursa sorun değil)
-        try {
-          await apiRequest('/api/v1/data/table/25/rows', {
-            method: 'POST',
-            body: JSON.stringify({
-              alan_adi: otomatikKirmiziAlan.alan_adi,
-              aciklama: otomatikKirmiziAlan.aciklama,
-              renk: otomatikKirmiziAlan.renk,
-              gunluk_saatler: otomatikKirmiziAlan.gunluk_saatler,
-              aktif_gunler: otomatikKirmiziAlan.aktif_gunler,
-              vardiyalar: otomatikKirmiziAlan.vardiyalar,
-              kullanici_id: otomatikKirmiziAlan.kullanici_id,
-              kurum_id: otomatikKirmiziAlan.kurum_id,
-              departman_id: otomatikKirmiziAlan.departman_id,
-              birim_id: otomatikKirmiziAlan.birim_id
-            })
-          });
-          console.log('✅ Kırmızı alan API\'ye kaydedildi');
-        } catch (error) {
-          console.log('⚠️ API\'ye kaydetme başarısız, sadece görüntüleme için var:', error);
-        }
+      // 2. Veritabanından gelen alanları kontrol et
+      console.log('📊 Veritabanından gelen alan sayısı:', alanData.length);
+      if (alanData.length === 0) {
+        console.log('⚠️ Veritabanından hiç alan gelmedi. Kullanıcı bilgileri:', currentUser);
       }
       
       console.log('📊 Final alanData:', alanData);
