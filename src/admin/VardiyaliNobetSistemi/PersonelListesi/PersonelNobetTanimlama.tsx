@@ -59,6 +59,12 @@ interface KayitliNobetTanimlamasi {
   guncelleme_tarihi: string;
 }
 
+interface Unvan {
+  id: number;
+  unvan_adi: string;
+  kurum_id: string;
+}
+
 const PersonelNobetTanimlama: React.FC = () => {
   const [personnel, setPersonnel] = useState<Personnel[]>([]);
   const [loading, setLoading] = useState(true);
@@ -75,6 +81,7 @@ const PersonelNobetTanimlama: React.FC = () => {
   const [nobetKombinasyonlari, setNobetKombinasyonlari] = useState<NobetKombinasyonu[]>([]);
   const [kayitliNobetTanimlama, setKayitliNobetTanimlama] = useState<KayitliNobetTanimlamasi[]>([]);
   const [kayitliNobetLoading, setKayitliNobetLoading] = useState(false);
+  const [unvanlar, setUnvanlar] = useState<Unvan[]>([]);
   const [nobetFilter, setNobetFilter] = useState<'tum' | 'tanimli' | 'tanimsiz'>('tum');
   const navigate = useNavigate();
   const { user } = useAuthContext();
@@ -195,13 +202,46 @@ const PersonelNobetTanimlama: React.FC = () => {
     }
   };
 
+  const loadUnvanlar = async () => {
+    if (!user) return;
+    
+    try {
+      const response = await fetch('/.netlify/functions/api-proxy', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          path: '/api/v1/data/table/15',
+          method: 'GET'
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data?.rows) {
+          setUnvanlar(result.data.rows);
+        }
+      }
+    } catch (error) {
+      console.error('Ünvanlar yükleme hatası:', error);
+    }
+  };
+
   useEffect(() => {
     loadPersonnel();
     loadTanimliAlanlar();
     loadKayitliNobetTanimlama();
+    loadUnvanlar();
   }, [user]);
 
   const gunler = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
+
+  // Ünvan ID'sini ünvan adına çeviren fonksiyon
+  const getUnvanAdi = (unvanId: string) => {
+    const unvan = unvanlar.find(u => u.id.toString() === unvanId);
+    return unvan ? unvan.unvan_adi : unvanId;
+  };
 
   // Alan rengi fonksiyonu
   const getAlanRengi = (alanAdi: string) => {
@@ -678,7 +718,7 @@ const PersonelNobetTanimlama: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                          {person.unvan}
+                          {getUnvanAdi(person.unvan)}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
