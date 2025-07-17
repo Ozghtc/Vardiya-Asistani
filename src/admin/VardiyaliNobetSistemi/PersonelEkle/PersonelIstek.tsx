@@ -192,7 +192,7 @@ const PersonelIstek: React.FC = () => {
                     <th key={index} className="px-3 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[60px]">
                       <div className="flex flex-col items-center">
                         <div className="text-lg font-bold text-gray-900">
-                          {index + 1}
+                          {date.getDate()}
                         </div>
                         <div className="text-xs text-gray-400">
                           {date.toLocaleDateString('tr-TR', { 
@@ -233,7 +233,12 @@ const PersonelIstek: React.FC = () => {
                       </td>
                       {dateRange.map((date, dayIndex) => (
                         <td key={dayIndex} className="px-3 py-4 text-center">
-                          <div className="w-12 h-12 flex items-center justify-center rounded-lg border-2 border-gray-200 hover:border-blue-300 cursor-pointer transition-colors">
+                          <div 
+                            className="w-12 h-12 flex items-center justify-center rounded-lg border-2 border-gray-200 hover:border-blue-300 cursor-pointer transition-colors"
+                            data-date={date.toISOString().split('T')[0]}
+                            data-day={date.getDate()}
+                            data-weekday={date.toLocaleDateString('tr-TR', { weekday: 'short' })}
+                          >
                             <span className="text-sm font-medium text-gray-600">
                               {/* Burada vardiya kodları veya numaraları olacak */}
                               -
