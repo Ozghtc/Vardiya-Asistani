@@ -173,7 +173,8 @@ const AlanTanimlama: React.FC = () => {
         return;
       }
 
-      const response = await apiRequest('/api/v1/data/table/18');
+      // Yeni tablo (table/25) kullanarak kullanılmış renkleri al
+      const response = await apiRequest('/api/v1/data/table/25');
       if (response.success) {
         const areaData = response.data.rows
           .filter((row: any) => 
@@ -186,9 +187,9 @@ const AlanTanimlama: React.FC = () => {
             alan_adi: row.alan_adi,
             aciklama: row.aciklama || '',
             renk: row.renk,
-            gunluk_mesai_saati: row.gunluk_mesai_saati || 40,
-            vardiya_bilgileri: row.vardiya_bilgileri || '{}',
-            aktif_mi: row.aktif_mi !== false,
+            gunluk_mesai_saati: 40, // Varsayılan değer
+            vardiya_bilgileri: row.vardiyalar || '{}',
+            aktif_mi: true,
             kurum_id: row.kurum_id,
             departman_id: row.departman_id,
             birim_id: row.birim_id
@@ -196,6 +197,7 @@ const AlanTanimlama: React.FC = () => {
         setAreas(areaData);
         const colors = areaData.map((area: Area) => area.renk);
         setUsedColors(colors);
+        console.log('🎨 Kullanılmış renkler:', colors);
       } else {
         // API başarısız olursa, usedColors'ı temizle
         setUsedColors([]);
