@@ -1,0 +1,338 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Plus, ArrowLeft, Save, User, UserPlus } from 'lucide-react';
+import { safeStringOperation } from '../../../hooks/useCapitalization';
+import { apiRequest } from '../../../lib/api';
+
+interface Unvan {
+  id: number;
+  unvan_adi: string;
+  aciklama?: string;
+}
+
+interface PersonelFormData {
+  ad: string;
+  soyad: string;
+  tc: string;
+  unvan_id: string;
+  email: string;
+  telefon: string;
+}
+
+const PersonelEkle: React.FC = () => {
+  const navigate = useNavigate();
+  const [formData, setFormData] = useState<PersonelFormData>({
+    ad: '',
+    soyad: '',
+    tc: '',
+    unvan_id: '',
+    email: '',
+    telefon: ''
+  });
+  const [unvanlar, setUnvanlar] = useState<Unvan[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+
+  // Unvanları yükle
+  useEffect(() => {
+    const loadUnvanlar = async () => {
+      try {
+        setLoading(true);
+        const response = await apiRequest('/api/v1/data/table/15');
+        if (response.success && response.data?.rows) {
+          setUnvanlar(response.data.rows);
+        }
+      } catch (error) {
+        console.error('Unvanlar yüklenirken hata:', error);
+        setError('Unvanlar yüklenemedi');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadUnvanlar();
+  }, []);
+
+  const handleInputChange = (field: keyof PersonelFormData, value: string) => {
+    let processedValue = value;
+    
+    // TC için sadece rakam
+    if (field === 'tc') {
+      processedValue = value.replace(/\D/g, '').slice(0, 11);
+    }
+    
+    // Telefon için format
+    if (field === 'telefon') {
+      processedValue = value.replace(/\D/g, '').slice(0, 10);
+    }
+    
+    // Ad ve soyad için büyük harf
+    if (field === 'ad' || field === 'soyad') {
+      processedValue = safeStringOperation(value, 'toUpperCase');
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      [field]: processedValue
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validasyon
+    if (!formData.ad || !formData.soyad || !formData.tc || !formData.unvan_id) {
+      setError('Lütfen tüm zorunlu alanları doldurun');
+      return;
+    }
+
+    if (formData.tc.length !== 11) {
+      setError('TC Kimlik No 11 haneli olmalıdır');
+      return;
+    }
+
+    try {
+      setSaving(true);
+      setError(null);
+
+      const personelData = {
+        ad: formData.ad,
+        soyad: formData.soyad,
+        tc: formData.tc,
+        unvan_id: formData.unvan_id,
+        email: formData.email || null,
+        telefon: formData.telefon || null,
+        aktif_mi: true,
+        created_at: new Date().toISOString()
+      };
+
+      const response = await apiRequest('/api/v1/data/table/21/rows', {
+        method: 'POST',
+        body: JSON.stringify(personelData)
+      });
+
+      if (response.success) {
+        setSuccess(true);
+        setTimeout(() => {
+          navigate('/personel-listesi');
+        }, 2000);
+      } else {
+        setError('Personel eklenirken bir hata oluştu');
+      }
+    } catch (error) {
+      console.error('Personel ekleme hatası:', error);
+      setError('Personel eklenirken bir hata oluştu');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleBack = () => {
+    navigate('/personel-listesi');
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={handleBack}
+                className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5" />
+                <span>Geri Dön</span>
+              </button>
+              <div className="h-6 w-px bg-gray-300"></div>
+              <h1 className="text-2xl font-bold text-gray-900">Yeni Personel Ekle</h1>
+            </div>
+            <div className="flex items-center space-x-2">
+              <UserPlus className="w-6 h-6 text-blue-600" />
+              <span className="text-sm text-gray-500">Personel Yönetimi</span>
+            </div>
+          </div>
+          <p className="mt-2 text-gray-600">Yeni personel kaydı oluşturun</p>
+        </div>
+
+        {/* Success Message */}
+        {success && (
+          <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <User className="w-5 h-5 text-green-400" />
+              </div>
+              <div className="ml-3">
+                <p className="text-sm font-medium text-green-800">
+                  Personel başarıyla eklendi! Personel listesine yönlendiriliyorsunuz...
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Error Message */}
+        {error && (
+          <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <div className="w-5 h-5 text-red-400">⚠️</div>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm font-medium text-red-800">{error}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Form Card */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-900">Personel Bilgileri</h2>
+            <p className="text-sm text-gray-600 mt-1">Temel personel bilgilerini girin</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="p-6 space-y-6">
+            {/* Ad Soyad Row */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label htmlFor="ad" className="block text-sm font-medium text-gray-700 mb-2">
+                  Adı <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="ad"
+                  value={formData.ad}
+                  onChange={(e) => handleInputChange('ad', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="AD"
+                  required
+                />
+              </div>
+
+              <div>
+                <label htmlFor="soyad" className="block text-sm font-medium text-gray-700 mb-2">
+                  Soyadı <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="soyad"
+                  value={formData.soyad}
+                  onChange={(e) => handleInputChange('soyad', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="SOYAD"
+                  required
+                />
+              </div>
+            </div>
+
+            {/* TC Kimlik Row */}
+            <div>
+              <label htmlFor="tc" className="block text-sm font-medium text-gray-700 mb-2">
+                TC Kimlik No <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                id="tc"
+                value={formData.tc}
+                onChange={(e) => handleInputChange('tc', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="12345678901"
+                maxLength={11}
+                required
+              />
+              <p className="mt-1 text-xs text-gray-500">11 haneli TC Kimlik numarası</p>
+            </div>
+
+            {/* Unvan Row */}
+            <div>
+              <label htmlFor="unvan" className="block text-sm font-medium text-gray-700 mb-2">
+                Ünvan <span className="text-red-500">*</span>
+              </label>
+              <select
+                id="unvan"
+                value={formData.unvan_id}
+                onChange={(e) => handleInputChange('unvan_id', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                required
+                disabled={loading}
+              >
+                <option value="">Ünvan seçiniz</option>
+                {unvanlar.map((unvan) => (
+                  <option key={unvan.id} value={unvan.id}>
+                    {unvan.unvan_adi}
+                  </option>
+                ))}
+              </select>
+              {loading && <p className="mt-1 text-xs text-gray-500">Ünvanlar yükleniyor...</p>}
+            </div>
+
+            {/* İletişim Bilgileri Row */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  id="email"
+                  value={formData.email}
+                  onChange={(e) => handleInputChange('email', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="ornek@email.com"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="telefon" className="block text-sm font-medium text-gray-700 mb-2">
+                  Telefon
+                </label>
+                <input
+                  type="tel"
+                  id="telefon"
+                  value={formData.telefon}
+                  onChange={(e) => handleInputChange('telefon', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="5XX XXX XX XX"
+                />
+              </div>
+            </div>
+
+            {/* Form Actions */}
+            <div className="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200">
+              <button
+                type="button"
+                onClick={handleBack}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              >
+                İptal
+              </button>
+              <button
+                type="submit"
+                disabled={saving}
+                className="px-6 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+              >
+                {saving ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>Kaydediliyor...</span>
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4" />
+                    <span>Personel Ekle</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default PersonelEkle; 
