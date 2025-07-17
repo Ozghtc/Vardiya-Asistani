@@ -24,7 +24,7 @@ interface Personnel {
 }
 
 interface TanimliAlan {
-  id: number;
+    id: number;
   alan_adi: string;
   alan_kodu: string;
   kurum_id: string;
@@ -47,7 +47,7 @@ interface NobetKombinasyonu {
 }
 
 interface KayitliNobetTanimlamasi {
-  id: number;
+    id: number;
   personel_id: string;
   kurum_id: string;
   departman_id: string;
@@ -216,19 +216,7 @@ const PersonelListesi: React.FC = () => {
 
   const gunler = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
 
-  // Gün kısaltma fonksiyonu
-  const getGunKisaltma = (gun: string) => {
-    const kisaltmalar: { [key: string]: string } = {
-      'Pazartesi': 'Pzt',
-      'Salı': 'Sal',
-      'Çarşamba': 'Çar',
-      'Perşembe': 'Per',
-      'Cuma': 'Cum',
-      'Cumartesi': 'Cmt',
-      'Pazar': 'Paz'
-    };
-    return kisaltmalar[gun] || gun;
-  };
+
 
   // Alan rengi fonksiyonu
   const getAlanRengi = (alanAdi: string) => {
@@ -257,24 +245,17 @@ const PersonelListesi: React.FC = () => {
   const renderGunler = (gunlerArray: string[]) => {
     const tumGunler = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
     
+    // Sadece atanmamış günleri göster
+    const atanmamisGunler = tumGunler.filter(gun => !gunlerArray.includes(gun));
+    
+    if (atanmamisGunler.length === 0) {
+      return <span className="text-xs text-green-600">Tüm günler atanmış</span>;
+    }
+    
     return (
-      <div className="flex flex-wrap gap-1">
-        {tumGunler.map((gun) => {
-          const atanmis = gunlerArray.includes(gun);
-          return (
-            <span
-              key={gun}
-              className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium border ${
-                atanmis
-                  ? 'bg-blue-100 text-blue-800 border-blue-200'
-                  : 'bg-red-100 text-red-800 border-red-200'
-              }`}
-            >
-              {getGunKisaltma(gun)}
-            </span>
-          );
-        })}
-      </div>
+      <span className="text-xs text-red-600">
+        {atanmamisGunler.join(', ')}
+      </span>
     );
   };
 
@@ -510,7 +491,7 @@ const PersonelListesi: React.FC = () => {
         const result = await response.json();
         if (result.success) {
           setPersonnel(prev => prev.filter(p => p.id !== id));
-          setSelectedPerson(null);
+    setSelectedPerson(null);
         } else {
           alert('Personel silinirken bir hata oluştu');
         }
@@ -548,8 +529,8 @@ const PersonelListesi: React.FC = () => {
     const filteredPersonnel = getFilteredPersonnel();
     const istatistikler = getPersonelIstatistikleri();
 
-    return (
-      <div className="space-y-6">
+  return (
+    <div className="space-y-6">
         {/* Filtre Butonları ve İstatistikler */}
         <div className="bg-white rounded-xl shadow-sm p-6">
           <div className="flex items-center justify-between mb-6">
@@ -757,13 +738,13 @@ const PersonelListesi: React.FC = () => {
                   {nobetFilter === 'tanimsiz' && 'Nöbet tanımsız personel bulunmuyor'}
                 </p>
                 {nobetFilter === 'tum' && (
-                  <button
-                    onClick={() => navigate('/personel-ekle')}
+        <button
+          onClick={() => navigate('/personel-ekle')}
                     className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
-                  >
-                    <Plus className="w-5 h-5" />
+        >
+          <Plus className="w-5 h-5" />
                     <span>İlk Personeli Ekle</span>
-                  </button>
+        </button>
                 )}
               </div>
             )}
@@ -871,9 +852,9 @@ const PersonelListesi: React.FC = () => {
               </div>
             </div>
           </div>
-        </div>
+      </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100">
           <div className="px-6 py-4 border-b border-gray-200">
             <p className="text-sm text-gray-600">
               {filteredPersonnel.length} personel görüntüleniyor
@@ -882,18 +863,18 @@ const PersonelListesi: React.FC = () => {
             </p>
           </div>
           
-          <div className="overflow-hidden">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-gray-50 border-b border-gray-100">
+            <div className="overflow-hidden">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-100">
                   <th className="text-left px-6 py-4 text-sm font-semibold text-gray-600">Ad Soyad</th>
                   <th className="text-left px-6 py-4 text-sm font-semibold text-gray-600">TC Kimlik No</th>
                   <th className="text-left px-6 py-4 text-sm font-semibold text-gray-600">Ünvan</th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-600">Durum</th>
+                    <th className="text-left px-6 py-4 text-sm font-semibold text-gray-600">Durum</th>
                   <th className="text-right px-6 py-4 text-sm font-semibold text-gray-600">İşlem</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
                 {filteredPersonnel.map((person) => {
                   const personelNobetler = getPersonelNobetTanimlama(person.id);
                   
@@ -904,23 +885,23 @@ const PersonelListesi: React.FC = () => {
                         <td className="px-6 py-4">
                           <div className="font-medium text-gray-900">{person.ad} {person.soyad}</div>
                         </td>
-                        <td className="px-6 py-4">
+                      <td className="px-6 py-4">
                           <div className="text-sm text-gray-600">{person.tcno}</div>
-                        </td>
-                        <td className="px-6 py-4">
+                      </td>
+                      <td className="px-6 py-4">
                           <div className="text-sm text-blue-600">{person.unvan}</div>
-                        </td>
-                        <td className="px-6 py-4">
+                      </td>
+                      <td className="px-6 py-4">
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                             person.aktif_mi 
                               ? 'bg-green-100 text-green-800' 
                               : 'bg-red-100 text-red-800'
                           }`}>
                             {person.aktif_mi ? 'Aktif' : 'Pasif'}
-                          </span>
-                        </td>
+                        </span>
+                      </td>
                         <td className="px-6 py-4 text-right">
-                          <button
+                          <button 
                             onClick={() => handleNobetTanimlamaOpen(person)}
                             className="inline-flex items-center gap-1 px-3 py-1 text-sm bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
                           >
@@ -959,14 +940,14 @@ const PersonelListesi: React.FC = () => {
                                   <div className="flex items-center gap-1">
                                     <Building2 className="w-3 h-3" />
                                     <span className="font-medium">Alanlar:</span>
-                                  </div>
-                                </td>
+                        </div>
+                      </td>
                                 <td className="px-6 py-2 text-xs text-gray-700" colSpan={2}>
                                   {renderAlanlar(alanlarArray)}
                                 </td>
                                 <td className="px-6 py-2"></td>
                                 <td className="px-6 py-2"></td>
-                              </tr>
+                    </tr>
                             </React.Fragment>
                           );
                         } catch (error) {
@@ -977,12 +958,12 @@ const PersonelListesi: React.FC = () => {
                     </React.Fragment>
                   );
                 })}
-              </tbody>
-            </table>
+                </tbody>
+              </table>
 
             {filteredPersonnel.length === 0 && (
-              <div className="text-center py-12">
-                <User2 className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                <div className="text-center py-12">
+                  <User2 className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                 <p className="text-gray-500">
                   {nobetFilter === 'tum' && 'Henüz personel kaydı bulunmuyor'}
                   {nobetFilter === 'tanimli' && 'Nöbet tanımlı personel bulunmuyor'}
@@ -997,10 +978,10 @@ const PersonelListesi: React.FC = () => {
                     <span>İlk Personeli Ekle</span>
                   </button>
                 )}
-              </div>
-            )}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
       </div>
     );
   };
@@ -1022,7 +1003,7 @@ const PersonelListesi: React.FC = () => {
             >
               <X className="w-5 h-5" />
             </button>
-          </div>
+        </div>
 
           {/* Content */}
           <div className="p-6 space-y-8">
@@ -1059,10 +1040,10 @@ const PersonelListesi: React.FC = () => {
                   );
                 })}
               </div>
-            </div>
+                </div>
 
             {/* Alt Kısım - Tanımlı Alanlar */}
-            <div>
+                <div>
               <div className="flex items-center justify-between mb-4">
                 <h4 className="text-md font-medium text-gray-800">Tanımlı Alanlar</h4>
                 <div className="flex items-center gap-2">
@@ -1075,7 +1056,7 @@ const PersonelListesi: React.FC = () => {
                   <span className="text-sm text-gray-600">Tümünü Seç</span>
                 </div>
               </div>
-              
+
               {tanimliAlanlarLoading ? (
                 <div className="flex items-center justify-center py-8">
                   <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
@@ -1167,8 +1148,8 @@ const PersonelListesi: React.FC = () => {
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
+            </div>
+          )}
           </div>
 
           {/* Footer */}
