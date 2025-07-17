@@ -282,20 +282,55 @@ const PersonelListesi: React.FC = () => {
     return '#6B7280';
   };
 
-  // Günler render fonksiyonu
-  const renderGunler = (gunlerArray: string[]) => {
+  // Gün kısaltma fonksiyonu
+  const getGunKisaltma = (gun: string) => {
+    const kisaltmalar: { [key: string]: string } = {
+      'Pazartesi': 'Pzt',
+      'Salı': 'Sal',
+      'Çarşamba': 'Çar',
+      'Perşembe': 'Per',
+      'Cuma': 'Cum',
+      'Cumartesi': 'Cmt',
+      'Pazar': 'Paz'
+    };
+    return kisaltmalar[gun] || gun;
+  };
+
+  // Günler render fonksiyonu - gün bazlı gruplama
+  const renderGunler = (gunlerArray: string[], alanlarArray: string[]) => {
     const tumGunler = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
     
-    // Sadece atanmamış günleri göster
-    const atanmamisGunler = tumGunler.filter(gun => !gunlerArray.includes(gun));
+    // Atanmış günleri göster
+    const atanmisGunler = tumGunler.filter(gun => gunlerArray.includes(gun));
     
-    if (atanmamisGunler.length === 0) {
-      return <span className="text-xs text-green-600">Tüm günler atanmış</span>;
+    if (atanmisGunler.length === 0) {
+      return <span className="text-xs text-red-600">Hiç gün atanmamış</span>;
     }
     
+    // Alanları kısalt ve renklendir
+    const alanlarMetni = alanlarArray.slice(0, 3).map((alan, idx) => (
+      <span key={idx}>
+        <span style={{ color: getAlanYaziRengi(alan) }} className="font-medium">
+          {alan}
+        </span>
+        {idx < Math.min(alanlarArray.length, 3) - 1 && <span className="text-gray-400">-</span>}
+      </span>
+    ));
+    
     return (
-      <span className="text-xs text-red-600">
-        {atanmamisGunler.join(', ')}
+      <span className="text-xs">
+        {atanmisGunler.map((gun, index) => (
+          <span key={gun}>
+            <span className="font-medium text-gray-700">
+              {getGunKisaltma(gun)}
+            </span>
+            <span className="text-gray-500"> (</span>
+            {alanlarMetni}
+            {alanlarArray.length > 3 && <span className="text-gray-400">...</span>}
+            <span className="text-gray-500">)</span>
+            {index < atanmisGunler.length - 1 && <span className="text-gray-400">, </span>}
+          </span>
+        ))}
       </span>
     );
   };
@@ -744,7 +779,7 @@ const PersonelListesi: React.FC = () => {
                                   </div>
                                 </td>
                                 <td className="px-6 py-2 text-xs text-gray-700" colSpan={4}>
-                                  {renderGunler(gunlerArray)}
+                                  {renderGunler(gunlerArray, alanlarArray)}
                                 </td>
                               </tr>
                               
@@ -972,7 +1007,7 @@ const PersonelListesi: React.FC = () => {
                                   </div>
                                 </td>
                                 <td className="px-6 py-2 text-xs text-gray-700" colSpan={2}>
-                                  {renderGunler(gunlerArray)}
+                                  {renderGunler(gunlerArray, alanlarArray)}
                                 </td>
                                 <td className="px-6 py-2"></td>
                                 <td className="px-6 py-2"></td>
