@@ -46,6 +46,7 @@ const PersonelListesi: React.FC = () => {
       setLoading(true);
       setError(null);
       
+      // Cache'i temizle ve taze veri çek
       const response = await fetch('/.netlify/functions/api-proxy', {
         method: 'POST',
         headers: {
@@ -54,13 +55,20 @@ const PersonelListesi: React.FC = () => {
         body: JSON.stringify({
           path: '/api/v1/data/table/21',
           method: 'GET',
-          apiKey: 'hzm_1ce98c92189d4a109cd604b22bfd86b7'
+          apiKey: 'hzm_1ce98c92189d4a109cd604b22bfd86b7',
+          // Cache'i bypass et
+          cache: 'no-cache',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          }
         })
       });
 
       if (response.ok) {
         const result = await response.json();
-        console.log('API\'den gelen personel verileri:', result);
+        console.log('API\'den gelen TAZE personel verileri:', result);
         
         if (result.success && result.data?.rows) {
           // Tüm personelleri göster (MERT ALTİNTAS'ı bulmak için)
