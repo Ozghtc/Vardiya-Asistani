@@ -51,6 +51,18 @@ interface AlanTanimlama {
   birim_id: string;
 }
 
+interface VardiyaTanimlama {
+  id: string;
+  vardiya_adi: string;
+  baslangic_saati: string;
+  bitis_saati: string;
+  calisma_saati: number;
+  aktif_mi: boolean;
+  kurum_id: string;
+  departman_id: string;
+  birim_id: string;
+}
+
 interface TalepItem {
   id: string;
   tip: 'nobet' | 'izin';
@@ -89,6 +101,7 @@ const PersonelIzinIstekleri: React.FC = () => {
   // API verileri
   const [izinTanimlamalari, setIzinTanimlamalari] = useState<IzinTanimlama[]>([]);
   const [alanTanimlamalari, setAlanTanimlamalari] = useState<AlanTanimlama[]>([]);
+  const [vardiyaTanimlamalari, setVardiyaTanimlamalari] = useState<VardiyaTanimlama[]>([]);
 
   // Ay adını al
   const ayYil = startDate.toLocaleString('tr-TR', { month: 'long', year: 'numeric' });
@@ -163,6 +176,24 @@ const PersonelIzinIstekleri: React.FC = () => {
     }
   };
 
+  // Vardiya tanımlamalarını yükle
+  const loadVardiyaTanimlamalari = async () => {
+    if (!user) return;
+    
+    try {
+      const rows = await apiCall('/api/v1/data/table/17');
+      const filteredVardiyalar = rows.filter((vardiya: VardiyaTanimlama) => 
+        vardiya.kurum_id === user.kurum_id &&
+        vardiya.departman_id === user.departman_id &&
+        vardiya.birim_id === user.birim_id &&
+        vardiya.aktif_mi
+      );
+      setVardiyaTanimlamalari(filteredVardiyalar);
+    } catch (error) {
+      console.error('Vardiya tanımlamaları yükleme hatası:', error);
+    }
+  };
+
   // Personel listesini yükle
   const loadPersonnel = async () => {
     if (!user) return;
@@ -220,12 +251,13 @@ const PersonelIzinIstekleri: React.FC = () => {
     const loadAllData = async () => {
       setLoading(true);
       try {
-        await Promise.all([
-          loadPersonnel(),
-          loadIzinIstekleri(),
-          loadIzinTanimlamalari(),
-          loadAlanTanimlamalari()
-        ]);
+                 await Promise.all([
+           loadPersonnel(),
+           loadIzinIstekleri(),
+           loadIzinTanimlamalari(),
+           loadAlanTanimlamalari(),
+           loadVardiyaTanimlamalari()
+         ]);
       } catch (error) {
         console.error('Veri yükleme hatası:', error);
       } finally {
@@ -689,13 +721,7 @@ const PersonelIzinIstekleri: React.FC = () => {
                             <option value="">Alan seçin</option>
                             {alanTanimlamalari.map((alan) => (
                               <option key={alan.id} value={alan.alan_adi}>
-                                <div className="flex items-center gap-2">
-                                  <div 
-                                    className="w-3 h-3 rounded-full" 
-                                    style={{ backgroundColor: alan.renk }}
-                                  ></div>
-                                  {alan.alan_adi}
-                                </div>
+                                {alan.alan_adi}
                               </option>
                             ))}
                           </select>
@@ -724,10 +750,11 @@ const PersonelIzinIstekleri: React.FC = () => {
                             className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 py-2 px-3"
                           >
                             <option value="">Mesai saati seçin</option>
-                            <option value="08:00-16:00">08:00-16:00 (Sabah)</option>
-                            <option value="16:00-24:00">16:00-24:00 (Akşam)</option>
-                            <option value="00:00-08:00">00:00-08:00 (Gece)</option>
-                            <option value="08:00-20:00">08:00-20:00 (Uzun)</option>
+                            {vardiyaTanimlamalari.map((vardiya) => (
+                              <option key={vardiya.id} value={`${vardiya.baslangic_saati}-${vardiya.bitis_saati}`}>
+                                {vardiya.baslangic_saati}-{vardiya.bitis_saati} ({vardiya.vardiya_adi})
+                              </option>
+                            ))}
                           </select>
                         </div>
                       </div>
