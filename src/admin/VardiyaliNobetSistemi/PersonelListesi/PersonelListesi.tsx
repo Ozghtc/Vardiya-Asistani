@@ -22,8 +22,15 @@ interface Personnel {
   guncelleme_tarihi: string;
 }
 
+interface Unvan {
+  id: number;
+  unvan_adi: string;
+  aciklama?: string;
+}
+
 const PersonelListesi: React.FC = () => {
   const [personnel, setPersonnel] = useState<Personnel[]>([]);
+  const [unvanlar, setUnvanlar] = useState<Unvan[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deleteDialog, setDeleteDialog] = useState<{
@@ -38,6 +45,47 @@ const PersonelListesi: React.FC = () => {
   const [deleting, setDeleting] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuthContext();
+
+  // Ünvan ID'sini ünvan adına çevir
+  const getUnvanAdi = (unvanId: string): string => {
+    if (!unvanId) return '-';
+    
+    // Eğer zaten ünvan adı ise direkt döndür
+    if (isNaN(Number(unvanId))) {
+      return unvanId;
+    }
+    
+    // ID ise ünvan adını bul
+    const unvan = unvanlar.find(u => u.id === Number(unvanId));
+    return unvan ? unvan.unvan_adi : `Ünvan ${unvanId}`;
+  };
+
+  // Ünvanları yükle
+  const loadUnvanlar = async () => {
+    try {
+      const response = await fetch('/.netlify/functions/api-proxy', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          path: '/api/v1/data/table/15',
+          method: 'GET',
+          apiKey: 'hzm_1ce98c92189d4a109cd604b22bfd86b7'
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data?.rows) {
+          setUnvanlar(result.data.rows);
+          console.log('Yüklenen ünvanlar:', result.data.rows);
+        }
+      }
+    } catch (error) {
+      console.error('Ünvanlar yüklenirken hata:', error);
+    }
+  };
 
   const loadPersonnel = async () => {
     if (!user) return;
@@ -106,6 +154,7 @@ const PersonelListesi: React.FC = () => {
 
   useEffect(() => {
     loadPersonnel();
+    loadUnvanlar(); // Ünvanları yükle
   }, [user]);
 
   if (loading) {
@@ -252,7 +301,7 @@ const PersonelListesi: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                      {person.unvan}
+                      {getUnvanAdi(person.unvan)}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
