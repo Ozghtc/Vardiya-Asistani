@@ -40,17 +40,27 @@ const UnvanTanimlama: React.FC = () => {
         setError(null);
         
         try {
+          console.log('🔍 Ünvanlar yükleniyor...', {
+            kurum_id: user.kurum_id,
+            departman_id: user.departman_id,
+            birim_id: user.birim_id
+          });
+          
           const response = await apiRequest(`/api/v1/data/table/15?kurum_id=${user.kurum_id}&departman_id=${user.departman_id}&birim_id=${user.birim_id}`, {
             method: 'GET'
           });
           
+          console.log('📦 API Response:', response);
+          
           if (response.success) {
+            console.log('✅ Ünvanlar başarıyla yüklendi:', response.data.rows);
             setUnvanlar(response.data.rows);
           } else {
+            console.error('❌ API Error:', response.error);
             setError('Ünvanlar yüklenemedi: ' + (response.error || 'Bilinmeyen hata'));
           }
         } catch (error) {
-          console.error('Ünvanlar yüklenemedi:', error);
+          console.error('🚨 Ünvanlar yüklenemedi:', error);
           setError('Ünvanlar yüklenemedi. Lütfen tekrar deneyin.');
         } finally {
           setLoading(false);
