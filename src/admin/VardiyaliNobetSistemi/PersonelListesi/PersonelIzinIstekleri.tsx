@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Calendar, User2, Plus, Filter, Clock, CalendarDays, X } from 'lucide-react';
+import { ArrowLeft, Calendar, User2, Plus, Filter, Clock, CalendarDays, X, MapPin, Save } from 'lucide-react';
 import { useAuthContext } from '../../../contexts/AuthContext';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
@@ -31,6 +31,35 @@ interface IzinIstek {
   aciklama?: string;
 }
 
+interface IzinTanimlama {
+  id: string;
+  izin_turu: string;
+  kisaltma: string;
+  renk: string;
+  mesai_dusumu: boolean;
+  kurum_id: string;
+  departman_id: string;
+  birim_id: string;
+}
+
+interface AlanTanimlama {
+  id: string;
+  alan_adi: string;
+  renk: string;
+  kurum_id: string;
+  departman_id: string;
+  birim_id: string;
+}
+
+interface TalepItem {
+  id: string;
+  tip: 'nobet' | 'izin';
+  tarih: Date;
+  alan?: string;
+  izin_turu?: string;
+  aciklama?: string;
+}
+
 const PersonelIzinIstekleri: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuthContext();
@@ -43,9 +72,85 @@ const PersonelIzinIstekleri: React.FC = () => {
   const [endDate, setEndDate] = useState<Date>(addDays(new Date(), 30));
   const [selectedMonth, setSelectedMonth] = useState<string>('2025-07');
   const [showPopup, setShowPopup] = useState(false);
+  
+  // Popup state'leri
+  const [selectedTip, setSelectedTip] = useState<'nobet' | 'izin' | null>(null);
+  const [selectedTarih, setSelectedTarih] = useState<Date | null>(null);
+  const [selectedAlan, setSelectedAlan] = useState<string>('');
+  const [selectedIzinTuru, setSelectedIzinTuru] = useState<string>('');
+  const [aciklama, setAciklama] = useState<string>('');
+  const [talepler, setTalepler] = useState<TalepItem[]>([]);
+  
+  // API verileri
+  const [izinTanimlamalari, setIzinTanimlamalari] = useState<IzinTanimlama[]>([]);
+  const [alanTanimlamalari, setAlanTanimlamalari] = useState<AlanTanimlama[]>([]);
 
   // Ay adını al
   const ayYil = startDate.toLocaleString('tr-TR', { month: 'long', year: 'numeric' });
+
+  // İzin tanımlamalarını yükle
+  const loadIzinTanimlamalari = async () => {
+    if (!user) return;
+    
+    try {
+      const response = await fetch('/.netlify/functions/api-proxy', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          path: '/api/v1/data/table/16',
+          method: 'GET'
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data?.rows) {
+          const filteredIzinler = result.data.rows.filter((izin: IzinTanimlama) => 
+            izin.kurum_id === user.kurum_id &&
+            izin.departman_id === user.departman_id &&
+            izin.birim_id === user.birim_id
+          );
+          setIzinTanimlamalari(filteredIzinler);
+        }
+      }
+    } catch (error) {
+      console.error('İzin tanımlamaları yükleme hatası:', error);
+    }
+  };
+
+  // Alan tanımlamalarını yükle
+  const loadAlanTanimlamalari = async () => {
+    if (!user) return;
+    
+    try {
+      const response = await fetch('/.netlify/functions/api-proxy', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          path: '/api/v1/data/table/18',
+          method: 'GET'
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data?.rows) {
+          const filteredAlanlar = result.data.rows.filter((alan: AlanTanimlama) => 
+            alan.kurum_id === user.kurum_id &&
+            alan.departman_id === user.departman_id &&
+            alan.birim_id === user.birim_id
+          );
+          setAlanTanimlamalari(filteredAlanlar);
+        }
+      }
+    } catch (error) {
+      console.error('Alan tanımlamaları yükleme hatası:', error);
+    }
+  };
 
   // Personel listesini yükle
   const loadPersonnel = async () => {
@@ -115,6 +220,8 @@ const PersonelIzinIstekleri: React.FC = () => {
   useEffect(() => {
     loadPersonnel();
     loadIzinIstekleri();
+    loadIzinTanimlamalari();
+    loadAlanTanimlamalari();
   }, [user]);
 
   // Tarih değişiklikleri
@@ -134,15 +241,59 @@ const PersonelIzinIstekleri: React.FC = () => {
   };
 
   // Popup işlemleri
-  const handleTalebiClick = (tip: 'nobet' | 'izin') => {
-    setShowPopup(false);
-    if (tip === 'nobet') {
-      // Nöbet isteği sayfasına yönlendir
-      navigate('/nobet-istegi');
-    } else {
-      // İzin/bosluk talebi sayfasına yönlendir
-      navigate('/izin-bosluk-talebi');
+  const handleTipSecimi = (tip: 'nobet' | 'izin') => {
+    setSelectedTip(tip);
+    setSelectedTarih(null);
+    setSelectedAlan('');
+    setSelectedIzinTuru('');
+    setAciklama('');
+  };
+
+  const handleEkle = () => {
+    if (!selectedTip || !selectedTarih) return;
+    
+    if (selectedTip === 'nobet' && !selectedAlan) return;
+    if (selectedTip === 'izin' && !selectedIzinTuru) return;
+
+    const yeniTalep: TalepItem = {
+      id: Date.now().toString(),
+      tip: selectedTip,
+      tarih: selectedTarih,
+      alan: selectedTip === 'nobet' ? selectedAlan : undefined,
+      izin_turu: selectedTip === 'izin' ? selectedIzinTuru : undefined,
+      aciklama: aciklama || undefined
+    };
+
+    setTalepler([...talepler, yeniTalep]);
+    
+    // Form'u temizle
+    setSelectedTarih(null);
+    setSelectedAlan('');
+    setSelectedIzinTuru('');
+    setAciklama('');
+  };
+
+  const handleKaydet = async () => {
+    if (talepler.length === 0) return;
+    
+    try {
+      // Burada API'ye talepleri göndereceğiz
+      console.log('Kaydedilecek talepler:', talepler);
+      
+      // Başarılı kaydetme sonrası
+      setTalepler([]);
+      setShowPopup(false);
+      setSelectedTip(null);
+      
+      // Sayfayı yenile
+      loadIzinIstekleri();
+    } catch (error) {
+      console.error('Talep kaydetme hatası:', error);
     }
+  };
+
+  const handleTalepSil = (id: string) => {
+    setTalepler(talepler.filter(t => t.id !== id));
   };
 
   // Takvim günlerini hesapla
@@ -342,53 +493,238 @@ const PersonelIzinIstekleri: React.FC = () => {
 
       {/* Popup Modal */}
       {showPopup && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md mx-4">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-gray-900">Personel Talebi</h3>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h3 className="text-xl font-semibold text-gray-900">Personel Talebi</h3>
               <button
-                onClick={() => setShowPopup(false)}
+                onClick={() => {
+                  setShowPopup(false);
+                  setSelectedTip(null);
+                  setTalepler([]);
+                }}
                 className="text-gray-400 hover:text-gray-600 transition-colors"
               >
-                <X className="w-5 h-5" />
+                <X className="w-6 h-6" />
               </button>
             </div>
             
-            <div className="space-y-4">
-              <button
-                onClick={() => handleTalebiClick('nobet')}
-                className="w-full flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-blue-300 transition-colors"
-              >
-                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <Clock className="w-5 h-5 text-blue-600" />
-                </div>
-                <div className="text-left">
-                  <div className="font-medium text-gray-900">Nöbet İsteği</div>
-                  <div className="text-sm text-gray-500">Nöbet değişimi veya nöbet talebi</div>
-                </div>
-              </button>
+            <div className="flex flex-col h-full">
+              {/* Üst Bölüm - Form */}
+              <div className="p-6 border-b border-gray-200">
+                {/* Tip Seçimi */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                  <button
+                    onClick={() => handleTipSecimi('nobet')}
+                    disabled={selectedTip === 'izin'}
+                    className={`flex items-center gap-3 p-4 border rounded-lg transition-colors ${
+                      selectedTip === 'nobet' 
+                        ? 'border-blue-300 bg-blue-50' 
+                        : selectedTip === 'izin'
+                        ? 'border-gray-200 bg-gray-100 opacity-50 cursor-not-allowed'
+                        : 'border-gray-200 hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                      <Clock className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div className="text-left">
+                      <div className="font-medium text-gray-900">Nöbet İsteği</div>
+                      <div className="text-sm text-gray-500">Nöbet değişimi veya nöbet talebi</div>
+                    </div>
+                  </button>
 
-              <button
-                onClick={() => handleTalebiClick('izin')}
-                className="w-full flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-blue-300 transition-colors"
-              >
-                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                  <CalendarDays className="w-5 h-5 text-green-600" />
+                  <button
+                    onClick={() => handleTipSecimi('izin')}
+                    disabled={selectedTip === 'nobet'}
+                    className={`flex items-center gap-3 p-4 border rounded-lg transition-colors ${
+                      selectedTip === 'izin' 
+                        ? 'border-green-300 bg-green-50' 
+                        : selectedTip === 'nobet'
+                        ? 'border-gray-200 bg-gray-100 opacity-50 cursor-not-allowed'
+                        : 'border-gray-200 hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                      <CalendarDays className="w-5 h-5 text-green-600" />
+                    </div>
+                    <div className="text-left">
+                      <div className="font-medium text-gray-900">İzin/Bosluk Talebi</div>
+                      <div className="text-sm text-gray-500">İzin veya boşluk talebi</div>
+                    </div>
+                  </button>
                 </div>
-                <div className="text-left">
-                  <div className="font-medium text-gray-900">İzin/Bosluk Talebi</div>
-                  <div className="text-sm text-gray-500">İzin veya boşluk talebi</div>
-                </div>
-              </button>
-            </div>
 
-            <div className="mt-6 pt-4 border-t border-gray-200">
-              <button
-                onClick={() => setShowPopup(false)}
-                className="w-full px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-              >
-                İptal
-              </button>
+                {/* Form Alanları */}
+                {selectedTip && (
+                  <div className="space-y-4">
+                    {/* Tarih Seçimi */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Tarih <span className="text-red-500">*</span>
+                      </label>
+                                             <DatePicker
+                         selected={selectedTarih}
+                         onChange={(date: Date | null) => setSelectedTarih(date)}
+                         dateFormat="dd/MM/yyyy"
+                         locale={tr}
+                         className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 py-2 px-3"
+                         placeholderText="Tarih seçin"
+                         minDate={startDate}
+                         maxDate={endDate}
+                       />
+                    </div>
+
+                    {/* Alan Seçimi (Nöbet için) */}
+                    {selectedTip === 'nobet' && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Alan <span className="text-red-500">*</span>
+                        </label>
+                        <select
+                          value={selectedAlan}
+                          onChange={(e) => setSelectedAlan(e.target.value)}
+                          className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 py-2 px-3"
+                        >
+                          <option value="">Alan seçin</option>
+                          {alanTanimlamalari.map((alan) => (
+                            <option key={alan.id} value={alan.alan_adi}>
+                              {alan.alan_adi}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
+                    {/* İzin Türü Seçimi (İzin için) */}
+                    {selectedTip === 'izin' && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          İzin Türü <span className="text-red-500">*</span>
+                        </label>
+                        <select
+                          value={selectedIzinTuru}
+                          onChange={(e) => setSelectedIzinTuru(e.target.value)}
+                          className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 py-2 px-3"
+                        >
+                          <option value="">İzin türü seçin</option>
+                          {izinTanimlamalari.map((izin) => (
+                            <option key={izin.id} value={izin.izin_turu}>
+                              {izin.izin_turu}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
+                    {/* Açıklama */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Açıklama
+                      </label>
+                      <textarea
+                        value={aciklama}
+                        onChange={(e) => setAciklama(e.target.value)}
+                        rows={3}
+                        className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 py-2 px-3"
+                        placeholder="Açıklama ekleyin (opsiyonel)"
+                      />
+                    </div>
+
+                    {/* Ekle Butonu */}
+                    <div className="flex justify-end">
+                      <button
+                        onClick={handleEkle}
+                        disabled={!selectedTarih || (selectedTip === 'nobet' && !selectedAlan) || (selectedTip === 'izin' && !selectedIzinTuru)}
+                        className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
+                      >
+                        <Plus className="w-4 h-4" />
+                        <span>Ekle</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Alt Bölüm - Liste */}
+              <div className="flex-1 p-6 overflow-y-auto">
+                <h4 className="text-lg font-semibold text-gray-900 mb-4">Eklenen Talepler</h4>
+                
+                {talepler.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    Henüz talep eklenmedi
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {talepler.map((talep) => (
+                      <div key={talep.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                            talep.tip === 'nobet' ? 'bg-blue-100' : 'bg-green-100'
+                          }`}>
+                            {talep.tip === 'nobet' ? (
+                              <Clock className="w-4 h-4 text-blue-600" />
+                            ) : (
+                              <CalendarDays className="w-4 h-4 text-green-600" />
+                            )}
+                          </div>
+                          <div>
+                            <div className="font-medium text-gray-900">
+                              {talep.tip === 'nobet' ? 'Nöbet İsteği' : 'İzin/Bosluk Talebi'}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {talep.tarih.toLocaleDateString('tr-TR')}
+                              {talep.alan && ` • ${talep.alan}`}
+                              {talep.izin_turu && ` • ${talep.izin_turu}`}
+                            </div>
+                            {talep.aciklama && (
+                              <div className="text-xs text-gray-400 mt-1">
+                                {talep.aciklama}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handleTalepSil(talep.id)}
+                          className="text-red-400 hover:text-red-600 transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Footer - Kaydet Butonu */}
+              <div className="p-6 border-t border-gray-200 bg-gray-50">
+                <div className="flex justify-between items-center">
+                  <div className="text-sm text-gray-600">
+                    Toplam {talepler.length} talep
+                  </div>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => {
+                        setShowPopup(false);
+                        setSelectedTip(null);
+                        setTalepler([]);
+                      }}
+                      className="px-4 py-2 text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                      İptal
+                    </button>
+                    <button
+                      onClick={handleKaydet}
+                      disabled={talepler.length === 0}
+                      className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
+                    >
+                      <Save className="w-4 h-4" />
+                      <span>Kaydet</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
