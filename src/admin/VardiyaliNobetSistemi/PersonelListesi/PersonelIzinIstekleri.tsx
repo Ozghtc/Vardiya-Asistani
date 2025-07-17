@@ -1,7 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import PersonelIstek from '../PersonelEkle/PersonelIstek';
 
 const PersonelIzinIstekleri: React.FC = () => {
   const navigate = useNavigate();
@@ -25,8 +24,10 @@ const PersonelIzinIstekleri: React.FC = () => {
         </div>
       </div>
 
-      {/* PersonelIstek Component */}
-      <PersonelIstek />
+      {/* Henüz izin isteği yok mesajı */}
+      <div className="bg-white rounded-xl shadow-sm p-8 text-center border border-gray-200">
+        <p className="text-gray-500">Henüz izin isteği bulunmuyor.</p>
+      </div>
     </div>
   );
 };

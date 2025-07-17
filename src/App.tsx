@@ -16,7 +16,7 @@ import VardiyaPlanla from './admin/VardiyaliNobetSistemi/NobetIslemleri/VardiyaP
 import KurumEkle from './admin/KurumYonetimi/KurumYonetimi';
 import KullaniciYonetimPaneli from './admin/KullaniciYonetimi/KullaniciYonetimPaneli';
 import Tanimlamalar from './admin/VardiyaliNobetSistemi/Tanimlamalar/Tanimlamalar';
-import PersonelEkle from './admin/VardiyaliNobetSistemi/PersonelEkle/PersonelEkle';
+// PersonelEkle dosyası silindi - artık PersonelIslemleri kullanılıyor
 import PersonelIslemleri from './admin/VardiyaliNobetSistemi/PersonelListesi/PersonelIslemleri';
 import PersonelListesi from './admin/VardiyaliNobetSistemi/PersonelListesi/PersonelListesi';
 import PersonelNobetTanimlama from './admin/VardiyaliNobetSistemi/PersonelListesi/PersonelNobetTanimlama';
@@ -66,7 +66,7 @@ function App() {
         } />
         <Route path="/personel-ekle" element={
           <ProtectedRoute allowedRoles={['admin', 'yonetici']}>
-            <Layout><PersonelEkle /></Layout>
+            <Layout><PersonelIslemleri /></Layout>
           </ProtectedRoute>
         } />
         <Route path="/personel-islemleri" element={

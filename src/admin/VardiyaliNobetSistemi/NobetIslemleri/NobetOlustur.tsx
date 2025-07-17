@@ -90,6 +90,7 @@ export default function NobetOlustur() {
   const handleStartDateChange = (date: Date | null) => {
     if (!date) return;
     setStartDate(date);
+    // Başlangıç tarihi değiştiğinde bitiş tarihini de güncelle
     const maxEnd = addDays(date, 30);
     if (!endDate || endDate < date || endDate > maxEnd) {
       setEndDate(maxEnd);
@@ -104,10 +105,11 @@ export default function NobetOlustur() {
 
   const daysInRange: Date[] = [];
   if (startDate && endDate && endDate >= startDate) {
-    let d = new Date(startDate);
-    while (d <= endDate) {
-      daysInRange.push(new Date(d));
-      d.setDate(d.getDate() + 1);
+    // Başlangıç tarihinden bitiş tarihine kadar tüm günleri ekle
+    let currentDate = new Date(startDate);
+    while (currentDate <= endDate) {
+      daysInRange.push(new Date(currentDate));
+      currentDate.setDate(currentDate.getDate() + 1);
     }
   }
 
@@ -462,10 +464,10 @@ export default function NobetOlustur() {
             <DatePicker
               selected={startDate}
               onChange={handleStartDateChange}
-              dateFormat="dd.MM.yyyy"
+              dateFormat="dd/MM/yyyy"
               locale="tr"
               className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 py-2 px-3"
-              placeholderText="gg.aa.yyyy"
+              placeholderText="gg/aa/yyyy"
             />
           </div>
           <div>
@@ -473,10 +475,10 @@ export default function NobetOlustur() {
             <DatePicker
               selected={endDate}
               onChange={handleEndDateChange}
-              dateFormat="dd.MM.yyyy"
+              dateFormat="dd/MM/yyyy"
               locale="tr"
               className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 py-2 px-3"
-              placeholderText="gg.aa.yyyy"
+              placeholderText="gg/aa/yyyy"
               minDate={startDate}
               maxDate={addDays(startDate, 30)}
             />
@@ -497,12 +499,17 @@ export default function NobetOlustur() {
                 {daysInRange.map(dateObj => {
                   const gun = dateObj.getDay(); // 0: Pazar, 6: Cumartesi
                   const isWeekend = gun === 0 || gun === 6;
+                  const gunAdlari = ['PAZ', 'PZT', 'SAL', 'ÇAR', 'PER', 'CUM', 'CMT'];
+                  const gunAdi = gunAdlari[gun];
                   return (
                     <th
                       key={dateObj.toISOString()}
                       className={`py-4 px-3 text-center text-sm font-semibold border-b min-w-[40px] ${isWeekend ? 'font-bold text-blue-700 bg-blue-50' : 'text-gray-600 bg-gray-50'}`}
                     >
-                      {dateObj.getDate()}
+                      <div className="flex flex-col">
+                        <span className="text-xs text-gray-500">{gunAdi}</span>
+                        <span>{dateObj.getDate()}</span>
+                      </div>
                     </th>
                   );
                 })}
