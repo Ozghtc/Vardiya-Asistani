@@ -16,9 +16,10 @@ interface Alan {
   alan_adi: string;
   aciklama: string;
   renk: string;
-  gunluk_mesai_saati: number;
-  vardiya_bilgileri: string;
-  aktif_mi: boolean;
+  gunluk_saatler: string; // Yeni format
+  aktif_gunler: string; // Yeni format
+  vardiyalar: string; // Yeni format
+  kullanici_id: number;
   kurum_id: string;
   departman_id: string;
   birim_id: string;
@@ -67,9 +68,9 @@ const TanimliAlanlar: React.FC = () => {
       
       console.log('🚀 loadAlanlar başladı, user:', currentUser);
       
-      // 1. HZM API'den veri oku
+      // 1. HZM API'den veri oku (YeniAlanTanimlama tablosu - ID: 25)
       try {
-        const response = await apiRequest('/api/v1/data/table/18');
+        const response = await apiRequest('/api/v1/data/table/25');
         if (response.success && response.data.rows) {
           console.log('📊 API\'den gelen ham veri:', response.data.rows);
           
@@ -80,39 +81,39 @@ const TanimliAlanlar: React.FC = () => {
               row.birim_id === currentUser.birim_id
             )
             .map((row: any) => {
-              let parsedVardiyaBilgileri = { nobetler: [] };
+              let parsedGunlukSaatler = {};
+              let parsedAktifGunler = [];
+              let parsedVardiyalar = [];
+              
               try {
-                parsedVardiyaBilgileri = JSON.parse(row.vardiya_bilgileri || '{}');
+                parsedGunlukSaatler = JSON.parse(row.gunluk_saatler || '{}');
+                parsedAktifGunler = JSON.parse(row.aktif_gunler || '[]');
+                parsedVardiyalar = JSON.parse(row.vardiyalar || '[]');
               } catch (e) {
-                console.error('Vardiya bilgileri parse hatası:', e);
+                console.error('JSON parse hatası:', e);
               }
               
               // Computed fields'i hesapla
-              const nobetler = parsedVardiyaBilgileri.nobetler || [];
-              const totalHours = nobetler.reduce((sum: number, nobet: any) => sum + (nobet.saat || 0), 0);
-              const totalVardiya = nobetler.length;
-              const activeDays = nobetler.reduce((days: Set<string>, nobet: any) => {
-                if (nobet.gunler && Array.isArray(nobet.gunler)) {
-                  nobet.gunler.forEach((gun: string) => days.add(gun));
-                }
-                return days;
-              }, new Set()).size;
+              const totalHours = parsedVardiyalar.reduce((sum: number, vardiya: any) => sum + (vardiya.duration || 0), 0);
+              const totalVardiya = parsedVardiyalar.length;
+              const activeDays = parsedAktifGunler.length;
               
               const mappedRow = {
-                id: parseInt(row.id.toString(), 10), // ID'yi number'a çevir
+                id: parseInt(row.id.toString(), 10),
                 alan_adi: row.alan_adi,
                 aciklama: row.aciklama,
                 renk: row.renk,
-                gunluk_mesai_saati: row.gunluk_mesai_saati,
-                vardiya_bilgileri: parsedVardiyaBilgileri,
-                aktif_mi: row.aktif_mi,
+                gunluk_saatler: row.gunluk_saatler,
+                aktif_gunler: row.aktif_gunler,
+                vardiyalar: row.vardiyalar,
+                kullanici_id: row.kullanici_id,
                 kurum_id: row.kurum_id,
                 departman_id: row.departman_id,
                 birim_id: row.birim_id,
                 totalHours: totalHours,
                 totalVardiya: totalVardiya,
                 activeDays: activeDays,
-                nobetler: nobetler
+                nobetler: parsedVardiyalar
               };
               
               console.log('🔄 Alan map edildi:', { originalId: row.id, mappedId: mappedRow.id, name: mappedRow.alan_adi });
@@ -134,9 +135,10 @@ const TanimliAlanlar: React.FC = () => {
           alan_adi: 'KIRMIZI ALAN',
           aciklama: 'Kırmızı Gözlem Alanı - Otomatik Oluşturuldu',
           renk: '#dc2626',
-          gunluk_mesai_saati: 40,
-          vardiya_bilgileri: '{}',
-          aktif_mi: true,
+          gunluk_saatler: '{}',
+          aktif_gunler: '[]',
+          vardiyalar: '[]',
+          kullanici_id: 1,
           kurum_id: currentUser.kurum_id,
           departman_id: currentUser.departman_id,
           birim_id: currentUser.birim_id,
@@ -150,15 +152,16 @@ const TanimliAlanlar: React.FC = () => {
         
         // API'ye kaydetmeye çalış (başarısız olursa sorun değil)
         try {
-          await apiRequest('/api/v1/data/table/18/rows', {
+          await apiRequest('/api/v1/data/table/25/rows', {
             method: 'POST',
             body: JSON.stringify({
               alan_adi: otomatikKirmiziAlan.alan_adi,
               aciklama: otomatikKirmiziAlan.aciklama,
               renk: otomatikKirmiziAlan.renk,
-              gunluk_mesai_saati: otomatikKirmiziAlan.gunluk_mesai_saati,
-              vardiya_bilgileri: otomatikKirmiziAlan.vardiya_bilgileri,
-              aktif_mi: otomatikKirmiziAlan.aktif_mi,
+              gunluk_saatler: otomatikKirmiziAlan.gunluk_saatler,
+              aktif_gunler: otomatikKirmiziAlan.aktif_gunler,
+              vardiyalar: otomatikKirmiziAlan.vardiyalar,
+              kullanici_id: otomatikKirmiziAlan.kullanici_id,
               kurum_id: otomatikKirmiziAlan.kurum_id,
               departman_id: otomatikKirmiziAlan.departman_id,
               birim_id: otomatikKirmiziAlan.birim_id
@@ -237,7 +240,7 @@ const TanimliAlanlar: React.FC = () => {
       setLoading(true);
       console.log('🗑️ Alan siliniyor, ID:', alanId);
       
-      const response = await apiRequest(`/api/v1/data/table/18/rows/${alanId}`, {
+      const response = await apiRequest(`/api/v1/data/table/25/rows/${alanId}`, {
         method: 'DELETE',
       });
       
@@ -372,7 +375,7 @@ const TanimliAlanlar: React.FC = () => {
                     <div>
                       <h4 className="font-medium text-gray-900 mb-2">Alan Bilgileri</h4>
                       <p className="text-sm text-gray-600">{alan.aciklama || 'Açıklama eklenmemiş'}</p>
-                      <p className="text-sm text-gray-600">Günlük Mesai: {alan.gunluk_mesai_saati} saat</p>
+                      <p className="text-sm text-gray-600">Aktif Günler: {alan.activeDays} gün</p>
                     </div>
                     
                     {alan.nobetler && alan.nobetler.length > 0 && (
