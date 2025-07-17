@@ -63,8 +63,18 @@ const PersonelListesi: React.FC = () => {
         console.log('API\'den gelen personel verileri:', result);
         
         if (result.success && result.data?.rows) {
+          // Tüm personelleri göster (MERT ALTİNTAS'ı bulmak için)
+          const allPersonnel = result.data.rows;
+          console.log('TÜM personel verileri (filtresiz):', allPersonnel);
+          
+          // MERT ALTİNTAS'ı ara
+          const mertAltintas = allPersonnel.find((person: Personnel) => 
+            person.ad === 'MERT' && person.soyad === 'ALTİNTAS'
+          );
+          console.log('MERT ALTİNTAS bulundu mu?:', mertAltintas);
+          
           // Kullanıcının kurum/departman/birim'ine göre filtreleme
-          const filteredPersonnel = result.data.rows.filter((person: Personnel) => 
+          const filteredPersonnel = allPersonnel.filter((person: Personnel) => 
             person.kurum_id === user.kurum_id &&
             person.departman_id === user.departman_id &&
             person.birim_id === user.birim_id
