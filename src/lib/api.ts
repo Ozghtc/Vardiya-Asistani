@@ -57,27 +57,43 @@ const getJWTToken = async (): Promise<string> => {
   }
 };
 
-// Optimized API Request function
+// Optimized API Request function with timeout
 const apiRequest = async (path: string, options: RequestInit = {}) => {
   try {
     const token = await getJWTToken();
-    const response = await fetch('/.netlify/functions/api-proxy', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        path,
-        method: options.method || 'GET',
-        body: options.body ? JSON.parse(options.body as string) : undefined,
-        jwtToken: token,
-        apiKey: API_CONFIG.apiKey,
-      }),
-    });
     
-    const data = await response.json();
-    if (!response.ok) {
-      throw new Error(data.error || `HTTP error! status: ${response.status}`);
+    // Timeout ile request
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 saniye timeout
+    
+    try {
+      const response = await fetch('/.netlify/functions/api-proxy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          path,
+          method: options.method || 'GET',
+          body: options.body ? JSON.parse(options.body as string) : undefined,
+          jwtToken: token,
+          apiKey: API_CONFIG.apiKey,
+        }),
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || `HTTP error! status: ${response.status}`);
+      }
+      return data;
+    } catch (fetchError: any) {
+      clearTimeout(timeoutId);
+      if (fetchError.name === 'AbortError') {
+        throw new Error('Request timeout - API yanıt vermiyor');
+      }
+      throw fetchError;
     }
-    return data;
   } catch (error) {
     logError('API Request Error', error);
     throw error;

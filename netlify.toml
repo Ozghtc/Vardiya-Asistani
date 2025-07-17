@@ -9,6 +9,11 @@
 [functions]
   directory = "netlify/functions"
 
+# Functions için timeout ve memory ayarları
+[functions."api-proxy"]
+  timeout = 30
+  memory = 1024
+
 # SPA routing için tüm rotaları index.html'e yönlendir
 [[redirects]]
   from = "/*"

@@ -93,9 +93,10 @@ const PersonelIzinIstekleri: React.FC = () => {
   // Ay adını al
   const ayYil = startDate.toLocaleString('tr-TR', { month: 'long', year: 'numeric' });
 
-  // İzin tanımlamalarını yükle
-  const loadIzinTanimlamalari = async () => {
-    if (!user) return;
+  // Optimized API çağrısı fonksiyonu
+  const apiCall = async (path: string) => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 saniye timeout
     
     try {
       const response = await fetch('/.netlify/functions/api-proxy', {
@@ -104,22 +105,42 @@ const PersonelIzinIstekleri: React.FC = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          path: '/api/v1/data/table/16',
+          path,
           method: 'GET'
-        })
+        }),
+        signal: controller.signal
       });
 
+      clearTimeout(timeoutId);
+      
       if (response.ok) {
         const result = await response.json();
-        if (result.success && result.data?.rows) {
-          const filteredIzinler = result.data.rows.filter((izin: IzinTanimlama) => 
-            izin.kurum_id === user.kurum_id &&
-            izin.departman_id === user.departman_id &&
-            izin.birim_id === user.birim_id
-          );
-          setIzinTanimlamalari(filteredIzinler);
-        }
+        return result.success ? result.data?.rows || [] : [];
       }
+      return [];
+    } catch (error: any) {
+      clearTimeout(timeoutId);
+      if (error.name === 'AbortError') {
+        console.error('API timeout:', path);
+      } else {
+        console.error('API error:', path, error);
+      }
+      return [];
+    }
+  };
+
+  // İzin tanımlamalarını yükle
+  const loadIzinTanimlamalari = async () => {
+    if (!user) return;
+    
+    try {
+      const rows = await apiCall('/api/v1/data/table/16');
+      const filteredIzinler = rows.filter((izin: IzinTanimlama) => 
+        izin.kurum_id === user.kurum_id &&
+        izin.departman_id === user.departman_id &&
+        izin.birim_id === user.birim_id
+      );
+      setIzinTanimlamalari(filteredIzinler);
     } catch (error) {
       console.error('İzin tanımlamaları yükleme hatası:', error);
     }
@@ -130,28 +151,13 @@ const PersonelIzinIstekleri: React.FC = () => {
     if (!user) return;
     
     try {
-      const response = await fetch('/.netlify/functions/api-proxy', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          path: '/api/v1/data/table/18',
-          method: 'GET'
-        })
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success && result.data?.rows) {
-          const filteredAlanlar = result.data.rows.filter((alan: AlanTanimlama) => 
-            alan.kurum_id === user.kurum_id &&
-            alan.departman_id === user.departman_id &&
-            alan.birim_id === user.birim_id
-          );
-          setAlanTanimlamalari(filteredAlanlar);
-        }
-      }
+      const rows = await apiCall('/api/v1/data/table/18');
+      const filteredAlanlar = rows.filter((alan: AlanTanimlama) => 
+        alan.kurum_id === user.kurum_id &&
+        alan.departman_id === user.departman_id &&
+        alan.birim_id === user.birim_id
+      );
+      setAlanTanimlamalari(filteredAlanlar);
     } catch (error) {
       console.error('Alan tanımlamaları yükleme hatası:', error);
     }
@@ -164,30 +170,15 @@ const PersonelIzinIstekleri: React.FC = () => {
     try {
       setLoading(true);
       
-      const response = await fetch('/.netlify/functions/api-proxy', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          path: '/api/v1/data/table/21',
-          method: 'GET'
-        })
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success && result.data?.rows) {
-          const filteredPersonnel = result.data.rows.filter((person: Personnel) => 
-            person.kurum_id === user.kurum_id &&
-            person.departman_id === user.departman_id &&
-            person.birim_id === user.birim_id &&
-            person.aktif_mi
-          );
-          
-          setPersonnel(filteredPersonnel);
-        }
-      }
+      const rows = await apiCall('/api/v1/data/table/21');
+      const filteredPersonnel = rows.filter((person: Personnel) => 
+        person.kurum_id === user.kurum_id &&
+        person.departman_id === user.departman_id &&
+        person.birim_id === user.birim_id &&
+        person.aktif_mi
+      );
+      
+      setPersonnel(filteredPersonnel);
     } catch (error) {
       console.error('Personel yükleme hatası:', error);
     } finally {
@@ -223,10 +214,26 @@ const PersonelIzinIstekleri: React.FC = () => {
   };
 
   useEffect(() => {
-    loadPersonnel();
-    loadIzinIstekleri();
-    loadIzinTanimlamalari();
-    loadAlanTanimlamalari();
+    if (!user) return;
+    
+    // Paralel API çağrıları
+    const loadAllData = async () => {
+      setLoading(true);
+      try {
+        await Promise.all([
+          loadPersonnel(),
+          loadIzinIstekleri(),
+          loadIzinTanimlamalari(),
+          loadAlanTanimlamalari()
+        ]);
+      } catch (error) {
+        console.error('Veri yükleme hatası:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadAllData();
   }, [user]);
 
   // Tarih değişiklikleri
@@ -371,8 +378,12 @@ const PersonelIzinIstekleri: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="flex flex-col items-center justify-center h-64 space-y-4">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="text-center">
+          <p className="text-gray-600 font-medium">Veriler yükleniyor...</p>
+          <p className="text-sm text-gray-500">Lütfen bekleyin</p>
+        </div>
       </div>
     );
   }

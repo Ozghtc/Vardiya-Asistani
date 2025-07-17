@@ -1,6 +1,9 @@
-// Netlify Functions - API Proxy (ES MODULES)
+// Netlify Functions - API Proxy (ES MODULES) - OPTIMIZED
+const CACHE_DURATION = 5 * 60 * 1000; // 5 dakika cache
+const cache = new Map();
+
 export const handler = async (event, context) => {
-  console.log('📡 Netlify Function başlatıldı');
+  console.log('📡 Netlify Function başlatıldı - OPTIMIZED');
   
   try {
     // Only allow POST requests
@@ -12,6 +15,30 @@ export const handler = async (event, context) => {
     }
 
     const { path, method = 'GET', body, apiKey: bodyApiKey, jwtToken } = JSON.parse(event.body);
+    
+    // Cache key oluştur
+    const cacheKey = `${method}:${path}:${JSON.stringify(body || {})}`;
+    
+    // GET istekleri için cache kontrolü
+    if (method === 'GET' && cache.has(cacheKey)) {
+      const cachedData = cache.get(cacheKey);
+      if (Date.now() - cachedData.timestamp < CACHE_DURATION) {
+        console.log('⚡ Cache hit:', cacheKey);
+        return {
+          statusCode: 200,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+            'X-Cache': 'HIT'
+          },
+          body: JSON.stringify(cachedData.data),
+        };
+      } else {
+        cache.delete(cacheKey);
+      }
+    }
     
     console.log('Event method:', event.httpMethod);
     console.log('Event headers:', event.headers);
@@ -72,33 +99,70 @@ export const handler = async (event, context) => {
 
     console.log('📡 Fetching:', apiUrl);
     
-    const response = await fetch(apiUrl, requestOptions);
+    // Timeout ile fetch işlemi
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 25000); // 25 saniye timeout
     
-    console.log('📨 Response status:', response.status);
-    console.log('📨 Response ok:', response.ok);
-    
-    const responseText = await response.text();
-    console.log('📨 Response text length:', responseText.length);
-    
-    let responseData;
     try {
-      responseData = JSON.parse(responseText);
-      console.log('✅ API Response parsed successfully');
-    } catch (e) {
-      console.log('⚠️ API Response is not JSON:', responseText);
-      responseData = { error: 'Invalid JSON response', raw: responseText };
-    }
+      const response = await fetch(apiUrl, {
+        ...requestOptions,
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+    
+      console.log('📨 Response status:', response.status);
+      console.log('📨 Response ok:', response.ok);
+      
+      const responseText = await response.text();
+      console.log('📨 Response text length:', responseText.length);
+      
+      let responseData;
+      try {
+        responseData = JSON.parse(responseText);
+        console.log('✅ API Response parsed successfully');
+      } catch (e) {
+        console.log('⚠️ API Response is not JSON:', responseText);
+        responseData = { error: 'Invalid JSON response', raw: responseText };
+      }
 
-    return {
-      statusCode: response.status,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-      },
-      body: JSON.stringify(responseData),
-    };
+      // GET istekleri için cache'e kaydet
+      if (method === 'GET' && response.status === 200) {
+        cache.set(cacheKey, {
+          data: responseData,
+          timestamp: Date.now()
+        });
+        console.log('💾 Cache set:', cacheKey);
+      }
+
+      return {
+        statusCode: response.status,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+          'X-Cache': 'MISS'
+        },
+        body: JSON.stringify(responseData),
+      };
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      if (fetchError.name === 'AbortError') {
+        console.error('⏰ Request timeout after 25 seconds');
+        return {
+          statusCode: 408,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+          },
+          body: JSON.stringify({
+            error: 'Request Timeout',
+            message: 'API request timed out after 25 seconds'
+          }),
+        };
+      }
+      throw fetchError;
+    }
 
   } catch (error) {
     console.error('🚨 Proxy Function Error:', error);
