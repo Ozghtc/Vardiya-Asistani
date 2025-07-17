@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, UserPlus } from 'lucide-react';
+import { Plus, Trash2, UserPlus, Clock } from 'lucide-react';
 import { useCapitalization } from '../../../hooks/useCapitalization';
 import { SuccessNotification } from '../../../components/ui/Notification';
 import { useDepartmanBirim } from './DepartmanBirimContext';
@@ -111,6 +111,20 @@ const UnvanTanimlama: React.FC = () => {
 
   return (
     <div className="bg-white rounded-xl shadow-sm p-6">
+      {/* Personel Gün Mesai Tanımlama Butonu */}
+      <div className="mb-6">
+        <button
+          onClick={() => {
+            // Buraya mesai tanımlama sayfasına yönlendirme eklenebilir
+            console.log('Personel Gün Mesai Tanımlama tıklandı');
+          }}
+          className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+        >
+          <Clock className="w-5 h-5" />
+          <span>Personel Gün Mesai Tanımlama</span>
+        </button>
+      </div>
+
       <div className="flex items-center gap-2 mb-4">
         <UserPlus className="w-5 h-5 text-blue-600" />
         <h2 className="text-lg font-semibold">Personel Ünvan Tanımları</h2>
