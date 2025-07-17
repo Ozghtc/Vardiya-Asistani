@@ -91,6 +91,7 @@ const YeniAlan: React.FC = () => {
   const [selectedShift, setSelectedShift] = useState(vardiyalar[0].name);
   const [selectedShiftDays, setSelectedShiftDays] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   // Textarea için ayrı handler
   const handleDescriptionTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -98,11 +99,17 @@ const YeniAlan: React.FC = () => {
   };
 
   const handleAddArea = () => {
-    if (!name.trim() || !selectedColor) {
+    if (!name.trim() || !selectedColor || isProcessing) {
+      if (isProcessing) {
+        alert('İşlem devam ediyor, lütfen bekleyin!');
+        return;
+      }
       alert('Lütfen alan adı ve renk seçin!');
       return;
     }
 
+    setIsProcessing(true);
+    
     const newArea: Area = {
       id: Date.now().toString(),
       name: name.trim(),
@@ -121,13 +128,21 @@ const YeniAlan: React.FC = () => {
     handleNameChange({ target: { value: '' } } as React.ChangeEvent<HTMLInputElement>);
     setDescription('');
     setSelectedColor('');
+    
+    setIsProcessing(false);
   };
 
   const handleAddShiftSettings = () => {
-    if (selectedDays.length === 0) {
+    if (selectedDays.length === 0 || isProcessing) {
+      if (isProcessing) {
+        alert('İşlem devam ediyor, lütfen bekleyin!');
+        return;
+      }
       alert('Lütfen en az bir gün seçin!');
       return;
     }
+
+    setIsProcessing(true);
 
     // Son eklenen alanı güncelle
     setAreas(prevAreas => {
@@ -144,16 +159,27 @@ const YeniAlan: React.FC = () => {
 
     setShowShiftAddition(true);
     setSelectedShiftDays([...selectedDays]);
+    
+    setIsProcessing(false);
   };
 
   const handleAddShift = () => {
-    if (selectedShiftDays.length === 0) {
+    if (selectedShiftDays.length === 0 || isProcessing) {
+      if (isProcessing) {
+        alert('İşlem devam ediyor, lütfen bekleyin!');
+        return;
+      }
       alert('Lütfen en az bir gün seçin!');
       return;
     }
 
+    setIsProcessing(true);
+
     const shift = vardiyalar.find(v => v.name === selectedShift);
-    if (!shift) return;
+    if (!shift) {
+      setIsProcessing(false);
+      return;
+    }
 
     const newShift: Shift = {
       id: Date.now().toString(),
@@ -173,18 +199,26 @@ const YeniAlan: React.FC = () => {
       return updatedAreas;
     });
 
-      // Kalan mesai saati olan tüm günleri otomatik seç
-  const remainingDays = selectedDays.filter(day => getRemainingHoursForDay(day) > 0);
-  setSelectedShiftDays(remainingDays);
-};
+    // Kalan mesai saati olan tüm günleri otomatik seç
+    const remainingDays = selectedDays.filter(day => getRemainingHoursForDay(day) > 0);
+    setSelectedShiftDays(remainingDays);
+    
+    setIsProcessing(false);
+  };
 
 const handleSaveToDatabase = async () => {
-  if (areas.length === 0) {
+  if (areas.length === 0 || isProcessing) {
+    if (isProcessing) {
+      alert('İşlem devam ediyor, lütfen bekleyin!');
+      return;
+    }
     alert('Kaydedilecek alan bulunamadı!');
     return;
   }
 
   setIsSaving(true);
+  setIsProcessing(true);
+  
   try {
     const area = areas[areas.length - 1];
     
@@ -230,6 +264,7 @@ const handleSaveToDatabase = async () => {
     alert('Kaydetme sırasında bir hata oluştu!');
   } finally {
     setIsSaving(false);
+    setIsProcessing(false);
   }
 };
 
@@ -445,13 +480,21 @@ const handleSaveToDatabase = async () => {
                       type="number"
                       value={dailyWorkHours}
                       onChange={(e) => setDailyWorkHours(Number(e.target.value))}
-                      className="w-32 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200"
+                      disabled={isProcessing}
+                      className={`w-32 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 ${
+                        isProcessing ? 'bg-gray-100 cursor-not-allowed' : ''
+                      }`}
                     />
                     <button
                       onClick={updateAllDaysHours}
-                      className="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                      disabled={isProcessing}
+                      className={`px-3 py-1 rounded-lg transition-colors text-sm ${
+                        isProcessing
+                          ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                          : 'bg-blue-600 text-white hover:bg-blue-700'
+                      }`}
                     >
-                      Tüm Günlere Uygula
+                      {isProcessing ? 'İşleniyor...' : 'Tüm Günlere Uygula'}
                     </button>
                   </div>
                 </div>
@@ -463,11 +506,12 @@ const handleSaveToDatabase = async () => {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={toggleAllDays}
+                      disabled={isProcessing}
                       className={`flex items-center gap-2 px-3 py-1 rounded-lg transition-colors text-sm ${
                         selectedDays.length === weekDays.length
                           ? 'bg-blue-100 text-blue-800'
                           : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                      }`}
+                      } ${isProcessing ? 'cursor-not-allowed opacity-50' : ''}`}
                     >
                       <div className={`w-4 h-4 border-2 rounded flex items-center justify-center ${
                         selectedDays.length === weekDays.length
@@ -498,12 +542,13 @@ const handleSaveToDatabase = async () => {
                         }`}
                       >
                         <div className="flex items-center justify-between mb-3">
-                          <button
-                            onClick={() => toggleDay(day.value)}
-                            className={`flex items-center gap-2 w-full text-left ${
-                              isSelected ? 'text-blue-800' : 'text-gray-600'
-                            }`}
-                          >
+                                              <button
+                      onClick={() => toggleDay(day.value)}
+                      disabled={isProcessing}
+                      className={`flex items-center gap-2 w-full text-left ${
+                        isSelected ? 'text-blue-800' : 'text-gray-600'
+                      } ${isProcessing ? 'cursor-not-allowed opacity-50' : ''}`}
+                    >
                             <div className={`w-5 h-5 border-2 rounded flex items-center justify-center ${
                               isSelected
                                 ? 'bg-blue-600 border-blue-600'
@@ -526,7 +571,10 @@ const handleSaveToDatabase = async () => {
                               type="number"
                               value={dayHour}
                               onChange={(e) => updateDayHour(day.value, Number(e.target.value))}
-                              className="w-full px-3 py-2 text-sm rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200"
+                              disabled={isProcessing}
+                              className={`w-full px-3 py-2 text-sm rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 ${
+                                isProcessing ? 'bg-gray-100 cursor-not-allowed' : ''
+                              }`}
                               placeholder="40"
                             />
                           </div>
@@ -541,14 +589,14 @@ const handleSaveToDatabase = async () => {
             <div className="pt-6">
               <button
                 onClick={handleAddShiftSettings}
-                disabled={selectedDays.length === 0}
+                disabled={selectedDays.length === 0 || isProcessing}
                 className={`w-full py-3 rounded-lg transition-colors ${
-                  selectedDays.length > 0
+                  selectedDays.length > 0 && !isProcessing
                     ? 'bg-green-600 hover:bg-green-700 text-white'
                     : 'bg-gray-200 text-gray-500 cursor-not-allowed'
                 }`}
               >
-                Ekle
+                {isProcessing ? 'İşleniyor...' : 'Ekle'}
               </button>
             </div>
           </div>
@@ -571,7 +619,10 @@ const handleSaveToDatabase = async () => {
                   <select
                     value={selectedShift}
                     onChange={(e) => setSelectedShift(e.target.value)}
-                    className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200"
+                    disabled={isProcessing}
+                    className={`w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 ${
+                      isProcessing ? 'bg-gray-100 cursor-not-allowed' : ''
+                    }`}
                   >
                     {vardiyalar.map((shift) => (
                       <option key={shift.name} value={shift.name}>
@@ -597,7 +648,7 @@ const handleSaveToDatabase = async () => {
                       <button
                         key={day.value}
                         onClick={() => isActive && remainingHours > 0 && toggleShiftDay(day.value)}
-                        disabled={!isActive || remainingHours === 0}
+                        disabled={!isActive || remainingHours === 0 || isProcessing}
                         className={`px-3 py-2 rounded-lg transition-colors text-sm font-medium ${
                           !isActive
                             ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
@@ -606,12 +657,14 @@ const handleSaveToDatabase = async () => {
                             : isSelected
                             ? 'bg-blue-100 text-blue-800 hover:bg-blue-200'
                             : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                        }`}
+                        } ${isProcessing ? 'opacity-50' : ''}`}
                         title={
                           !isActive 
                             ? 'Bu gün aktif değil'
                             : remainingHours === 0 
                             ? 'Bu günün mesai saati doldu'
+                            : isProcessing
+                            ? 'İşlem devam ediyor'
                             : 'Bu güne vardiya ekle'
                         }
                       >
@@ -628,29 +681,29 @@ const handleSaveToDatabase = async () => {
               <div className="pt-4 space-y-3">
                 <button
                   onClick={handleAddShift}
-                  disabled={selectedShiftDays.length === 0 || allDaysCompleted}
+                  disabled={selectedShiftDays.length === 0 || allDaysCompleted || isProcessing}
                   className={`w-full py-3 rounded-lg transition-colors ${
-                    selectedShiftDays.length > 0 && !allDaysCompleted
+                    selectedShiftDays.length > 0 && !allDaysCompleted && !isProcessing
                       ? 'bg-blue-600 hover:bg-blue-700 text-white'
                       : 'bg-gray-200 text-gray-500 cursor-not-allowed'
                   }`}
                 >
-                  {allDaysCompleted ? 'Tüm Günler Tamamlandı' : 'Vardiya Ekle'}
+                  {isProcessing ? 'İşleniyor...' : allDaysCompleted ? 'Tüm Günler Tamamlandı' : 'Vardiya Ekle'}
                 </button>
                 
                 {/* Kaydet Butonu - Vardiya ekleme bölümünde de göster */}
                 {areas.length > 0 && (
                   <button
                     onClick={handleSaveToDatabase}
-                    disabled={isSaving}
+                    disabled={isSaving || isProcessing}
                     className={`w-full py-3 rounded-lg transition-colors flex items-center justify-center gap-2 ${
-                      isSaving
+                      isSaving || isProcessing
                         ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
                         : 'bg-red-600 hover:bg-red-700 text-white'
                     }`}
                   >
                     <Save className="w-4 h-4" />
-                    {isSaving ? 'Kaydediliyor...' : 'Kaydet'}
+                    {isSaving ? 'Kaydediliyor...' : isProcessing ? 'İşleniyor...' : 'Kaydet'}
                   </button>
                 )}
               </div>
@@ -671,15 +724,15 @@ const handleSaveToDatabase = async () => {
             <div className="mt-4">
               <button
                 onClick={handleSaveToDatabase}
-                disabled={isSaving}
+                disabled={isSaving || isProcessing}
                 className={`w-full py-3 rounded-lg transition-colors flex items-center justify-center gap-2 ${
-                  isSaving
+                  isSaving || isProcessing
                     ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
                     : 'bg-red-600 hover:bg-red-700 text-white'
                 }`}
               >
                 <Save className="w-4 h-4" />
-                {isSaving ? 'Kaydediliyor...' : 'Kaydet'}
+                {isSaving ? 'Kaydediliyor...' : isProcessing ? 'İşleniyor...' : 'Kaydet'}
               </button>
             </div>
           </div>
@@ -699,13 +752,16 @@ const handleSaveToDatabase = async () => {
           <div className="space-y-4">
             <div>
               <label className="block text-gray-700 mb-2 text-sm sm:text-base">Alan Adı</label>
-              <input
-                type="text"
-                value={name}
-                onChange={handleNameChange}
-                placeholder="ÖRN: KIRMIZI ALAN, GÖZLEM ODASI"
-                className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200"
-              />
+                                <input
+                    type="text"
+                    value={name}
+                    onChange={handleNameChange}
+                    placeholder="ÖRN: KIRMIZI ALAN, GÖZLEM ODASI"
+                    disabled={isProcessing}
+                    className={`w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 ${
+                      isProcessing ? 'bg-gray-100 cursor-not-allowed' : ''
+                    }`}
+                  />
             </div>
 
             <div>
@@ -726,16 +782,16 @@ const handleSaveToDatabase = async () => {
                     <button
                       key={color}
                       type="button"
-                      onClick={() => !isUsed && setSelectedColor(color)}
-                      className={`relative group ${isUsed ? 'cursor-not-allowed' : 'cursor-pointer'}`}
-                      title={isUsed ? `${name} (Kullanımda)` : name}
-                      disabled={isUsed}
+                      onClick={() => !isUsed && !isProcessing && setSelectedColor(color)}
+                      className={`relative group ${isUsed || isProcessing ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                      title={isUsed ? `${name} (Kullanımda)` : isProcessing ? 'İşlem devam ediyor' : name}
+                      disabled={isUsed || isProcessing}
                     >
                       <div
                         className={`w-6 h-6 sm:w-8 sm:h-8 rounded-lg transition-all ${
                           isSelected 
                             ? 'ring-2 ring-blue-500 scale-110' 
-                            : isUsed
+                            : isUsed || isProcessing
                             ? 'opacity-50'
                             : 'hover:scale-110'
                         }`}
@@ -765,21 +821,24 @@ const handleSaveToDatabase = async () => {
                 onChange={handleDescriptionTextareaChange}
                 placeholder="ALAN HAKKINDA KISA BİR AÇIKLAMA"
                 rows={4}
-                className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200"
+                disabled={isProcessing}
+                className={`w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 ${
+                  isProcessing ? 'bg-gray-100 cursor-not-allowed' : ''
+                }`}
               />
             </div>
 
             <div className="pt-4">
               <button
                 onClick={handleAddArea}
-                disabled={!name.trim() || !selectedColor}
+                disabled={!name.trim() || !selectedColor || isProcessing}
                 className={`w-full py-3 rounded-lg transition-colors ${
-                  name.trim() && selectedColor
+                  name.trim() && selectedColor && !isProcessing
                     ? 'bg-blue-600 hover:bg-blue-700 text-white'
                     : 'bg-gray-200 text-gray-500 cursor-not-allowed'
                 }`}
               >
-                Ekle
+                {isProcessing ? 'İşleniyor...' : 'Ekle'}
               </button>
             </div>
           </div>
