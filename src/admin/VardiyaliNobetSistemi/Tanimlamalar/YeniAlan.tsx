@@ -312,130 +312,132 @@ const YeniAlan: React.FC = () => {
         </div>
 
         {/* Vardiya Ayarları */}
-        <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm">
-          <div className="flex items-center gap-2 sm:gap-3 mb-4">
-            <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
-            <h2 className="text-base sm:text-lg font-semibold">Günlük Mesai Belirleme</h2>
-          </div>
-
-          <div className="space-y-6">
-            <div className="flex items-center gap-4">
-              <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Günlük Toplam Mesai Saati
-                </label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    value={dailyWorkHours}
-                    onChange={(e) => setDailyWorkHours(Number(e.target.value))}
-                    className="w-32 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200"
-                  />
-                  <button
-                    onClick={updateAllDaysHours}
-                    className="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
-                  >
-                    Tüm Günlere Uygula
-                  </button>
-                </div>
-              </div>
+        {!showShiftAddition && (
+          <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm">
+            <div className="flex items-center gap-2 sm:gap-3 mb-4">
+              <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
+              <h2 className="text-base sm:text-lg font-semibold">Günlük Mesai Belirleme</h2>
             </div>
 
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold">Günler</h3>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={toggleAllDays}
-                    className={`flex items-center gap-2 px-3 py-1 rounded-lg transition-colors text-sm ${
-                      selectedDays.length === weekDays.length
-                        ? 'bg-blue-100 text-blue-800'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
-                  >
-                    <div className={`w-4 h-4 border-2 rounded flex items-center justify-center ${
-                      selectedDays.length === weekDays.length
-                        ? 'bg-blue-600 border-blue-600'
-                        : 'border-gray-400'
-                    }`}>
-                      {selectedDays.length === weekDays.length && (
-                        <Check className="w-3 h-3 text-white" />
-                      )}
-                    </div>
-                    Tümünü Seç
-                  </button>
+            <div className="space-y-6">
+              <div className="flex items-center gap-4">
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Günlük Toplam Mesai Saati
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      value={dailyWorkHours}
+                      onChange={(e) => setDailyWorkHours(Number(e.target.value))}
+                      className="w-32 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200"
+                    />
+                    <button
+                      onClick={updateAllDaysHours}
+                      className="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                    >
+                      Tüm Günlere Uygula
+                    </button>
+                  </div>
                 </div>
               </div>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {weekDays.map((day) => {
-                  const isSelected = selectedDays.includes(day.value);
-                  const dayHour = dayHours[day.value] || 0;
-                  
-                  return (
-                    <div 
-                      key={day.value}
-                      className={`p-4 rounded-lg border-2 transition-all ${
-                        isSelected
-                          ? 'border-blue-500 bg-blue-50'
-                          : 'border-gray-200 bg-gray-50'
+
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold">Günler</h3>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={toggleAllDays}
+                      className={`flex items-center gap-2 px-3 py-1 rounded-lg transition-colors text-sm ${
+                        selectedDays.length === weekDays.length
+                          ? 'bg-blue-100 text-blue-800'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                       }`}
                     >
-                      <div className="flex items-center justify-between mb-3">
-                        <button
-                          onClick={() => toggleDay(day.value)}
-                          className={`flex items-center gap-2 w-full text-left ${
-                            isSelected ? 'text-blue-800' : 'text-gray-600'
-                          }`}
-                        >
-                          <div className={`w-5 h-5 border-2 rounded flex items-center justify-center ${
-                            isSelected
-                              ? 'bg-blue-600 border-blue-600'
-                              : 'border-gray-400'
-                          }`}>
-                            {isSelected && (
-                              <Check className="w-3 h-3 text-white" />
-                            )}
-                          </div>
-                          <span className="font-semibold">{day.name}</span>
-                        </button>
+                      <div className={`w-4 h-4 border-2 rounded flex items-center justify-center ${
+                        selectedDays.length === weekDays.length
+                          ? 'bg-blue-600 border-blue-600'
+                          : 'border-gray-400'
+                      }`}>
+                        {selectedDays.length === weekDays.length && (
+                          <Check className="w-3 h-3 text-white" />
+                        )}
                       </div>
-                      
-                      {isSelected && (
-                        <div className="space-y-2">
-                          <label className="block text-xs font-medium text-gray-600">
-                            Günlük Toplam Mesai
-                          </label>
-                          <input
-                            type="number"
-                            value={dayHour}
-                            onChange={(e) => updateDayHour(day.value, Number(e.target.value))}
-                            className="w-full px-3 py-2 text-sm rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200"
-                            placeholder="40"
-                          />
+                      Tümünü Seç
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {weekDays.map((day) => {
+                    const isSelected = selectedDays.includes(day.value);
+                    const dayHour = dayHours[day.value] || 0;
+                    
+                    return (
+                      <div 
+                        key={day.value}
+                        className={`p-4 rounded-lg border-2 transition-all ${
+                          isSelected
+                            ? 'border-blue-500 bg-blue-50'
+                            : 'border-gray-200 bg-gray-50'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-3">
+                          <button
+                            onClick={() => toggleDay(day.value)}
+                            className={`flex items-center gap-2 w-full text-left ${
+                              isSelected ? 'text-blue-800' : 'text-gray-600'
+                            }`}
+                          >
+                            <div className={`w-5 h-5 border-2 rounded flex items-center justify-center ${
+                              isSelected
+                                ? 'bg-blue-600 border-blue-600'
+                                : 'border-gray-400'
+                            }`}>
+                              {isSelected && (
+                                <Check className="w-3 h-3 text-white" />
+                              )}
+                            </div>
+                            <span className="font-semibold">{day.name}</span>
+                          </button>
                         </div>
-                      )}
-                    </div>
-                  );
-                })}
+                        
+                        {isSelected && (
+                          <div className="space-y-2">
+                            <label className="block text-xs font-medium text-gray-600">
+                              Günlük Toplam Mesai
+                            </label>
+                            <input
+                              type="number"
+                              value={dayHour}
+                              onChange={(e) => updateDayHour(day.value, Number(e.target.value))}
+                              className="w-full px-3 py-2 text-sm rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200"
+                              placeholder="40"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="pt-6">
-            <button
-              onClick={handleAddShiftSettings}
-              disabled={selectedDays.length === 0}
-              className={`w-full py-3 rounded-lg transition-colors ${
-                selectedDays.length > 0
-                  ? 'bg-green-600 hover:bg-green-700 text-white'
-                  : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-              }`}
-            >
-              Ekle
-            </button>
+            <div className="pt-6">
+              <button
+                onClick={handleAddShiftSettings}
+                disabled={selectedDays.length === 0}
+                className={`w-full py-3 rounded-lg transition-colors ${
+                  selectedDays.length > 0
+                    ? 'bg-green-600 hover:bg-green-700 text-white'
+                    : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                }`}
+              >
+                Ekle
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Vardiya Ekleme Bölümü */}
         {showShiftAddition && unaddedDays.length > 0 && (
