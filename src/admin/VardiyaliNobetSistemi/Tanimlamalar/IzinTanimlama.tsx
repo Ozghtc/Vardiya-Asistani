@@ -10,6 +10,7 @@ interface IzinIstek {
   izin_turu: string;
   kisaltma: string;
   renk: string;
+  mesai_dusumu: boolean;
   kurum_id: string;
   departman_id: string;
   birim_id: string;
@@ -90,6 +91,7 @@ const IzinTanimlama: React.FC = () => {
         izin_turu: izinAdi.trim(),
         kisaltma: kisaltma.trim().toUpperCase(),
         renk: seciliRenk,
+        mesai_dusumu: mesaiDusumu,
         kurum_id,
         departman_id,
         birim_id,
@@ -151,11 +153,12 @@ const IzinTanimlama: React.FC = () => {
         <h2 className="text-lg font-semibold">İzin/İstek Tanımları</h2>
       </div>
 
-      {/* Kompakt Form - Yan Yana */}
+      {/* Kompakt Form - Responsive */}
       <div className="bg-gray-50 rounded-lg p-4 mb-6">
-        <div className="flex items-end gap-4">
+        {/* İlk Satır - İzin Adı ve Kısaltma */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           {/* İzin Adı */}
-          <div className="flex-1">
+          <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               İzin/İstek Adı <span className="text-red-500">*</span>
             </label>
@@ -169,7 +172,7 @@ const IzinTanimlama: React.FC = () => {
           </div>
 
           {/* Kısaltma */}
-          <div className="w-32">
+          <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Kısaltma <span className="text-red-500">*</span>
             </label>
@@ -182,9 +185,12 @@ const IzinTanimlama: React.FC = () => {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent uppercase text-center font-bold"
             />
           </div>
+        </div>
 
+        {/* İkinci Satır - Renk ve Mesai Düşümü */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           {/* Renk Seçimi - Dropdown */}
-          <div className="w-40 relative">
+          <div className="relative">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Renk
             </label>
@@ -229,7 +235,7 @@ const IzinTanimlama: React.FC = () => {
           </div>
 
           {/* Mesai Düşümü Checkbox */}
-          <div className="w-48">
+          <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Mesai Düşümü
             </label>
@@ -251,8 +257,10 @@ const IzinTanimlama: React.FC = () => {
               </p>
             )}
           </div>
+        </div>
 
-          {/* Ekle Butonu */}
+        {/* Üçüncü Satır - Ekle Butonu */}
+        <div className="flex justify-end">
           <button
             onClick={handleAddRequest}
             disabled={!izinAdi.trim() || !kisaltma.trim()}
@@ -279,6 +287,12 @@ const IzinTanimlama: React.FC = () => {
                   <div className="font-medium text-gray-900">{item.izin_turu}</div>
                   <div className="text-sm text-gray-500">
                     Kısaltma: <span className="font-mono bg-white px-2 py-1 rounded border font-bold">{item.kisaltma || 'N/A'}</span>
+                    {item.mesai_dusumu && (
+                      <span className="ml-2 inline-flex items-center gap-1 text-blue-600">
+                        <Clock className="w-3 h-3" />
+                        Mesai Düşümü
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
