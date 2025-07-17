@@ -228,7 +228,39 @@ const YeniAlan: React.FC = () => {
     return selectedDays.filter(day => !addedDays.has(day));
   };
 
+  // Gün için eklenen mesai saatini hesapla
+  const getAddedHoursForDay = (day: string) => {
+    if (areas.length === 0) return 0;
+    
+    const lastArea = areas[areas.length - 1];
+    if (!lastArea.shifts) return 0;
+    
+    return lastArea.shifts
+      .filter(shift => shift.days.includes(day))
+      .reduce((total, shift) => total + shift.duration, 0);
+  };
+
+  // Gün için kalan mesai saatini hesapla
+  const getRemainingHoursForDay = (day: string) => {
+    const totalHours = dayHours[day] || 0;
+    const addedHours = getAddedHoursForDay(day);
+    return Math.max(0, totalHours - addedHours);
+  };
+
+  // Gün için vardiya bilgilerini al
+  const getShiftsForDay = (day: string) => {
+    if (areas.length === 0) return [];
+    
+    const lastArea = areas[areas.length - 1];
+    if (!lastArea.shifts) return [];
+    
+    return lastArea.shifts.filter(shift => shift.days.includes(day));
+  };
+
   const unaddedDays = getUnaddedDays();
+
+  // Tüm günlerin kalan mesaisi 0 mı kontrol et
+  const allDaysCompleted = selectedDays.every(day => getRemainingHoursForDay(day) === 0);
 
   if (showShiftSettings) {
     return (
@@ -273,6 +305,9 @@ const YeniAlan: React.FC = () => {
                       {weekDays.map((day) => {
                         const dayHour = area.dayHours[day.value] || 0;
                         const isActive = area.activeDays.includes(day.value);
+                        const addedHours = getAddedHoursForDay(day.value);
+                        const remainingHours = getRemainingHoursForDay(day.value);
+                        const dayShifts = getShiftsForDay(day.value);
                         
                         return (
                           <div 
@@ -292,13 +327,27 @@ const YeniAlan: React.FC = () => {
                                 </div>
                                 <div className="text-center">
                                   <div className="font-medium text-gray-600">Ek Mes</div>
-                                  <div className="text-green-600 font-semibold">0</div>
+                                  <div className="text-green-600 font-semibold">{addedHours}</div>
                                 </div>
                                 <div className="text-center">
                                   <div className="font-medium text-gray-600">Kalan Mes</div>
-                                  <div className="text-red-600 font-semibold">{dayHour}</div>
+                                  <div className="text-red-600 font-semibold">{remainingHours}</div>
                                 </div>
                               </div>
+                              
+                              {/* Vardiya bilgileri */}
+                              {dayShifts.length > 0 && (
+                                <div className="mt-3 space-y-1">
+                                  {dayShifts.map((shift, index) => (
+                                    <div key={index} className="text-xs bg-white p-2 rounded border">
+                                      <div className="font-medium text-gray-700">
+                                        {index + 1} Vardiya: {shift.name} ({shift.hours})
+                                      </div>
+                                      <div className="text-gray-600">{shift.duration} saat</div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
                             </div>
                           </div>
                         );
@@ -512,14 +561,14 @@ const YeniAlan: React.FC = () => {
               <div className="pt-4">
                 <button
                   onClick={handleAddShift}
-                  disabled={selectedShiftDays.length === 0}
+                  disabled={selectedShiftDays.length === 0 || allDaysCompleted}
                   className={`w-full py-3 rounded-lg transition-colors ${
-                    selectedShiftDays.length > 0
+                    selectedShiftDays.length > 0 && !allDaysCompleted
                       ? 'bg-blue-600 hover:bg-blue-700 text-white'
                       : 'bg-gray-200 text-gray-500 cursor-not-allowed'
                   }`}
                 >
-                  Vardiya Ekle
+                  {allDaysCompleted ? 'Tüm Günler Tamamlandı' : 'Vardiya Ekle'}
                 </button>
               </div>
             </div>
