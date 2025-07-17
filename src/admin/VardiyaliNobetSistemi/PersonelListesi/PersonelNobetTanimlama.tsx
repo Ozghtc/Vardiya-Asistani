@@ -659,13 +659,15 @@ const PersonelNobetTanimlama: React.FC = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredPersonnel.map((person) => {
+              {filteredPersonnel.map((person, index) => {
                 const personelNobetler = getPersonelNobetTanimlama(person.id);
+                const isEvenPerson = index % 2 === 0;
+                const personelBgColor = isEvenPerson ? 'bg-blue-50' : 'bg-green-50';
                 
                 return (
                   <React.Fragment key={person.id}>
                     {/* Ana personel satırı */}
-                    <tr className="hover:bg-gray-50">
+                    <tr className={`hover:bg-gray-100 transition-colors ${personelBgColor}`}>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">
                           {person.ad} {person.soyad}
@@ -708,7 +710,7 @@ const PersonelNobetTanimlama: React.FC = () => {
                         return (
                           <React.Fragment key={nobet.id}>
                             {/* Günler satırı */}
-                            <tr className="bg-blue-50">
+                            <tr className={personelBgColor}>
                               <td className="px-6 py-2 text-xs text-gray-600">
                                 <div className="flex items-center gap-1">
                                   <Calendar className="w-3 h-3" />
@@ -721,7 +723,7 @@ const PersonelNobetTanimlama: React.FC = () => {
                             </tr>
                             
                             {/* Alanlar satırı */}
-                            <tr className="bg-green-50">
+                            <tr className={personelBgColor}>
                               <td className="px-6 py-2 text-xs text-gray-600">
                                 <div className="flex items-center gap-1">
                                   <Building2 className="w-3 h-3" />
