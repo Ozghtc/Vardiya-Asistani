@@ -235,16 +235,22 @@ const handleSaveToDatabase = async () => {
       birim_id: user?.birim_id || "6_HEMSİRE"
     };
 
-    const response = await fetch('https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/data/table/25/rows', {
+    const response = await fetch('/.netlify/functions/api-proxy', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'X-API-Key': 'hzm_1ce98c92189d4a109cd604b22bfd86b7'
+        'Content-Type': 'application/json'
       },
-      body: JSON.stringify(data)
+      body: JSON.stringify({
+        path: '/api/v1/data/table/25/rows',
+        method: 'POST',
+        body: data,
+        apiKey: 'hzm_1ce98c92189d4a109cd604b22bfd86b7'
+      })
     });
 
     if (response.ok) {
+      const result = await response.json();
+      console.log('✅ Kaydetme başarılı:', result);
       alert('Alan başarıyla kaydedildi!');
       // Sayfayı eski haline döndür
       setAreas([]);
@@ -256,12 +262,30 @@ const handleSaveToDatabase = async () => {
       setSelectedShiftDays([]);
       setSelectedShift(vardiyalar[0].name);
     } else {
-      const errorData = await response.json();
-      alert(`Kaydetme hatası: ${errorData.message || 'Bilinmeyen hata'}`);
+      let errorMessage = 'Bilinmeyen hata';
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.message || errorData.error || 'API hatası';
+        console.error('❌ API Hatası:', errorData);
+      } catch (parseError) {
+        console.error('❌ Response parse hatası:', parseError);
+        errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+      }
+      alert(`Kaydetme hatası: ${errorMessage}`);
     }
-  } catch (error) {
-    console.error('Kaydetme hatası:', error);
-    alert('Kaydetme sırasında bir hata oluştu!');
+  } catch (error: any) {
+    console.error('🚨 Kaydetme hatası:', error);
+    let errorMessage = 'Bilinmeyen hata';
+    
+    if (error?.name === 'TypeError' && error?.message?.includes('Failed to fetch')) {
+      errorMessage = 'Ağ bağlantısı hatası. Lütfen internet bağlantınızı kontrol edin.';
+    } else if (error?.name === 'AbortError') {
+      errorMessage = 'İstek zaman aşımına uğradı. Lütfen tekrar deneyin.';
+    } else {
+      errorMessage = error?.message || 'Bilinmeyen hata';
+    }
+    
+    alert(`Kaydetme sırasında bir hata oluştu: ${errorMessage}`);
   } finally {
     setIsSaving(false);
     setIsProcessing(false);
