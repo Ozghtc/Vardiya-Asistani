@@ -495,7 +495,7 @@ const PersonelNobetTanimlama: React.FC = () => {
       if (allSuccess) {
         await loadKayitliNobetTanimlama();
         handleNobetTanimlamaClose();
-        alert('Nöbet tanımlamaları başarıyla kaydedildi!');
+        alert('Alan tanımlamaları başarıyla kaydedildi!');
       } else {
         alert('Kayıt sırasında bir hata oluştu!');
       }
@@ -541,8 +541,8 @@ const PersonelNobetTanimlama: React.FC = () => {
             <span>Geri</span>
           </button>
           <div>
-            <h1 className="text-2xl font-bold text-gray-800">Nöbet Tanımlama</h1>
-            <p className="text-gray-600">Personel nöbet tanımlamaları</p>
+            <h1 className="text-2xl font-bold text-gray-800">Personel Alan Tanımlama</h1>
+            <p className="text-gray-600">Personel alan tanımlamaları</p>
           </div>
         </div>
       </div>
@@ -693,8 +693,8 @@ const PersonelNobetTanimlama: React.FC = () => {
                           onClick={() => handleNobetTanimlamaOpen(person)}
                           className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-sm"
                         >
-                          <Calendar className="w-4 h-4" />
-                          Nöbet Tanımla
+                          <Building2 className="w-4 h-4" />
+                          Alan Tanımla
                         </button>
                       </td>
                     </tr>
@@ -765,7 +765,7 @@ const PersonelNobetTanimlama: React.FC = () => {
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <h3 className="text-lg font-semibold text-gray-800">
-                {nobetTanimlamaPopup.personel.ad} {nobetTanimlamaPopup.personel.soyad} - Nöbet Tanımlama
+                {nobetTanimlamaPopup.personel.ad} {nobetTanimlamaPopup.personel.soyad} - Alan Tanımlama
               </h3>
               <button
                 onClick={handleNobetTanimlamaClose}
@@ -891,7 +891,7 @@ const PersonelNobetTanimlama: React.FC = () => {
               {/* Eklenen Kombinasyonlar */}
               {nobetKombinasyonlari.length > 0 && (
                 <div>
-                  <h4 className="text-md font-medium text-gray-800 mb-4">Eklenecek Nöbet Tanımlamaları</h4>
+                  <h4 className="text-md font-medium text-gray-800 mb-4">Eklenecek Alan Tanımlamaları</h4>
                   <div className="space-y-3">
                     {nobetKombinasyonlari.map((kombinasyon, index) => (
                       <div key={index} className="p-4 border border-gray-200 rounded-lg bg-gray-50">
