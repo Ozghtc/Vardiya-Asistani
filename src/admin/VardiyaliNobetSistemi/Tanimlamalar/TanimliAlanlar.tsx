@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, ChevronDown, ChevronUp, Trash2, FileText, BarChart } from 'lucide-react';
+import { ArrowLeft, ChevronDown, ChevronUp, Trash2, FileText, BarChart, X } from 'lucide-react';
 import DeleteConfirmDialog from '../../../components/ui/DeleteConfirmDialog';
 import { apiRequest } from '../../../lib/api';
 import { useAuthContext } from '../../../contexts/AuthContext';
@@ -9,6 +9,15 @@ interface NobetGrubu {
   saat: number;
   gunler: string[];
   hours?: string;
+}
+
+interface Vardiya {
+  id: string;
+  name: string;
+  startTime: string;
+  endTime: string;
+  duration: number;
+  gunler?: string[];
 }
 
 interface Alan {
@@ -28,11 +37,141 @@ interface Alan {
   totalVardiya: number;
   activeDays: number;
   nobetler?: NobetGrubu[];
+  parsedVardiyalar?: Vardiya[];
 }
+
+// Detay Modal Component
+const AlanDetayModal: React.FC<{
+  alan: Alan | null;
+  isOpen: boolean;
+  onClose: () => void;
+}> = ({ alan, isOpen, onClose }) => {
+  if (!isOpen || !alan) return null;
+
+  const gunler = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
+  
+  // Vardiya verilerini parse et
+  let parsedVardiyalar: Vardiya[] = [];
+  try {
+    parsedVardiyalar = JSON.parse(alan.vardiyalar || '[]');
+  } catch (e) {
+    console.error('Vardiya parse hatası:', e);
+  }
+
+  // Her gün için vardiya bilgilerini hesapla
+  const getGunVardiyalari = (gunAdi: string) => {
+    return parsedVardiyalar.filter(vardiya => 
+      vardiya.gunler && vardiya.gunler.includes(gunAdi)
+    );
+  };
+
+  const getGunToplamSaat = (gunAdi: string) => {
+    const gunVardiyalari = getGunVardiyalari(gunAdi);
+    return gunVardiyalari.reduce((toplam, vardiya) => toplam + (vardiya.duration || 0), 0);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <div className="flex items-center gap-3">
+            <div
+              className="w-4 h-4 rounded-full"
+              style={{ backgroundColor: alan.renk }}
+            />
+            <h2 className="text-xl font-bold text-gray-900">{alan.alan_adi} - Günlük Toplam Mesailer</h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="p-6">
+          {/* Özet Bilgiler */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div className="p-4 bg-blue-50 rounded-lg text-center">
+              <div className="text-2xl font-bold text-blue-600">{alan.totalHours || 0}</div>
+              <div className="text-sm text-gray-600">Haftalık Toplam Saat</div>
+            </div>
+            <div className="p-4 bg-green-50 rounded-lg text-center">
+              <div className="text-2xl font-bold text-green-600">{alan.totalVardiya || 0}</div>
+              <div className="text-sm text-gray-600">Toplam Vardiya</div>
+            </div>
+            <div className="p-4 bg-purple-50 rounded-lg text-center">
+              <div className="text-2xl font-bold text-purple-600">{alan.activeDays || 0}</div>
+              <div className="text-sm text-gray-600">Aktif Gün</div>
+            </div>
+            <div className="p-4 bg-orange-50 rounded-lg text-center">
+              <div className="text-2xl font-bold text-orange-600">
+                {Math.round(((alan.totalHours || 0) * 30/7) * 100) / 100}
+              </div>
+              <div className="text-sm text-gray-600">30 Günlük Saat</div>
+            </div>
+          </div>
+
+          {/* Günlük Vardiya Kartları */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {gunler.map((gunAdi) => {
+              const gunVardiyalari = getGunVardiyalari(gunAdi);
+              const gunToplamSaat = getGunToplamSaat(gunAdi);
+              const hedefSaat = 40; // Varsayılan hedef saat
+              const ekMesai = Math.max(0, gunToplamSaat - hedefSaat);
+              const kalanMesai = Math.max(0, hedefSaat - gunToplamSaat);
+
+              return (
+                <div key={gunAdi} className="bg-blue-50 rounded-lg p-4 border-l-4 border-blue-400">
+                  {/* Gün Başlığı */}
+                  <h3 className="font-bold text-center text-gray-900 mb-3">{gunAdi}</h3>
+                  
+                  {/* Özet Bilgiler */}
+                  <div className="grid grid-cols-3 gap-2 mb-3 text-sm">
+                    <div className="text-center">
+                      <div className="font-semibold text-blue-600">T: {hedefSaat}</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="font-semibold text-green-600">Ek Mes: {ekMesai}</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="font-semibold text-red-600">Kalan Mes: {kalanMesai}</div>
+                    </div>
+                  </div>
+
+                  {/* Vardiya Listesi */}
+                  <div className="space-y-2">
+                    {gunVardiyalari.length > 0 ? (
+                      gunVardiyalari.map((vardiya, index) => (
+                        <div key={index} className="bg-white rounded border p-2 text-xs">
+                          <div className="font-medium">
+                            {index + 1} Vardiya: {vardiya.name} ({vardiya.startTime} - {vardiya.endTime}) {vardiya.duration} saat
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="bg-white rounded border p-2 text-xs text-gray-500 text-center">
+                        Vardiya yok
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const TanimliAlanlar: React.FC = () => {
   const [alanlar, setAlanlar] = useState<Alan[]>([]);
   const [expandedAlan, setExpandedAlan] = useState<number | null>(null);
+  const [selectedAlan, setSelectedAlan] = useState<Alan | null>(null);
+  const [isDetayModalOpen, setIsDetayModalOpen] = useState(false);
   const [deleteDialog, setDeleteDialog] = useState<{isOpen: boolean; alanId?: number}>({
     isOpen: false
   });
@@ -103,7 +242,7 @@ const TanimliAlanlar: React.FC = () => {
         if (rows && rows.length > 0) {
           console.log('📊 API\'den gelen ham veri:', rows);
           
-                      const apiData = rows
+          const apiData = rows
             .filter((row: any) => {
               console.log('🔍 Filtreleme kontrolü:', {
                 rowKurum: row.kurum_id,
@@ -148,7 +287,8 @@ const TanimliAlanlar: React.FC = () => {
                 totalHours: totalHours,
                 totalVardiya: totalVardiya,
                 activeDays: activeDays,
-                nobetler: parsedVardiyalar
+                nobetler: parsedVardiyalar,
+                parsedVardiyalar: parsedVardiyalar
               };
               
               console.log('🔄 Alan map edildi:', { originalId: row.id, mappedId: mappedRow.id, name: mappedRow.alan_adi });
@@ -229,6 +369,16 @@ const TanimliAlanlar: React.FC = () => {
     setExpandedAlan(expandedAlan === alanId ? null : alanId);
   };
 
+  const openDetayModal = (alan: Alan) => {
+    setSelectedAlan(alan);
+    setIsDetayModalOpen(true);
+  };
+
+  const closeDetayModal = () => {
+    setIsDetayModalOpen(false);
+    setSelectedAlan(null);
+  };
+
   const handleDelete = async (alanId: number) => {
     if (!confirm('Bu alanı silmek istediğinizden emin misiniz?')) return;
 
@@ -242,11 +392,11 @@ const TanimliAlanlar: React.FC = () => {
         headers: {
           'Content-Type': 'application/json'
         },
-                  body: JSON.stringify({
-            path: `/api/v1/data/table/25/rows/${alanId}/delete`,
-            method: 'POST',
-            apiKey: 'hzm_1ce98c92189d4a109cd604b22bfd86b7'
-          })
+        body: JSON.stringify({
+          path: `/api/v1/data/table/25/rows/${alanId}/delete`,
+          method: 'POST',
+          apiKey: 'hzm_1ce98c92189d4a109cd604b22bfd86b7'
+        })
       });
       
       const result = await response.json();
@@ -378,8 +528,11 @@ const TanimliAlanlar: React.FC = () => {
                   )}
                   <button
                     className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                    title="Rapor"
-                    onClick={(e) => e.stopPropagation()}
+                    title="Detay Görünüm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openDetayModal(alan);
+                    }}
                   >
                     <FileText className="w-5 h-5" />
                   </button>
@@ -418,7 +571,7 @@ const TanimliAlanlar: React.FC = () => {
                             <div key={index} className="p-3 bg-gray-50 rounded-lg">
                               <div className="font-medium text-sm">{nobet.saat} Saat</div>
                               <div className="text-xs text-gray-600 mt-1">
-                                {nobet.gunler.join(', ')}
+                                {nobet.gunler && Array.isArray(nobet.gunler) ? nobet.gunler.join(', ') : 'Gün bilgisi yok'}
                               </div>
                             </div>
                           ))}
@@ -439,6 +592,13 @@ const TanimliAlanlar: React.FC = () => {
           HZM İşbirliği ile
         </button>
       </div>
+
+      {/* Detay Modal */}
+      <AlanDetayModal
+        alan={selectedAlan}
+        isOpen={isDetayModalOpen}
+        onClose={closeDetayModal}
+      />
     </div>
   );
 };
