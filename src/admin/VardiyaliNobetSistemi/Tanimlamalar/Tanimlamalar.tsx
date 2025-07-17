@@ -6,6 +6,7 @@ import UnvanTanimlama from './UnvanTanimlama';
 import IzinTanimlama from './IzinTanimlama';
 import VardiyaTanimlama from './VardiyaTanimlama';
 import AlanTanimlama from './AlanTanimlama';
+import YeniAlan from './YeniAlan';
 import TanimliAlanlar from './TanimliAlanlar';
 import TanimliVardiyalar from './TanimliVardiyalar';
 import { useDepartmanBirim } from './DepartmanBirimContext';
@@ -63,6 +64,12 @@ const SistemTanimlamalari: React.FC = () => {
       name: 'Alan',
       icon: <MapPin className="w-5 h-5" />, 
       component: <AlanTanimlama />
+    },
+    {
+      id: 'yeni-alan',
+      name: 'Yeni Alan',
+      icon: <MapPin className="w-5 h-5" />, 
+      component: <YeniAlan />
     },
     {
       id: 'tanimli-alanlar',
