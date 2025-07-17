@@ -29,6 +29,7 @@ const UnvanTanimlama: React.FC = () => {
   const [mesaiAdi, setMesaiAdi] = useState('');
   const [mesaiSaati, setMesaiSaati] = useState<number>(8);
   const [mesaiTanımları, setMesaiTanımları] = useState<MesaiTanimi[]>([]);
+  const [kaydedilenMesai, setKaydedilenMesai] = useState<any>(null);
 
   const gunler = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
 
@@ -164,10 +165,43 @@ const UnvanTanimlama: React.FC = () => {
     setMesaiSaati(8);
   };
 
-  const handleMesaiKaydet = () => {
-    console.log('Mesai tanımları:', mesaiTanımları);
-    console.log('Bu veriler veritabanına kaydedilecek');
-    setShowMesaiPopup(false);
+  const handleMesaiKaydet = async () => {
+    if (mesaiTanımları.length === 0) {
+      alert('En az bir mesai tanımı ekleyin.');
+      return;
+    }
+    if (!user?.kurum_id || !user?.departman_id || !user?.birim_id) {
+      alert('Kullanıcı kurum, departman veya birim bilgisi eksik!');
+      return;
+    }
+    const mesai = mesaiTanımları[mesaiTanımları.length - 1];
+    const payload = {
+      mesai_adi: mesai.mesaiAdi,
+      gunler: JSON.stringify(mesai.gunler),
+      mesai_saati: mesai.mesaiSaati,
+      kurum_id: user.kurum_id,
+      departman_id: user.departman_id,
+      birim_id: user.birim_id,
+      aktif_mi: true
+    };
+          try {
+        console.log('API gonderilen veri:', payload);
+        const response = await apiRequest('/api/v1/data/table/24/rows', {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        });
+        console.log('📥 API yanıtı:', response);
+        if (response.success) {
+          setKaydedilenMesai(response.data.row);
+          console.log('✅ Kayıt başarılı:', response.data.row);
+        } else {
+          console.error('❌ API Hatası:', response.error);
+          alert('Kayıt başarısız: ' + (response.error || 'Bilinmeyen hata'));
+        }
+      } catch (err) {
+        console.error('🚨 Kayıt hatası:', err);
+        alert('Kayıt sırasında hata oluştu: ' + err);
+      }
   };
 
   const handleMesaiSil = (id: string) => {
@@ -308,6 +342,18 @@ const UnvanTanimlama: React.FC = () => {
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Kaydedilen Mesai Başarı Kutusu */}
+      {kaydedilenMesai && (
+        <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg shadow flex flex-col gap-1 animate-fade-in">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="inline-block w-3 h-3 bg-green-500 rounded-full"></span>
+            <span className="font-semibold text-green-700">Mesai başarıyla kaydedildi!</span>
+          </div>
+          <div className="text-gray-800 font-medium">{kaydedilenMesai.mesai_adi}</div>
+          <div className="text-gray-600 text-sm">Günler: {JSON.parse(kaydedilenMesai.gunler).join(', ')} | {kaydedilenMesai.mesai_saati} saat</div>
         </div>
       )}
 
