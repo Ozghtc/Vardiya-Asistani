@@ -160,23 +160,55 @@ const YeniAlan: React.FC = () => {
             {areas.map((area) => (
               <div 
                 key={area.id}
-                className="flex items-center justify-between p-3 border rounded-lg"
+                className="border rounded-lg overflow-hidden"
                 style={{ borderLeftColor: area.color, borderLeftWidth: '4px' }}
               >
-                <div className="flex items-center gap-3">
-                  <div 
-                    className="w-4 h-4 rounded-full"
-                    style={{ backgroundColor: area.color }}
-                  ></div>
-                  <div>
-                    <h3 className="font-semibold">{area.name}</h3>
-                    <p className="text-sm text-gray-600">{area.description}</p>
+                {/* Alan Bilgileri */}
+                <div className="flex items-center justify-between p-3 bg-gray-50">
+                  <div className="flex items-center gap-3">
+                    <div 
+                      className="w-4 h-4 rounded-full"
+                      style={{ backgroundColor: area.color }}
+                    ></div>
+                    <div>
+                      <h3 className="font-semibold">{area.name}</h3>
+                      <p className="text-sm text-gray-600">{area.description}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm text-gray-600">Günlük: {area.dailyHours} saat</p>
+                    <p className="text-xs text-gray-500">{area.activeDays.length} gün aktif</p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-sm text-gray-600">Günlük: {area.dailyHours} saat</p>
-                  <p className="text-xs text-gray-500">{area.activeDays.length} gün aktif</p>
-                </div>
+
+                {/* Günlük Mesai Bilgileri */}
+                {area.dayHours && Object.keys(area.dayHours).length > 0 && (
+                  <div className="p-3 border-t">
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">Günlük Toplam Mesailer</h4>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+                      {weekDays.map((day) => {
+                        const dayHour = area.dayHours[day.value] || 0;
+                        const isActive = area.activeDays.includes(day.value);
+                        
+                        return (
+                          <div 
+                            key={day.value}
+                            className={`p-2 rounded text-xs ${
+                              isActive 
+                                ? 'bg-blue-50 text-blue-800 border border-blue-200'
+                                : 'bg-gray-50 text-gray-500 border border-gray-200'
+                            }`}
+                          >
+                            <div className="font-medium">{day.short}</div>
+                            <div className="text-xs">
+                              {isActive ? `${dayHour} saat` : 'Pasif'}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
