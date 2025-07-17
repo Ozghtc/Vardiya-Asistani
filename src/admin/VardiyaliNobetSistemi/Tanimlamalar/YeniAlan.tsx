@@ -258,6 +258,11 @@ const YeniAlan: React.FC = () => {
     return lastArea.shifts.filter(shift => shift.days.includes(day));
   };
 
+  // Haftalık toplam mesai saatini hesapla
+  const getWeeklyTotalHours = () => {
+    return Object.values(dayHours).reduce((total, hours) => total + hours, 0);
+  };
+
   const unaddedDays = getUnaddedDays();
 
   // Tüm günlerin kalan mesaisi 0 mı kontrol et
@@ -293,7 +298,7 @@ const YeniAlan: React.FC = () => {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm text-gray-600">Günlük: {area.dailyHours} saat</p>
+                    <p className="text-sm text-gray-600">Haftalık: {getWeeklyTotalHours()} saat</p>
                     <p className="text-xs text-gray-500">{area.activeDays.length} gün aktif</p>
                   </div>
                 </div>
