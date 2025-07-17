@@ -135,8 +135,8 @@ const PersonelIslemleri: React.FC = () => {
     },
     {
       id: 'nobet',
-      title: 'Nöbet Tanımlama',
-      description: 'Personel nöbet tanımlamaları',
+      title: 'Alan Tanımlama',
+      description: 'Personel alan tanımlamaları',
       icon: <Calendar className="w-8 h-8" />,
       color: 'green',
       stats: `${istatistikler.nobetTanimliPersonel} tanımlı`,
