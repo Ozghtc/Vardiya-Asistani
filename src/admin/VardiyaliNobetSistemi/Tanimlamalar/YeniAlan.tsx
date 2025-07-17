@@ -623,7 +623,7 @@ const handleSaveToDatabase = async () => {
                 </div>
               </div>
 
-              <div className="pt-4">
+              <div className="pt-4 space-y-3">
                 <button
                   onClick={handleAddShift}
                   disabled={selectedShiftDays.length === 0 || allDaysCompleted}
@@ -635,6 +635,22 @@ const handleSaveToDatabase = async () => {
                 >
                   {allDaysCompleted ? 'Tüm Günler Tamamlandı' : 'Vardiya Ekle'}
                 </button>
+                
+                {/* Kaydet Butonu - Vardiya ekleme bölümünde de göster */}
+                {areas.length > 0 && (
+                  <button
+                    onClick={handleSaveToDatabase}
+                    disabled={isSaving}
+                    className={`w-full py-3 rounded-lg transition-colors flex items-center justify-center gap-2 ${
+                      isSaving
+                        ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                        : 'bg-red-600 hover:bg-red-700 text-white'
+                    }`}
+                  >
+                    <Save className="w-4 h-4" />
+                    {isSaving ? 'Kaydediliyor...' : 'Kaydet'}
+                  </button>
+                )}
               </div>
             </div>
           </div>
