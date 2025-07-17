@@ -170,7 +170,8 @@ const YeniAlan: React.FC = () => {
       return updatedAreas;
     });
 
-    setSelectedShiftDays([...selectedDays]);
+    // Seçili günleri temizle
+    setSelectedShiftDays([]);
   };
 
   const toggleDay = (day: string) => {
@@ -207,6 +208,17 @@ const YeniAlan: React.FC = () => {
       prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]
     );
   };
+
+  // Eklenmemiş günleri hesapla
+  const getUnaddedDays = () => {
+    if (areas.length === 0) return selectedDays;
+    
+    const lastArea = areas[areas.length - 1];
+    const addedDays = lastArea.shifts.flatMap(shift => shift.days);
+    return selectedDays.filter(day => !addedDays.includes(day));
+  };
+
+  const unaddedDays = getUnaddedDays();
 
   if (showShiftSettings) {
     return (
@@ -293,7 +305,7 @@ const YeniAlan: React.FC = () => {
         <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm">
           <div className="flex items-center gap-2 sm:gap-3 mb-4">
             <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
-            <h2 className="text-base sm:text-lg font-semibold">Vardiya ve Mesai Ayarları</h2>
+            <h2 className="text-base sm:text-lg font-semibold">Günlük Mesai Belirleme</h2>
           </div>
 
           <div className="space-y-6">
@@ -416,7 +428,7 @@ const YeniAlan: React.FC = () => {
         </div>
 
         {/* Vardiya Ekleme Bölümü */}
-        {showShiftAddition && (
+        {showShiftAddition && unaddedDays.length > 0 && (
           <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm mt-6">
             <div className="flex items-center gap-2 sm:gap-3 mb-4">
               <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
@@ -450,15 +462,16 @@ const YeniAlan: React.FC = () => {
                 <div className="flex flex-wrap gap-2">
                   {weekDays.map((day) => {
                     const isActive = selectedDays.includes(day.value);
+                    const isUnadded = unaddedDays.includes(day.value);
                     const isSelected = selectedShiftDays.includes(day.value);
                     
                     return (
                       <button
                         key={day.value}
-                        onClick={() => isActive && toggleShiftDay(day.value)}
-                        disabled={!isActive}
+                        onClick={() => isActive && isUnadded && toggleShiftDay(day.value)}
+                        disabled={!isActive || !isUnadded}
                         className={`px-3 py-2 rounded-lg transition-colors text-sm font-medium ${
-                          !isActive
+                          !isActive || !isUnadded
                             ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                             : isSelected
                             ? 'bg-green-100 text-green-800 hover:bg-green-200'

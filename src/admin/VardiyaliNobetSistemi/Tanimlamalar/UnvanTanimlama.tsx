@@ -135,10 +135,10 @@ const UnvanTanimlama: React.FC = () => {
         aktif_mi: true
       };
 
-              const response = await apiRequest('/api/v1/data/table/15/rows', {
-          method: 'POST',
-          body: JSON.stringify(newUnvan)
-        });
+      const response = await apiRequest('/api/v1/data/table/15/rows', {
+        method: 'POST',
+        body: JSON.stringify(newUnvan)
+      });
 
       if (response.success) {
         const updatedUnvanlar = [...unvanlar, response.data.row];
@@ -157,9 +157,9 @@ const UnvanTanimlama: React.FC = () => {
 
   const handleUnvanSil = async (unvanId: number) => {
     try {
-              const response = await apiRequest(`/api/v1/data/table/15/rows/${unvanId}`, {
-          method: 'DELETE'
-        });
+      const response = await apiRequest(`/api/v1/data/table/15/rows/${unvanId}`, {
+        method: 'DELETE'
+      });
 
       if (response.success) {
         const updatedUnvanlar = unvanlar.filter(unvan => unvan.id !== unvanId);
@@ -468,21 +468,21 @@ const UnvanTanimlama: React.FC = () => {
 
         {/* Yeni Unvan Ekleme */}
         <div className="flex gap-3 mb-6">
-          <input
-            type="text"
+        <input
+          type="text"
             value={yeniUnvan}
             onChange={(e) => setYeniUnvan(e.target.value)}
-            placeholder="YENİ ÜNVAN GİRİN"
+          placeholder="YENİ ÜNVAN GİRİN"
             className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             onKeyPress={(e) => e.key === 'Enter' && handleUnvanEkle}
-          />
-          <button
-            onClick={handleUnvanEkle}
+        />
+        <button
+          onClick={handleUnvanEkle}
             className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
-          >
+        >
             +
-          </button>
-        </div>
+        </button>
+      </div>
 
         {/* Unvan Listesi */}
         {loading ? (
@@ -499,17 +499,17 @@ const UnvanTanimlama: React.FC = () => {
             {unvanlar.map((unvan) => (
               <div key={unvan.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                 <span className="font-medium text-gray-800">{unvan.unvan_adi}</span>
-                <button
+            <button
                   onClick={() => handleUnvanSil(unvan.id)}
                   className="text-red-500 hover:text-red-700 transition-colors"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            ))}
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
           </div>
-        )}
+        ))}
       </div>
+        )}
+        </div>
     </div>
   );
 };
