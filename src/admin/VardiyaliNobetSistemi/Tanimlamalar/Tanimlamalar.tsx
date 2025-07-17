@@ -5,7 +5,7 @@ import { ArrowLeft, Users, Clock, MapPin, UserPlus, Settings, UserCog } from 'lu
 import UnvanTanimlama from './UnvanTanimlama';
 import IzinTanimlama from './IzinTanimlama';
 import VardiyaTanimlama from './VardiyaTanimlama';
-import AlanTanimlama from './AlanTanimlama';
+
 import YeniAlan from './YeniAlan';
 import TanimliAlanlar from './TanimliAlanlar';
 import TanimliVardiyalar from './TanimliVardiyalar';
@@ -59,12 +59,7 @@ const SistemTanimlamalari: React.FC = () => {
       icon: <Clock className="w-5 h-5" />, 
       component: <VardiyaTanimlama />
     },
-    {
-      id: 'alan',
-      name: 'Alan',
-      icon: <MapPin className="w-5 h-5" />, 
-      component: <AlanTanimlama />
-    },
+
     {
       id: 'yeni-alan',
       name: 'Yeni Alan',
