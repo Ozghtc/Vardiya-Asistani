@@ -123,10 +123,10 @@ const VardiyaliNobet: React.FC = () => {
       hoverColor: 'hover:bg-green-700'
     },
     {
-      title: 'Personel Listesi',
-      description: 'Tüm personelleri görüntüle',
+      title: 'Personel İşlemleri',
+      description: 'Personel listesi ve yönetimi',
       icon: <Users className="w-8 h-8 text-white" />,
-      route: '/personel-listesi',
+      route: '/personel-islemleri',
       bgColor: 'bg-purple-600',
       hoverColor: 'hover:bg-purple-700'
     },
