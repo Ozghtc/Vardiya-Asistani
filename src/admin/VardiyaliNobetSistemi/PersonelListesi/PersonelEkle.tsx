@@ -16,6 +16,7 @@ interface PersonelFormData {
   soyad: string;
   tc: string;
   unvan_id: string;
+  mesai_hesap: string;
   email: string;
   telefon: string;
 }
@@ -28,6 +29,7 @@ const PersonelEkle: React.FC = () => {
     soyad: '',
     tc: '',
     unvan_id: '',
+    mesai_hesap: '',
     email: '',
     telefon: ''
   });
@@ -115,6 +117,7 @@ const PersonelEkle: React.FC = () => {
         ad: formData.ad,
         soyad: formData.soyad,
         unvan: formData.unvan_id, // API'de unvan olarak geçiyor
+        mesai_hesap: formData.mesai_hesap,
         email: formData.email || '',
         telefon: formData.telefon || '',
         kurum_id: user.kurum_id,
@@ -277,27 +280,46 @@ const PersonelEkle: React.FC = () => {
               <p className="mt-1 text-xs text-gray-500">11 haneli TC Kimlik numarası</p>
             </div>
 
-            {/* Unvan Row */}
-            <div>
-              <label htmlFor="unvan" className="block text-sm font-medium text-gray-700 mb-2">
-                Ünvan <span className="text-red-500">*</span>
-              </label>
-              <select
-                id="unvan"
-                value={formData.unvan_id}
-                onChange={(e) => handleInputChange('unvan_id', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                required
-                disabled={loading}
-              >
-                <option value="">Ünvan seçiniz</option>
-                {unvanlar.map((unvan) => (
-                  <option key={unvan.id} value={unvan.id}>
-                    {unvan.unvan_adi}
-                  </option>
-                ))}
-              </select>
-              {loading && <p className="mt-1 text-xs text-gray-500">Ünvanlar yükleniyor...</p>}
+            {/* Unvan ve Mesai Hesap Row */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label htmlFor="unvan" className="block text-sm font-medium text-gray-700 mb-2">
+                  Ünvan <span className="text-red-500">*</span>
+                </label>
+                <select
+                  id="unvan"
+                  value={formData.unvan_id}
+                  onChange={(e) => handleInputChange('unvan_id', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  required
+                  disabled={loading}
+                >
+                  <option value="">Ünvan seçiniz</option>
+                  {unvanlar.map((unvan) => (
+                    <option key={unvan.id} value={unvan.id}>
+                      {unvan.unvan_adi}
+                    </option>
+                  ))}
+                </select>
+                {loading && <p className="mt-1 text-xs text-gray-500">Ünvanlar yükleniyor...</p>}
+              </div>
+
+              <div>
+                <label htmlFor="mesai_hesap" className="block text-sm font-medium text-gray-700 mb-2">
+                  Mesai Hesap <span className="text-red-500">*</span>
+                </label>
+                <select
+                  id="mesai_hesap"
+                  value={formData.mesai_hesap}
+                  onChange={(e) => handleInputChange('mesai_hesap', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  required
+                >
+                  <option value="">Mesai hesap seçiniz</option>
+                  <option value="evet">Evet</option>
+                  <option value="hayir">Hayır</option>
+                </select>
+              </div>
             </div>
 
             {/* İletişim Bilgileri Row */}
