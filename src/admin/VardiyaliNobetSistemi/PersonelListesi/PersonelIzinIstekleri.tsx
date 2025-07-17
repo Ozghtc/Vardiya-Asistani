@@ -55,6 +55,7 @@ interface TalepItem {
   id: string;
   tip: 'nobet' | 'izin';
   tarih: Date;
+  bitis_tarih?: Date;
   alan?: string;
   izin_turu?: string;
   aciklama?: string;
@@ -76,6 +77,8 @@ const PersonelIzinIstekleri: React.FC = () => {
   // Popup state'leri
   const [selectedTip, setSelectedTip] = useState<'nobet' | 'izin' | null>(null);
   const [selectedTarih, setSelectedTarih] = useState<Date | null>(null);
+  const [selectedBitisTarih, setSelectedBitisTarih] = useState<Date | null>(null);
+  const [isTarihAraligi, setIsTarihAraligi] = useState(false);
   const [selectedAlan, setSelectedAlan] = useState<string>('');
   const [selectedIzinTuru, setSelectedIzinTuru] = useState<string>('');
   const [aciklama, setAciklama] = useState<string>('');
@@ -242,11 +245,25 @@ const PersonelIzinIstekleri: React.FC = () => {
 
   // Popup işlemleri
   const handleTipSecimi = (tip: 'nobet' | 'izin') => {
-    setSelectedTip(tip);
-    setSelectedTarih(null);
-    setSelectedAlan('');
-    setSelectedIzinTuru('');
-    setAciklama('');
+    // Eğer aynı tip seçilirse, seçimi kaldır (toggle)
+    if (selectedTip === tip) {
+      setSelectedTip(null);
+      setSelectedTarih(null);
+      setSelectedBitisTarih(null);
+      setIsTarihAraligi(false);
+      setSelectedAlan('');
+      setSelectedIzinTuru('');
+      setAciklama('');
+    } else {
+      // Farklı tip seçilirse, yeni tipi seç
+      setSelectedTip(tip);
+      setSelectedTarih(null);
+      setSelectedBitisTarih(null);
+      setIsTarihAraligi(false);
+      setSelectedAlan('');
+      setSelectedIzinTuru('');
+      setAciklama('');
+    }
   };
 
   const handleEkle = () => {
@@ -255,10 +272,17 @@ const PersonelIzinIstekleri: React.FC = () => {
     if (selectedTip === 'nobet' && !selectedAlan) return;
     if (selectedTip === 'izin' && !selectedIzinTuru) return;
 
+    // Tarih aralığı kontrolü
+    if (isTarihAraligi && selectedBitisTarih && selectedTarih > selectedBitisTarih) {
+      alert('Bitiş tarihi başlangıç tarihinden önce olamaz!');
+      return;
+    }
+
     const yeniTalep: TalepItem = {
       id: Date.now().toString(),
       tip: selectedTip,
       tarih: selectedTarih,
+      bitis_tarih: isTarihAraligi && selectedBitisTarih ? selectedBitisTarih : undefined,
       alan: selectedTip === 'nobet' ? selectedAlan : undefined,
       izin_turu: selectedTip === 'izin' ? selectedIzinTuru : undefined,
       aciklama: aciklama || undefined
@@ -268,6 +292,8 @@ const PersonelIzinIstekleri: React.FC = () => {
     
     // Form'u temizle
     setSelectedTarih(null);
+    setSelectedBitisTarih(null);
+    setIsTarihAraligi(false);
     setSelectedAlan('');
     setSelectedIzinTuru('');
     setAciklama('');
@@ -571,21 +597,66 @@ const PersonelIzinIstekleri: React.FC = () => {
                 {/* Form Alanları */}
                 {selectedTip && (
                   <div className="space-y-4">
-                    {/* Tarih Seçimi */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Tarih <span className="text-red-500">*</span>
-                      </label>
-                                             <DatePicker
-                         selected={selectedTarih}
-                         onChange={(date: Date | null) => setSelectedTarih(date)}
-                         dateFormat="dd/MM/yyyy"
-                         locale={tr}
-                         className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 py-2 px-3"
-                         placeholderText="Tarih seçin"
-                         minDate={startDate}
-                         maxDate={endDate}
-                       />
+                                        {/* Tarih Seçimi */}
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <label className="block text-sm font-medium text-gray-700">
+                          Tarih <span className="text-red-500">*</span>
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            id="tarihAraligi"
+                            checked={isTarihAraligi}
+                            onChange={(e) => {
+                              setIsTarihAraligi(e.target.checked);
+                              if (!e.target.checked) {
+                                setSelectedBitisTarih(null);
+                              }
+                            }}
+                            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                          />
+                          <label htmlFor="tarihAraligi" className="text-sm text-gray-600">
+                            Tarih aralığı
+                          </label>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-600 mb-1">
+                            Başlangıç Tarihi
+                          </label>
+                          <DatePicker
+                            selected={selectedTarih}
+                            onChange={(date: Date | null) => setSelectedTarih(date)}
+                            dateFormat="dd/MM/yyyy"
+                            locale={tr}
+                            className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 py-2 px-3"
+                            placeholderText="Başlangıç tarihi"
+                            minDate={startDate}
+                            maxDate={endDate}
+                          />
+                        </div>
+                        
+                        {isTarihAraligi && (
+                          <div>
+                            <label className="block text-sm font-medium text-gray-600 mb-1">
+                              Bitiş Tarihi
+                            </label>
+                            <DatePicker
+                              selected={selectedBitisTarih}
+                              onChange={(date: Date | null) => setSelectedBitisTarih(date)}
+                              dateFormat="dd/MM/yyyy"
+                              locale={tr}
+                              className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 py-2 px-3"
+                              placeholderText="Bitiş tarihi"
+                              minDate={selectedTarih || startDate}
+                              maxDate={endDate}
+                            />
+                          </div>
+                        )}
+                      </div>
                     </div>
 
                     {/* Alan Seçimi (Nöbet için) */}
@@ -686,7 +757,10 @@ const PersonelIzinIstekleri: React.FC = () => {
                               {talep.tip === 'nobet' ? 'Nöbet İsteği' : 'İzin/Bosluk Talebi'}
                             </div>
                             <div className="text-sm text-gray-500">
-                              {talep.tarih.toLocaleDateString('tr-TR')}
+                              {talep.bitis_tarih 
+                                ? `${talep.tarih.toLocaleDateString('tr-TR')} - ${talep.bitis_tarih.toLocaleDateString('tr-TR')}`
+                                : talep.tarih.toLocaleDateString('tr-TR')
+                              }
                               {talep.alan && ` • ${talep.alan}`}
                               {talep.izin_turu && ` • ${talep.izin_turu}`}
                             </div>
