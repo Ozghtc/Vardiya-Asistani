@@ -19,6 +19,7 @@ let tokenExpiry: number | null = null;
 const getJWTToken = async (): Promise<string> => {
   // Token mevcut ve henüz expire olmadıysa kullan
   if (jwtToken && tokenExpiry && Date.now() < tokenExpiry) {
+    console.log('🔄 Cached JWT token kullanılıyor');
     return jwtToken;
   }
   
@@ -64,7 +65,7 @@ const apiRequest = async (path: string, options: RequestInit = {}) => {
     
     // Timeout ile request
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 saniye timeout
+    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 saniye timeout
     
     try {
       const response = await fetch('/.netlify/functions/api-proxy', {

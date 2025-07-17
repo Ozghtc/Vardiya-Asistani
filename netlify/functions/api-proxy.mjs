@@ -1,5 +1,5 @@
 // Netlify Functions - API Proxy (ES MODULES) - OPTIMIZED
-const CACHE_DURATION = 5 * 60 * 1000; // 5 dakika cache
+const CACHE_DURATION = 10 * 60 * 1000; // 10 dakika cache
 const cache = new Map();
 
 export const handler = async (event, context) => {
@@ -101,7 +101,7 @@ export const handler = async (event, context) => {
     
     // Timeout ile fetch işlemi
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 25000); // 25 saniye timeout
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 saniye timeout
     
     try {
       const response = await fetch(apiUrl, {
