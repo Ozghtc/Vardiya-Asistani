@@ -37,10 +37,19 @@ interface Area {
   dailyHours: number;
   activeDays: string[];
   dayHours: DayHours;
+  shifts: Shift[];
 }
 
 interface DayHours {
   [key: string]: number;
+}
+
+interface Shift {
+  id: string;
+  name: string;
+  hours: string;
+  duration: number;
+  days: string[];
 }
 
 const weekDays = [
@@ -53,18 +62,32 @@ const weekDays = [
   { value: 'Pazar', name: 'Pazar', short: 'Paz' }
 ];
 
+const vardiyalar = [
+  { name: 'GÜNDÜZ', hours: '08:00 - 16:00', duration: 8 },
+  { name: 'AKŞAM', hours: '16:00 - 24:00', duration: 8 },
+  { name: 'GECE', hours: '00:00 - 08:00', duration: 8 },
+  { name: '24 SAAT', hours: '08:00 - 08:00', duration: 24 },
+  { name: 'SABAH', hours: '08:00 - 13:00', duration: 5 },
+  { name: 'ÖĞLE', hours: '13:00 - 18:00', duration: 5 },
+  { name: 'GEÇ', hours: '16:00 - 08:00', duration: 16 },
+  { name: 'GÜNDÜZ UZUN', hours: '08:00 - 00:00', duration: 16 }
+];
+
 const YeniAlan: React.FC = () => {
   const [name, handleNameChange] = useCapitalization('');
   const [description, setDescription] = useState('');
   const [selectedColor, setSelectedColor] = useState('');
   const [usedColors, setUsedColors] = useState<string[]>([]);
   const [showShiftSettings, setShowShiftSettings] = useState(false);
+  const [showShiftAddition, setShowShiftAddition] = useState(false);
   const [areas, setAreas] = useState<Area[]>([]);
   const [dailyWorkHours, setDailyWorkHours] = useState(40);
   const [selectedDays, setSelectedDays] = useState<string[]>(weekDays.map(day => day.value));
   const [dayHours, setDayHours] = useState<DayHours>(
     weekDays.reduce((acc, day) => ({ ...acc, [day.value]: 40 }), {})
   );
+  const [selectedShift, setSelectedShift] = useState(vardiyalar[0].name);
+  const [selectedShiftDays, setSelectedShiftDays] = useState<string[]>([]);
 
   // Textarea için ayrı handler
   const handleDescriptionTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -84,7 +107,8 @@ const YeniAlan: React.FC = () => {
       description: description.trim(),
       dailyHours: dailyWorkHours,
       activeDays: [...selectedDays],
-      dayHours: { ...dayHours }
+      dayHours: { ...dayHours },
+      shifts: []
     };
 
     setAreas([...areas, newArea]);
@@ -110,11 +134,43 @@ const YeniAlan: React.FC = () => {
         lastArea.activeDays = [...selectedDays];
         lastArea.dayHours = { ...dayHours };
         lastArea.dailyHours = dailyWorkHours;
+        lastArea.shifts = [];
       }
       return updatedAreas;
     });
 
-    alert('Vardiya ayarları alana eklendi!');
+    setShowShiftAddition(true);
+    setSelectedShiftDays([...selectedDays]);
+  };
+
+  const handleAddShift = () => {
+    if (selectedShiftDays.length === 0) {
+      alert('Lütfen en az bir gün seçin!');
+      return;
+    }
+
+    const shift = vardiyalar.find(v => v.name === selectedShift);
+    if (!shift) return;
+
+    const newShift: Shift = {
+      id: Date.now().toString(),
+      name: shift.name,
+      hours: shift.hours,
+      duration: shift.duration,
+      days: [...selectedShiftDays]
+    };
+
+    // Son eklenen alana vardiyayı ekle
+    setAreas(prevAreas => {
+      const updatedAreas = [...prevAreas];
+      if (updatedAreas.length > 0) {
+        const lastArea = updatedAreas[updatedAreas.length - 1];
+        lastArea.shifts = [...lastArea.shifts, newShift];
+      }
+      return updatedAreas;
+    });
+
+    setSelectedShiftDays([...selectedDays]);
   };
 
   const toggleDay = (day: string) => {
@@ -144,6 +200,12 @@ const YeniAlan: React.FC = () => {
       ...prev,
       [day]: hours
     }));
+  };
+
+  const toggleShiftDay = (day: string) => {
+    setSelectedShiftDays((prev: string[]) => 
+      prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]
+    );
   };
 
   if (showShiftSettings) {
@@ -339,6 +401,80 @@ const YeniAlan: React.FC = () => {
             </button>
           </div>
         </div>
+
+        {/* Vardiya Ekleme Bölümü */}
+        {showShiftAddition && (
+          <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm mt-6">
+            <div className="flex items-center gap-2 sm:gap-3 mb-4">
+              <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
+              <h2 className="text-base sm:text-lg font-semibold">Vardiya Eklenecek Günler</h2>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Vardiya Türü
+                  </label>
+                  <select
+                    value={selectedShift}
+                    onChange={(e) => setSelectedShift(e.target.value)}
+                    className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200"
+                  >
+                    {vardiyalar.map((shift) => (
+                      <option key={shift.name} value={shift.name}>
+                        {shift.name} ({shift.hours}) = {shift.duration} Saat
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Vardiya Eklenecek Günler
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {weekDays.map((day) => {
+                    const isActive = selectedDays.includes(day.value);
+                    const isSelected = selectedShiftDays.includes(day.value);
+                    
+                    return (
+                      <button
+                        key={day.value}
+                        onClick={() => isActive && toggleShiftDay(day.value)}
+                        disabled={!isActive}
+                        className={`px-3 py-2 rounded-lg transition-colors text-sm font-medium ${
+                          !isActive
+                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                            : isSelected
+                            ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        }`}
+                      >
+                        {day.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="pt-4">
+                <button
+                  onClick={handleAddShift}
+                  disabled={selectedShiftDays.length === 0}
+                  className={`w-full py-3 rounded-lg transition-colors ${
+                    selectedShiftDays.length > 0
+                      ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                      : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                  }`}
+                >
+                  Vardiya Ekle
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
