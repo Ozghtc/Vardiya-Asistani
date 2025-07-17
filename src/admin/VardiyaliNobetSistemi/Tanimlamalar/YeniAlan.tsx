@@ -365,7 +365,7 @@ const handleSaveToDatabase = async () => {
                 {showShiftAddition && area.dayHours && Object.keys(area.dayHours).length > 0 && (
                   <div className="p-3 border-t">
                     <h4 className="text-sm font-medium text-gray-700 mb-2">Günlük Toplam Mesailer</h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-4">
                       {weekDays.map((day) => {
                         const dayHour = area.dayHours[day.value] || 0;
                         const isActive = area.activeDays.includes(day.value);
@@ -399,17 +399,19 @@ const handleSaveToDatabase = async () => {
                                 </div>
                               </div>
                               
-                              {/* Vardiya bilgileri */}
+                              {/* Vardiya bilgileri - 2'li gruplar halinde */}
                               {dayShifts.length > 0 && (
-                                <div className="mt-3 space-y-1">
-                                  {dayShifts.map((shift, index) => (
-                                    <div key={index} className="text-xs bg-white p-2 rounded border">
-                                      <div className="font-medium text-gray-700">
-                                        {index + 1} Vardiya: {shift.name} ({shift.hours})
+                                <div className="mt-3">
+                                  <div className="grid grid-cols-2 gap-1">
+                                    {dayShifts.map((shift, index) => (
+                                      <div key={index} className="text-xs bg-white p-2 rounded border">
+                                        <div className="font-medium text-gray-700">
+                                          {index + 1} Vardiya: {shift.name} ({shift.hours})
+                                        </div>
+                                        <div className="text-gray-600">{shift.duration} saat</div>
                                       </div>
-                                      <div className="text-gray-600">{shift.duration} saat</div>
-                                    </div>
-                                  ))}
+                                    ))}
+                                  </div>
                                 </div>
                               )}
                             </div>
