@@ -652,41 +652,55 @@ const TanimliAlanlar: React.FC = () => {
                     
                     {alan.parsedVardiyalar && alan.parsedVardiyalar.length > 0 && (
                       <div>
-                        <h4 className="font-medium text-gray-900 mb-2">Nöbet Grupları</h4>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                          {(() => {
-                            // Vardiyaları tip ve saatlerine göre grupla
-                            const vardiyaGruplari = new Map<string, {name: string, hours: string, duration: number, count: number, gunler: Set<string>}>();
+                        <h4 className="font-medium text-gray-900 mb-2">Günlük Vardiya Grupları</h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                          {['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'].map((gunAdi) => {
+                            // Bu güne ait vardiyaları al
+                            const gunVardiyalari = (alan.parsedVardiyalar || []).filter((vardiya) => 
+                              vardiya.gunler && vardiya.gunler.includes(gunAdi)
+                            );
                             
-                            alan.parsedVardiyalar.forEach((vardiya) => {
+                            if (gunVardiyalari.length === 0) {
+                              return (
+                                <div key={gunAdi} className="p-3 bg-gray-50 rounded-lg border-l-4 border-gray-300">
+                                  <div className="font-medium text-sm text-gray-900">{gunAdi}</div>
+                                  <div className="text-xs text-gray-500 mt-1">Vardiya yok</div>
+                                </div>
+                              );
+                            }
+                            
+                            // Bu gün için vardiyaları tip ve saatlerine göre grupla
+                            const gunVardiyaGruplari = new Map<string, {name: string, hours: string, duration: number, count: number}>();
+                            
+                            gunVardiyalari.forEach((vardiya) => {
                               const key = `${vardiya.name}_${vardiya.startTime}_${vardiya.endTime}`;
-                              if (vardiyaGruplari.has(key)) {
-                                const grup = vardiyaGruplari.get(key)!;
+                              if (gunVardiyaGruplari.has(key)) {
+                                const grup = gunVardiyaGruplari.get(key)!;
                                 grup.count++;
-                                vardiya.gunler.forEach(gun => grup.gunler.add(gun));
                               } else {
-                                vardiyaGruplari.set(key, {
+                                gunVardiyaGruplari.set(key, {
                                   name: vardiya.name,
                                   hours: `${vardiya.startTime} - ${vardiya.endTime}`,
                                   duration: vardiya.duration,
-                                  count: 1,
-                                  gunler: new Set(vardiya.gunler)
+                                  count: 1
                                 });
                               }
                             });
                             
-                            return Array.from(vardiyaGruplari.values()).map((grup, index) => (
-                              <div key={index} className="p-3 bg-gray-50 rounded-lg">
-                                <div className="font-medium text-sm">{grup.count} adet {grup.name}</div>
-                                <div className="text-xs text-gray-600 mt-1">
-                                  {grup.hours} • {grup.duration} saat
-                                </div>
-                                <div className="text-xs text-gray-500 mt-1">
-                                  {Array.from(grup.gunler).join(', ')}
+                            return (
+                              <div key={gunAdi} className="p-3 bg-blue-50 rounded-lg border-l-4 border-blue-400">
+                                <div className="font-medium text-sm text-gray-900 mb-2">{gunAdi}</div>
+                                <div className="space-y-1">
+                                  {Array.from(gunVardiyaGruplari.values()).map((grup, index) => (
+                                    <div key={index} className="text-xs bg-white rounded p-1 border">
+                                      <div className="font-medium">{grup.count} adet {grup.name}</div>
+                                      <div className="text-gray-600">{grup.hours} • {grup.duration} saat</div>
+                                    </div>
+                                  ))}
                                 </div>
                               </div>
-                            ));
-                          })()}
+                            );
+                          })}
                         </div>
                       </div>
                     )}
