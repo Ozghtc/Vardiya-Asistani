@@ -312,7 +312,7 @@ const YeniAlan: React.FC = () => {
                         return (
                           <div 
                             key={day.value}
-                            className={`p-4 rounded-lg border-2 ${
+                            className={`p-4 rounded-lg border-2 min-h-[180px] ${
                               isActive 
                                 ? 'border-blue-500 bg-blue-50'
                                 : 'border-gray-200 bg-gray-50'
@@ -425,7 +425,7 @@ const YeniAlan: React.FC = () => {
                     return (
                       <div 
                         key={day.value}
-                        className={`p-4 rounded-lg border-2 transition-all ${
+                        className={`p-4 rounded-lg border-2 transition-all min-h-[120px] ${
                           isSelected
                             ? 'border-blue-500 bg-blue-50'
                             : 'border-gray-200 bg-gray-50'
