@@ -86,10 +86,24 @@ const TanimliAlanlar: React.FC = () => {
         const result = await response.json();
         console.log('📊 API\'den gelen ham veri:', result);
         
+        // API response yapısını kontrol et
+        let rows = [];
         if (result.success && result.data && result.data.rows) {
-          console.log('📊 API\'den gelen ham veri:', result.data.rows);
+          rows = result.data.rows;
+        } else if (result.rows) {
+          rows = result.rows;
+        } else if (Array.isArray(result)) {
+          rows = result;
+        } else if (result.data && Array.isArray(result.data)) {
+          rows = result.data;
+        }
+        
+        console.log('📊 İşlenmiş rows verisi:', rows);
+        
+        if (rows && rows.length > 0) {
+          console.log('📊 API\'den gelen ham veri:', rows);
           
-          const apiData = result.data.rows
+                      const apiData = rows
             .filter((row: any) => {
               console.log('🔍 Filtreleme kontrolü:', {
                 rowKurum: row.kurum_id,
