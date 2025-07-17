@@ -489,7 +489,7 @@ const YeniAlan: React.FC = () => {
         )}
 
         {/* Vardiya Ekleme Bölümü */}
-        {showShiftAddition && unaddedDays.length > 0 && !allDaysCompleted && (
+        {showShiftAddition && !allDaysCompleted && (
           <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm mt-6">
             <div className="flex items-center gap-2 sm:gap-3 mb-4">
               <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
@@ -518,7 +518,7 @@ const YeniAlan: React.FC = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Vardiya Eklenecek Günler ({unaddedDays.length} gün kaldı)
+                  Vardiya Eklenecek Günler ({selectedDays.filter(day => getRemainingHoursForDay(day) > 0).length} gün kaldı)
                 </label>
                 <div className="flex flex-wrap gap-2">
                   {weekDays.map((day) => {
