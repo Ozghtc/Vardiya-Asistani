@@ -118,24 +118,57 @@ const AlanDetayModal: React.FC<{
         {/* Content */}
         <div className="p-6">
           {/* Özet Bilgiler */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div className="p-4 bg-blue-50 rounded-lg text-center">
-              <div className="text-2xl font-bold text-blue-600">{haftalikToplamSaat}</div>
-              <div className="text-sm text-gray-600">Haftalık Toplam Saat</div>
-            </div>
-            <div className="p-4 bg-green-50 rounded-lg text-center">
-              <div className="text-2xl font-bold text-green-600">{haftalikToplamVardiya}</div>
-              <div className="text-sm text-gray-600">Toplam Vardiya</div>
-            </div>
-            <div className="p-4 bg-purple-50 rounded-lg text-center">
-              <div className="text-2xl font-bold text-purple-600">{alan.activeDays || 0}</div>
-              <div className="text-sm text-gray-600">Aktif Gün</div>
-            </div>
-            <div className="p-4 bg-orange-50 rounded-lg text-center">
-              <div className="text-2xl font-bold text-orange-600">
-                {Math.round(((haftalikToplamSaat) * 30/7) * 100) / 100}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            {/* Haftalık Bilgiler */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">Haftalık Özet</h3>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="p-4 bg-blue-50 rounded-lg text-center">
+                  <div className="text-2xl font-bold text-blue-600">{haftalikToplamSaat}</div>
+                  <div className="text-sm text-gray-600">Saat</div>
+                </div>
+                <div className="p-4 bg-green-50 rounded-lg text-center">
+                  <div className="text-2xl font-bold text-green-600">{haftalikToplamVardiya}</div>
+                  <div className="text-sm text-gray-600">Vardiya</div>
+                </div>
+                <div className="p-4 bg-purple-50 rounded-lg text-center">
+                  <div className="text-2xl font-bold text-purple-600">{alan.activeDays || 0}</div>
+                  <div className="text-sm text-gray-600">Gün</div>
+                </div>
               </div>
-              <div className="text-sm text-gray-600">30 Günlük Saat</div>
+            </div>
+
+            {/* Aylık Bilgiler */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">Aylık Özet</h3>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="p-4 bg-orange-50 rounded-lg text-center">
+                  <div className="text-2xl font-bold text-orange-600">
+                    {(() => {
+                      const aktifGun = alan.activeDays || 0;
+                      if (aktifGun === 0) return 0;
+                      const carpim = aktifGun === 5 ? 6 : aktifGun === 6 ? 5 : 30/7;
+                      return Math.round(haftalikToplamSaat * carpim);
+                    })()}
+                  </div>
+                  <div className="text-sm text-gray-600">Saat</div>
+                </div>
+                <div className="p-4 bg-red-50 rounded-lg text-center">
+                  <div className="text-2xl font-bold text-red-600">
+                    {(() => {
+                      const aktifGun = alan.activeDays || 0;
+                      if (aktifGun === 0) return 0;
+                      const carpim = aktifGun === 5 ? 6 : aktifGun === 6 ? 5 : 30/7;
+                      return Math.round(haftalikToplamVardiya * carpim);
+                    })()}
+                  </div>
+                  <div className="text-sm text-gray-600">Vardiya</div>
+                </div>
+                <div className="p-4 bg-indigo-50 rounded-lg text-center">
+                  <div className="text-2xl font-bold text-indigo-600">30</div>
+                  <div className="text-sm text-gray-600">Gün</div>
+                </div>
+              </div>
             </div>
           </div>
 
