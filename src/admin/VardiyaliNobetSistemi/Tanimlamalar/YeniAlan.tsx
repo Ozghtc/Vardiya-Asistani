@@ -489,7 +489,7 @@ const YeniAlan: React.FC = () => {
         )}
 
         {/* Vardiya Ekleme Bölümü */}
-        {showShiftAddition && unaddedDays.length > 0 && (
+        {showShiftAddition && unaddedDays.length > 0 && !allDaysCompleted && (
           <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm mt-6">
             <div className="flex items-center gap-2 sm:gap-3 mb-4">
               <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
@@ -525,16 +525,17 @@ const YeniAlan: React.FC = () => {
                     const isActive = selectedDays.includes(day.value);
                     const isUnadded = unaddedDays.includes(day.value);
                     const isSelected = selectedShiftDays.includes(day.value);
+                    const remainingHours = getRemainingHoursForDay(day.value);
                     
                     return (
                       <button
                         key={day.value}
-                        onClick={() => isActive && isUnadded && toggleShiftDay(day.value)}
-                        disabled={!isActive || !isUnadded}
+                        onClick={() => isActive && remainingHours > 0 && toggleShiftDay(day.value)}
+                        disabled={!isActive || remainingHours === 0}
                         className={`px-3 py-2 rounded-lg transition-colors text-sm font-medium ${
                           !isActive
                             ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                            : !isUnadded
+                            : remainingHours === 0
                             ? 'bg-green-100 text-green-800 cursor-not-allowed'
                             : isSelected
                             ? 'bg-blue-100 text-blue-800 hover:bg-blue-200'
@@ -543,13 +544,13 @@ const YeniAlan: React.FC = () => {
                         title={
                           !isActive 
                             ? 'Bu gün aktif değil'
-                            : !isUnadded 
-                            ? 'Bu güne zaten vardiya eklendi'
+                            : remainingHours === 0 
+                            ? 'Bu günün mesai saati doldu'
                             : 'Bu güne vardiya ekle'
                         }
                       >
                         {day.name}
-                        {!isUnadded && isActive && (
+                        {remainingHours === 0 && isActive && (
                           <span className="ml-1 text-xs">✓</span>
                         )}
                       </button>
@@ -576,7 +577,7 @@ const YeniAlan: React.FC = () => {
         )}
 
         {/* Tüm günlere vardiya eklendiğinde gösterilecek mesaj */}
-        {showShiftAddition && unaddedDays.length === 0 && (
+        {showShiftAddition && allDaysCompleted && (
           <div className="bg-green-50 border border-green-200 rounded-xl p-4 sm:p-6 mt-6">
             <div className="flex items-center gap-2">
               <Check className="w-5 h-5 text-green-600" />
