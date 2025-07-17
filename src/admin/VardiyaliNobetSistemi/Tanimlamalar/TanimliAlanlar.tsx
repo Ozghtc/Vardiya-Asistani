@@ -68,7 +68,7 @@ const TanimliAlanlar: React.FC = () => {
       
       console.log('🚀 loadAlanlar başladı, user:', currentUser);
       
-      // 1. HZM API'den veri oku (tanimli_alanlar tablosu - ID: 18)
+      // 1. HZM API'den veri oku (YeniAlanTanimlama tablosu - ID: 25)
       try {
         // Netlify proxy üzerinden API çağrısı
         const response = await fetch('/.netlify/functions/api-proxy', {
@@ -77,7 +77,7 @@ const TanimliAlanlar: React.FC = () => {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            path: '/api/v1/data/table/18',
+            path: '/api/v1/data/table/25',
             method: 'GET',
             apiKey: 'hzm_1ce98c92189d4a109cd604b22bfd86b7'
           })
@@ -243,7 +243,7 @@ const TanimliAlanlar: React.FC = () => {
           'Content-Type': 'application/json'
         },
                   body: JSON.stringify({
-            path: `/api/v1/data/table/18/rows/${alanId}/delete`,
+            path: `/api/v1/data/table/25/rows/${alanId}/delete`,
             method: 'POST',
             apiKey: 'hzm_1ce98c92189d4a109cd604b22bfd86b7'
           })
