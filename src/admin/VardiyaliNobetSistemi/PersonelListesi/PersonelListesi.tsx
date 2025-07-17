@@ -60,6 +60,8 @@ const PersonelListesi: React.FC = () => {
 
       if (response.ok) {
         const result = await response.json();
+        console.log('API\'den gelen personel verileri:', result);
+        
         if (result.success && result.data?.rows) {
           // Kullanıcının kurum/departman/birim'ine göre filtreleme
           const filteredPersonnel = result.data.rows.filter((person: Personnel) => 
@@ -68,6 +70,7 @@ const PersonelListesi: React.FC = () => {
             person.birim_id === user.birim_id
           );
           
+          console.log('Filtrelenmiş personel verileri:', filteredPersonnel);
           setPersonnel(filteredPersonnel);
         } else {
           setError('Personel verileri yüklenemedi');
@@ -202,6 +205,15 @@ const PersonelListesi: React.FC = () => {
                   Ünvan
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Email
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Telefon
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Oluşturma Tarihi
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Durum
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -226,6 +238,21 @@ const PersonelListesi: React.FC = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900">
+                      {person.email || '-'}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900">
+                      {person.telefon || '-'}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900">
+                      {person.olusturma_tarihi ? new Date(person.olusturma_tarihi).toLocaleDateString('tr-TR') : '-'}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                       person.aktif_mi 
                         ? 'bg-green-100 text-green-800' 
@@ -236,6 +263,13 @@ const PersonelListesi: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => navigate(`/personel-duzenle/${person.id}`)}
+                        className="text-blue-600 hover:text-blue-800 transition-colors p-1"
+                        title="Personeli Düzenle"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
                       <button
                         onClick={() => handleDeleteClick(person)}
                         className="text-red-600 hover:text-red-800 transition-colors p-1"
