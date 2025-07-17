@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, User2, ArrowLeft } from 'lucide-react';
+import { Plus, User2, ArrowLeft, Trash2, Edit } from 'lucide-react';
 import { useAuthContext } from '../../../contexts/AuthContext';
+import DeleteConfirmDialog from '../../../components/ui/DeleteConfirmDialog';
 
 interface Personnel {
   id: number;
@@ -25,6 +26,16 @@ const PersonelListesi: React.FC = () => {
   const [personnel, setPersonnel] = useState<Personnel[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [deleteDialog, setDeleteDialog] = useState<{
+    isOpen: boolean;
+    personId: number | null;
+    personName: string;
+  }>({
+    isOpen: false,
+    personId: null,
+    personName: ''
+  });
+  const [deleting, setDeleting] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuthContext();
 
@@ -91,6 +102,50 @@ const PersonelListesi: React.FC = () => {
     );
   }
 
+  const handleDeleteClick = (person: Personnel) => {
+    setDeleteDialog({
+      isOpen: true,
+      personId: person.id,
+      personName: `${person.ad} ${person.soyad}`
+    });
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteDialog.personId) return;
+
+    try {
+      setDeleting(true);
+      
+      const response = await fetch('/.netlify/functions/api-proxy', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          path: `/api/v1/data/table/21/rows/${deleteDialog.personId}`,
+          method: 'DELETE'
+        })
+      });
+
+      if (response.ok) {
+        // Personeli listeden kaldır
+        setPersonnel(prev => prev.filter(p => p.id !== deleteDialog.personId));
+        setDeleteDialog({ isOpen: false, personId: null, personName: '' });
+      } else {
+        setError('Personel silinirken bir hata oluştu');
+      }
+    } catch (error) {
+      console.error('Personel silme hatası:', error);
+      setError('Personel silinirken bir hata oluştu');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteDialog({ isOpen: false, personId: null, personName: '' });
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -147,6 +202,9 @@ const PersonelListesi: React.FC = () => {
                 <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Durum
                 </th>
+                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  İşlemler
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -174,6 +232,17 @@ const PersonelListesi: React.FC = () => {
                       {person.aktif_mi ? 'Aktif' : 'Pasif'}
                     </span>
                   </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => handleDeleteClick(person)}
+                        className="text-red-600 hover:text-red-800 transition-colors p-1"
+                        title="Personeli Sil"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -194,6 +263,15 @@ const PersonelListesi: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmDialog
+        isOpen={deleteDialog.isOpen}
+        onClose={handleDeleteCancel}
+        onConfirm={handleDeleteConfirm}
+        title="Personeli Sil"
+        message={`"${deleteDialog.personName}" adlı personeli silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`}
+      />
     </div>
   );
 };
