@@ -458,10 +458,10 @@ const handleSaveToDatabase = async () => {
                                 </div>
                               </div>
                               
-                              {/* Vardiya bilgileri - 2'li gruplar halinde */}
+                              {/* Vardiya bilgileri - Tek sıra halinde */}
                               {dayShifts.length > 0 && (
                                 <div className="mt-3">
-                                  <div className="grid grid-cols-2 gap-1">
+                                  <div className="space-y-1">
                                     {dayShifts.map((shift, index) => (
                                       <div key={index} className="text-xs bg-white p-2 rounded border">
                                         <div className="font-medium text-gray-700">
