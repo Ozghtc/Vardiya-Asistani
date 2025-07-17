@@ -435,26 +435,23 @@ const UnvanTanimlama: React.FC = () => {
             <p className="text-gray-500">Henüz kaydedilmiş mesai türü bulunmuyor</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="space-y-3">
             {kaydedilenMesaiTurleri.map((mesai) => (
               <div key={mesai.id} className="bg-gray-50 p-4 rounded-lg border border-gray-200 hover:shadow-md transition-shadow">
-                <div className="flex justify-between items-start mb-3">
-                  <h3 className="font-semibold text-gray-800 text-lg flex-1">{mesai.mesai_adi}</h3>
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-gray-800 text-lg mb-2">{mesai.mesai_adi}</h3>
+                    <div className="text-gray-600 text-sm">
+                      <span className="font-medium">Günler:</span> {JSON.parse(mesai.gunler).join(', ')} | {mesai.mesai_saati} saat
+                    </div>
+                  </div>
                   <button
                     onClick={() => handleMesaiTuruSil(mesai.id)}
-                    className="text-red-500 hover:text-red-700 transition-colors ml-2 flex-shrink-0"
+                    className="text-red-500 hover:text-red-700 transition-colors ml-4 flex-shrink-0"
                     title="Mesai türünü sil"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
-                </div>
-                <div className="space-y-2">
-                  <div className="text-gray-600 text-sm">
-                    <span className="font-medium">Günler:</span> {JSON.parse(mesai.gunler).join(', ')}
-                  </div>
-                  <div className="text-gray-600 text-sm">
-                    <span className="font-medium">Saat:</span> {mesai.mesai_saati} saat
-                  </div>
                 </div>
               </div>
             ))}
