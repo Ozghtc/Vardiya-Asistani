@@ -36,17 +36,27 @@ const UnvanTanimlama: React.FC = () => {
     // Load unvanlar from HZM API
     const loadUnvanlar = async () => {
       if (user?.kurum_id && user?.departman_id && user?.birim_id) {
-                  try {
-            const response = await apiRequest(`/api/v1/data/table/15?kurum_id=${user.kurum_id}&departman_id=${user.departman_id}&birim_id=${user.birim_id}`, {
-              method: 'GET'
-            });
-            
-            if (response.success) {
-              setUnvanlar(response.data.rows);
-            }
-          } catch (error) {
+        setLoading(true);
+        setError(null);
+        
+        try {
+          const response = await apiRequest(`/api/v1/data/table/15?kurum_id=${user.kurum_id}&departman_id=${user.departman_id}&birim_id=${user.birim_id}`, {
+            method: 'GET'
+          });
+          
+          if (response.success) {
+            setUnvanlar(response.data.rows);
+          } else {
+            setError('Ünvanlar yüklenemedi: ' + (response.error || 'Bilinmeyen hata'));
+          }
+        } catch (error) {
           console.error('Ünvanlar yüklenemedi:', error);
+          setError('Ünvanlar yüklenemedi. Lütfen tekrar deneyin.');
+        } finally {
+          setLoading(false);
         }
+      } else {
+        setLoading(false);
       }
     };
     
