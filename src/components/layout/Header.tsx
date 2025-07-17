@@ -24,7 +24,6 @@ const Header: React.FC = () => {
 
   // AuthContext'den kullanıcı bilgilerini al - Demo veri gömme kaldırıldı
   React.useEffect(() => {
-    console.log('🔐 Header: AuthContext kullanıcı bilgileri:', currentUser);
   }, [currentUser]);
 
   const getPageTitle = () => {
@@ -57,11 +56,9 @@ const Header: React.FC = () => {
   };
 
   const handleLogout = () => {
-    // KURAL 16: Production ortamında localStorage yasak - direkt yönlendirme
-    console.log('🔒 Production logout - landing page\'e yönlendiriliyor');
-    logout();
-    setShowMenu(false);
-    navigate('/');
+    useAuthContext().logout();
+    // Production logout - landing page'e yönlendiriliyor
+    window.location.href = '/';
   };
 
   const handleLogoClick = () => {

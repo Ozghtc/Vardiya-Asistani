@@ -1,21 +1,9 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-// https://vitejs.dev/config/
+// Production optimized config
 export default defineConfig({
   plugins: [react()],
-  server: {
-    host: true,
-    port: 5173,
-    proxy: {
-      '/api': {
-        target: 'https://hzmbackandveritabani-production-c660.up.railway.app',
-        changeOrigin: true,
-        secure: true,
-        rewrite: (path) => path.replace(/^\/api/, '/api'),
-      },
-    },
-  },
   define: {
     'import.meta.env.VITE_API_BASE_URL': JSON.stringify('https://hzmbackandveritabani-production-c660.up.railway.app'),
     'import.meta.env.VITE_API_KEY': JSON.stringify('hzm_1ce98c92189d4a109cd604b22bfd86b7'),

@@ -27,12 +27,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<EnrichedUser | null>(null);
 
   const login = (userData: EnrichedUser) => {
-    console.log('🔐 AuthContext: Kullanıcı giriş yaptı:', userData);
     setUser(userData);
   };
 
   const logout = () => {
-    console.log('🔐 AuthContext: Kullanıcı çıkış yaptı');
     setUser(null);
   };
 

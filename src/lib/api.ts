@@ -1,43 +1,18 @@
+// Optimized API Configuration
 const API_CONFIG = {
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'https://hzmbackandveritabani-production-c660.up.railway.app',
-  apiKey: import.meta.env.VITE_API_KEY || 'hzm_1ce98c92189d4a109cd604b22bfd86b7',
-  projectId: import.meta.env.VITE_PROJECT_ID || '5',
-  tableId: import.meta.env.VITE_TABLE_ID || '10',
-  // Netlify Functions proxy (.mjs for ES modules)
-  proxyURL: import.meta.env.VITE_NETLIFY_FUNCTIONS_URL + '/api-proxy' || '/.netlify/functions/api-proxy'
+  baseURL: 'https://hzmbackandveritabani-production-c660.up.railway.app',
+  apiKey: 'hzm_1ce98c92189d4a109cd604b22bfd86b7',
+  projectId: '5',
+  tableId: '10',
+  proxyURL: '/.netlify/functions/api-proxy'
 };
 
-// CORS Proxy için alternatif URL'ler
-const CORS_PROXIES = [
-  'https://api.allorigins.win/raw?url=',
-  'https://corsproxy.io/?',
-];
-
-// KURAL 16: Production ortamında çalışıyoruz - logging sistemi
-const logInfo = (message: string, data?: any) => {
-  console.log(`🔄 ${message}`, data || '');
-};
-
-const logSuccess = (message: string, data?: any) => {
-  console.log(`✅ ${message}`, data || '');
-};
-
-const logWarning = (message: string, error?: any) => {
-  console.warn(`⚠️ ${message}`, error || '');
-};
-
+// Production logging - sadece kritik hatalar
 const logError = (message: string, error?: any) => {
   console.error(`❌ ${message}`, error || '');
 };
 
-const API_BASE_URL = import.meta.env.PROD 
-  ? '/.netlify/functions/api-proxy'
-  : 'https://hzmbackandveritabani-production-c660.up.railway.app';
-
-const HZM_API_KEY = 'hzm_1ce98c92189d4a109cd604b22bfd86b7';
-const isDev = false; // Production ortamında her zaman false
-
-// JWT Token yönetimi
+// Simplified JWT Token management
 let jwtToken: string | null = null;
 let tokenExpiry: number | null = null;
 
@@ -47,118 +22,64 @@ const getJWTToken = async (): Promise<string> => {
     return jwtToken;
   }
   
-  // Yeni token al
   try {
-    console.log('🔐 JWT Token alınıyor...');
-    
-    // API Key ile JWT token almayı dene - Netlify proxy üzerinden
     const response = await fetch('/.netlify/functions/api-proxy', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         path: '/api/v1/auth/login',
         method: 'POST',
         body: {
           email: 'ozgurhzm@gmail.com',
-          password: '135427'  // Doğru şifre
+          password: '135427'
         },
-        apiKey: HZM_API_KEY
+        apiKey: API_CONFIG.apiKey
       })
     });
     
-        if (response.ok) {
+    if (response.ok) {
       const data = await response.json();
-      // Netlify proxy response format'ı kontrol et
       if (data.success && data.token) {
         jwtToken = data.token;
-        tokenExpiry = Date.now() + (24 * 60 * 60 * 1000); // 24 saat
-        console.log('✅ JWT Token alındı');
+        tokenExpiry = Date.now() + (24 * 60 * 60 * 1000);
         return data.token;
       } else if (data.data && data.data.token) {
         jwtToken = data.data.token;
-        tokenExpiry = Date.now() + (24 * 60 * 60 * 1000); // 24 saat
-        console.log('✅ JWT Token alındı (data.data format)');
+        tokenExpiry = Date.now() + (24 * 60 * 60 * 1000);
         return data.data.token;
       }
     }
     
-    throw new Error('JWT Token alınamadı');
+    // Fallback to API key
+    return API_CONFIG.apiKey;
   } catch (error) {
-    console.error('❌ JWT Token alma hatası:', error);
-    
-    // Fallback: API key'i direkt JWT token gibi kullan
-    console.log('🔄 API Key\'i JWT token gibi kullanmaya çalışılıyor...');
-    
-    // Test: API key'i Authorization header'da gönder
-    try {
-      const testResponse = await fetch('/.netlify/functions/api-proxy', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          path: '/api/v1/data/table/13',
-          method: 'GET',
-          jwtToken: HZM_API_KEY, // API key'i JWT token gibi kullan
-        }),
-      });
-      
-      if (testResponse.ok) {
-        console.log('✅ API Key JWT token gibi çalışıyor');
-        return HZM_API_KEY;
-      }
-    } catch (testError) {
-      console.log('❌ API Key JWT token gibi çalışmıyor');
-    }
-    
-    // Son çare: API key'i return et
-    return HZM_API_KEY;
+    return API_CONFIG.apiKey;
   }
 };
 
+// Optimized API Request function
 const apiRequest = async (path: string, options: RequestInit = {}) => {
   try {
-    // KURAL 13: Railway API - JWT Token Authentication 
-    console.log('🔐 JWT Token Authentication sistemi aktif');
-    console.log('🔄 API Request:', { path, method: options.method || 'GET' });
-    
-    // KURAL 16: Production ortamında çalışıyoruz - JWT token ile authentication
     const token = await getJWTToken();
-    const url = '/.netlify/functions/api-proxy';
-    const requestOptions: RequestInit = {
+    const response = await fetch('/.netlify/functions/api-proxy', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-HZM-API-Key': HZM_API_KEY, // Fallback için API key
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         path,
         method: options.method || 'GET',
         body: options.body ? JSON.parse(options.body as string) : undefined,
-        jwtToken: token, // JWT token gönder
-        apiKey: HZM_API_KEY, // Fallback için API key
+        jwtToken: token,
+        apiKey: API_CONFIG.apiKey,
       }),
-    };
-
-    console.log('🚀 Production API Request (via Netlify proxy):', { url, path, apiKey: 'PRESENT' });
+    });
     
-    const response = await fetch(url, requestOptions);
     const data = await response.json();
-
     if (!response.ok) {
-      // API hatası durumunda gerçek hata fırlat
-      console.log('❌ API hatası:', data.error);
-      console.log('🔄 Gerçek API hatası - mock response devre dışı');
       throw new Error(data.error || `HTTP error! status: ${response.status}`);
     }
-
     return data;
   } catch (error) {
-    console.error('API Request Error:', error);
-    // Hata durumunda gerçek hata fırlat - mock response devre dışı
-    console.log('❌ API Request tamamen başarısız - gerçek hata fırlatılıyor');
+    logError('API Request Error', error);
     throw error;
   }
 };
@@ -329,12 +250,8 @@ const getMockResponse = (endpoint: string, method: string) => {
 
 // Kurumları getir - DOKÜMANTASYON VERSİYONU
 export const getKurumlar = async () => {
-  logInfo('getKurumlar() çağrıldı');
   try {
     const response = await apiRequest(`/api/v1/data/table/${API_CONFIG.tableId}?page=1&limit=100&sort=id&order=DESC`);
-    if (isDev) {
-      console.log('📋 getKurumlar response:', response);
-    }
     return response.data?.rows || [];
   } catch (error) {
     logError('getKurumlar hatası', error);
@@ -353,7 +270,6 @@ export const addKurum = async (kurumData: {
   departmanlar?: string;
   birimler?: string;
 }) => {
-  logInfo('addKurum() çağrıldı', kurumData);
   try {
     const requestBody = {
       kurum_adi: kurumData.kurum_adi,
@@ -366,18 +282,10 @@ export const addKurum = async (kurumData: {
       birimler: kurumData.birimler || ''
     };
     
-    if (isDev) {
-      console.log('➕ Request body:', requestBody);
-    }
-    
     const response = await apiRequest(`/api/v1/data/table/${API_CONFIG.tableId}/rows`, {
       method: 'POST',
       body: JSON.stringify(requestBody),
     });
-    
-    if (isDev) {
-      console.log('➕ addKurum response:', response);
-    }
     
     return {
       success: true,
@@ -405,7 +313,7 @@ export const updateKurum = async (kurumId: string, kurumData: {
   departmanlar?: string;
   birimler?: string;
 }) => {
-  logInfo('updateKurum() çağrıldı', { kurumId, kurumData });
+  // logInfo('updateKurum() çağrıldı', { kurumId, kurumData }); // Removed logInfo
   try {
     const response = await apiRequest(`/api/v1/data/table/${API_CONFIG.tableId}/rows/${kurumId}`, {
       method: 'PUT',
@@ -424,7 +332,7 @@ export const updateKurum = async (kurumId: string, kurumData: {
 
 // Kurum sil - DOKÜMANTASYON VERSİYONU
 export const deleteKurum = async (kurumId: string) => {
-  logInfo('deleteKurum() çağrıldı', kurumId);
+  // logInfo('deleteKurum() çağrıldı', kurumId); // Removed logInfo
   try {
     const response = await apiRequest(`/api/v1/data/table/${API_CONFIG.tableId}/rows/${kurumId}`, {
       method: 'DELETE',
@@ -442,7 +350,7 @@ export const deleteKurum = async (kurumId: string) => {
 
 // Tablo bilgilerini getir - DOKÜMANTASYON VERSİYONU
 export const getTableInfo = async () => {
-  logInfo('getTableInfo() çağrıldı');
+  // logInfo('getTableInfo() çağrıldı'); // Removed logInfo
   try {
     const response = await apiRequest(`/api/v1/tables/project/${API_CONFIG.projectId}`);
     return response.data?.tables?.[0] || response.data;
@@ -454,7 +362,6 @@ export const getTableInfo = async () => {
 
 // Tablo field'i ekle - DOKÜMANTASYON VERSİYONU (DÜZELTME)
 export const addTableColumn = async (columnName: string, columnType: string = 'string') => {
-  logInfo('addTableColumn() çağrıldı', { columnName, columnType });
   try {
     const response = await apiRequest(`/api/v1/tables/project/${API_CONFIG.projectId}/${API_CONFIG.tableId}/fields`, {
       method: 'POST',
@@ -465,10 +372,6 @@ export const addTableColumn = async (columnName: string, columnType: string = 's
         description: `${columnName} field'i otomatik eklendi`
       }),
     });
-    
-    if (isDev) {
-      console.log('➕ addTableColumn response:', response);
-    }
     
     return {
       success: true,
@@ -487,15 +390,15 @@ export const addTableColumn = async (columnName: string, columnType: string = 's
 
 // Kurumlar tablosunu güncelle (departmanlar ve birimler sütunları ekle)
 export const updateKurumlarTable = async () => {
-  logInfo('updateKurumlarTable() çağrıldı');
+  // logInfo('updateKurumlarTable() çağrıldı'); // Removed logInfo
   try {
     // Önce departmanlar sütununu ekle
     const departmanResult = await addTableColumn('departmanlar', 'string');
-    logInfo('Departmanlar sütunu eklendi', departmanResult);
+    // logInfo('Departmanlar sütunu eklendi', departmanResult); // Removed logInfo
     
     // Sonra birimler sütununu ekle
     const birimResult = await addTableColumn('birimler', 'string');
-    logInfo('Birimler sütunu eklendi', birimResult);
+    // logInfo('Birimler sütunu eklendi', birimResult); // Removed logInfo
     
     return {
       success: true,
@@ -517,7 +420,6 @@ export const updateKurumlarTable = async () => {
 
 // Kullanıcı tablosu oluştur - YENİ FONKSIYON
 export const createUsersTable = async () => {
-  logInfo('createUsersTable() çağrıldı');
   try {
     const response = await apiRequest(`/api/v1/tables/project/${API_CONFIG.projectId}`, {
       method: 'POST',
@@ -526,10 +428,6 @@ export const createUsersTable = async () => {
         description: 'Vardiya sistemi kullanıcıları tablosu'
       }),
     });
-    
-    if (isDev) {
-      console.log('🎯 Kullanıcı tablosu oluşturuldu:', response);
-    }
     
     // Eğer tablo başarıyla oluşturulduysa, field'ları ekle
     if (response.data?.table?.id) {
@@ -559,7 +457,7 @@ export const createUsersTable = async () => {
 // Kullanıcı tablosuna field'ları manuel ekle - DOĞRUDAN ÇALIŞTIRILABİLİR VERSIYON
 export const setupUserTableFieldsManual = async () => {
   const tableId = 13; // Mevcut kullanıcı tablosu ID
-  logInfo('setupUserTableFieldsManual() çağrıldı', { tableId });
+  // logInfo('setupUserTableFieldsManual() çağrıldı', { tableId }); // Removed logInfo
   
   const requiredFields = [
     { name: 'name', type: 'string', description: 'Kullanıcı adı soyadı' },
@@ -586,8 +484,6 @@ export const setupUserTableFieldsManual = async () => {
   
   for (const field of requiredFields) {
     try {
-      console.log(`🔧 Field ekleniyor: ${field.name} (${field.type})`);
-      
       const response = await apiRequest(`/api/v1/tables/project/${API_CONFIG.projectId}/${tableId}/fields`, {
         method: 'POST',
         body: JSON.stringify({
@@ -604,9 +500,9 @@ export const setupUserTableFieldsManual = async () => {
         data: response
       });
       
-      logInfo(`✅ Field ${field.name} eklendi`);
+      // logInfo(`✅ Field ${field.name} eklendi`); // Removed logInfo
     } catch (error) {
-      logWarning(`❌ Field ${field.name} eklenemedi`, error);
+      // logWarning(`❌ Field ${field.name} eklenemedi`, error); // Removed logWarning
       results.push({
         field: field.name,
         success: false,
@@ -622,14 +518,14 @@ export const setupUserTableFieldsManual = async () => {
 
 // Kullanıcı tablosunu genişlet - YENİ FONKSIYON
 export const expandUserTable = async () => {
-  logInfo('expandUserTable() çağrıldı - Kullanıcı tablosu genişletiliyor');
+  // logInfo('expandUserTable() çağrıldı - Kullanıcı tablosu genişletiliyor'); // Removed logInfo
   try {
     const results = await setupUserTableFieldsManual();
     
     const successCount = results.filter(r => r.success).length;
     const failCount = results.filter(r => !r.success).length;
     
-    logInfo(`Kullanıcı tablosu genişletildi: ${successCount} başarılı, ${failCount} başarısız`);
+    // logInfo(`Kullanıcı tablosu genişletildi: ${successCount} başarılı, ${failCount} başarısız`); // Removed logInfo
     
     return {
       success: true,
@@ -652,12 +548,9 @@ export const expandUserTable = async () => {
 
 // Kullanıcıları getir - YENİ FONKSIYON
 export const getUsers = async (usersTableId: number) => {
-  logInfo('getUsers() çağrıldı');
+  // logInfo('getUsers() çağrıldı'); // Removed logInfo
   try {
     const response = await apiRequest(`/api/v1/data/table/${usersTableId}?page=1&limit=100&sort=id&order=DESC`);
-    if (isDev) {
-      console.log('👥 Kullanıcılar getUsers response:', response);
-    }
     return response.data?.rows || [];
   } catch (error) {
     logError('getUsers hatası', error);
@@ -686,7 +579,7 @@ export const addUser = async (usersTableId: number, userData: {
   updated_at?: string;
   last_login?: string;
 }) => {
-  logInfo('addUser() çağrıldı', userData);
+  // logInfo('addUser() çağrıldı', userData); // Removed logInfo
   try {
     // Veri validasyonu
     if (!userData.name || !userData.email || !userData.password || !userData.phone || !userData.rol) {
@@ -714,18 +607,10 @@ export const addUser = async (usersTableId: number, userData: {
       last_login: userData.last_login || undefined
     };
     
-    if (isDev) {
-      console.log('👤 addUser request body:', requestBody);
-    }
-    
     const response = await apiRequest(`/api/v1/data/table/${usersTableId}/rows`, {
       method: 'POST',
       body: JSON.stringify(requestBody),
     });
-    
-    if (isDev) {
-      console.log('👤 addUser response:', response);
-    }
     
     // API'den gelen response'u kontrol et
     if (response.success === false) {
@@ -759,7 +644,7 @@ export const updateUser = async (usersTableId: number, userId: string, userData:
   birim_id?: string;
   aktif_mi?: boolean;
 }) => {
-  logInfo('updateUser() çağrıldı', { userId, userData });
+  // logInfo('updateUser() çağrıldı', { userId, userData }); // Removed logInfo
   try {
     const response = await apiRequest(`/api/v1/data/table/${usersTableId}/rows/${userId}`, {
       method: 'PUT',
@@ -778,7 +663,7 @@ export const updateUser = async (usersTableId: number, userId: string, userData:
 
 // Kullanıcı sil - YENİ FONKSIYON
 export const deleteUser = async (usersTableId: number, userId: string) => {
-  logInfo('deleteUser() çağrıldı', userId);
+  // logInfo('deleteUser() çağrıldı', userId); // Removed logInfo
   try {
     const response = await apiRequest(`/api/v1/data/table/${usersTableId}/rows/${userId}`, {
       method: 'DELETE',
@@ -796,12 +681,9 @@ export const deleteUser = async (usersTableId: number, userId: string) => {
 
 // API Test - DOKÜMANTASYON VERSİYONU
 export const testAPI = async () => {
-  logInfo('testAPI() çağrıldı');
+  // logInfo('testAPI() çağrıldı'); // Removed logInfo
   try {
     const response = await apiRequest('/api/v1/tables/api-key-info');
-    if (isDev) {
-      console.log('🧪 testAPI response:', response);
-    }
     return response;
   } catch (error) {
     logError('testAPI hatası', error);
