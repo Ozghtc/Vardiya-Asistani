@@ -42,9 +42,13 @@ const SistemTanimlamalari: React.FC = () => {
       name: 'Ünvan/İzin Tanımlamaları',
       icon: <Users className="w-5 h-5" />, // veya başka uygun bir ikon
       component: (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <UnvanTanimlama />
-          <IzinTanimlama />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          <div className="lg:col-span-1">
+            <UnvanTanimlama />
+          </div>
+          <div className="lg:col-span-2">
+            <IzinTanimlama />
+          </div>
         </div>
       )
     },

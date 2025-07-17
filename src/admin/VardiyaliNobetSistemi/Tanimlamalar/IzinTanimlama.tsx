@@ -137,7 +137,7 @@ const IzinTanimlama: React.FC = () => {
   }
 
   return (
-    <div className="max-w-6xl mx-auto bg-white rounded-xl shadow-sm p-6 mt-8">
+    <div className="bg-white rounded-xl shadow-sm p-6">
       <div className="flex items-center gap-2 mb-6">
         <Calendar className="w-5 h-5 text-blue-600" />
         <h2 className="text-lg font-semibold">İzin/İstek Tanımları</h2>
@@ -176,7 +176,7 @@ const IzinTanimlama: React.FC = () => {
           </div>
 
           {/* Renk Seçimi - Dropdown */}
-          <div className="w-48 relative">
+          <div className="w-40 relative">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Renk
             </label>

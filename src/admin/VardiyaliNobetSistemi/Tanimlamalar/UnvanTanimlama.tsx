@@ -110,47 +110,45 @@ const UnvanTanimlama: React.FC = () => {
   }
 
   return (
-    <div className="max-w-xl mx-auto bg-white rounded-xl shadow-sm p-6 mt-8 flex">
-      <div className="flex-1">
-        <div className="flex items-center gap-2 mb-4">
-          <UserPlus className="w-5 h-5 text-blue-600" />
-          <h2 className="text-lg font-semibold">Personel Ünvan Tanımları</h2>
-        </div>
-        <div className="flex gap-2 mb-4">
-          <input
-            type="text"
-            value={unvanAdi}
-            onChange={handleUnvanChange}
-            placeholder="YENİ ÜNVAN GİRİN"
-            className="flex-1 rounded-lg border-gray-300"
-          />
-          <button
-            onClick={handleUnvanEkle}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            <Plus className="w-4 h-4" />
-          </button>
-        </div>
-        <div className="space-y-2">
-          {unvanlar.map((item) => (
-            <div key={item.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-              <span className="font-medium">{item.unvan_adi}</span>
-              <button
-                onClick={() => handleUnvanSil(item.id)}
-                className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </div>
-          ))}
-        </div>
-        {showSuccess && <SuccessNotification message="Başarıyla eklendi" />}
-        {errorMsg && (
-          <div className="mt-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm">
-            {errorMsg}
-          </div>
-        )}
+    <div className="bg-white rounded-xl shadow-sm p-6">
+      <div className="flex items-center gap-2 mb-4">
+        <UserPlus className="w-5 h-5 text-blue-600" />
+        <h2 className="text-lg font-semibold">Personel Ünvan Tanımları</h2>
       </div>
+      <div className="flex gap-2 mb-4">
+        <input
+          type="text"
+          value={unvanAdi}
+          onChange={handleUnvanChange}
+          placeholder="YENİ ÜNVAN GİRİN"
+          className="flex-1 rounded-lg border-gray-300"
+        />
+        <button
+          onClick={handleUnvanEkle}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+        >
+          <Plus className="w-4 h-4" />
+        </button>
+      </div>
+      <div className="space-y-2">
+        {unvanlar.map((item) => (
+          <div key={item.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+            <span className="font-medium">{item.unvan_adi}</span>
+            <button
+              onClick={() => handleUnvanSil(item.id)}
+              className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+        ))}
+      </div>
+      {showSuccess && <SuccessNotification message="Başarıyla eklendi" />}
+      {errorMsg && (
+        <div className="mt-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm">
+          {errorMsg}
+        </div>
+      )}
     </div>
   );
 };
