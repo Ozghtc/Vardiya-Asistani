@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Calendar, User2, Plus, Filter } from 'lucide-react';
+import { ArrowLeft, Calendar, User2, Plus, Filter, Clock, CalendarDays, X } from 'lucide-react';
 import { useAuthContext } from '../../../contexts/AuthContext';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
@@ -42,6 +42,7 @@ const PersonelIzinIstekleri: React.FC = () => {
   const [startDate, setStartDate] = useState<Date>(new Date());
   const [endDate, setEndDate] = useState<Date>(addDays(new Date(), 30));
   const [selectedMonth, setSelectedMonth] = useState<string>('2025-07');
+  const [showPopup, setShowPopup] = useState(false);
 
   // Ay adını al
   const ayYil = startDate.toLocaleString('tr-TR', { month: 'long', year: 'numeric' });
@@ -132,6 +133,18 @@ const PersonelIzinIstekleri: React.FC = () => {
     setEndDate(date);
   };
 
+  // Popup işlemleri
+  const handleTalebiClick = (tip: 'nobet' | 'izin') => {
+    setShowPopup(false);
+    if (tip === 'nobet') {
+      // Nöbet isteği sayfasına yönlendir
+      navigate('/nobet-istegi');
+    } else {
+      // İzin/bosluk talebi sayfasına yönlendir
+      navigate('/izin-bosluk-talebi');
+    }
+  };
+
   // Takvim günlerini hesapla
   const daysInRange: Date[] = [];
   if (startDate && endDate && endDate >= startDate) {
@@ -201,11 +214,11 @@ const PersonelIzinIstekleri: React.FC = () => {
           </div>
         </div>
         <button
-          onClick={() => navigate('/personel-ekle')}
+          onClick={() => setShowPopup(true)}
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
         >
           <Plus className="w-5 h-5" />
-          <span>Yeni İzin İsteği</span>
+          <span>Personel Talebi</span>
         </button>
       </div>
 
@@ -326,6 +339,60 @@ const PersonelIzinIstekleri: React.FC = () => {
           <div>Tarih aralığı: {startDate.toLocaleDateString('tr-TR')} - {endDate.toLocaleDateString('tr-TR')}</div>
         </div>
       </div>
+
+      {/* Popup Modal */}
+      {showPopup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md mx-4">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold text-gray-900">Personel Talebi</h3>
+              <button
+                onClick={() => setShowPopup(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <button
+                onClick={() => handleTalebiClick('nobet')}
+                className="w-full flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-blue-300 transition-colors"
+              >
+                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <Clock className="w-5 h-5 text-blue-600" />
+                </div>
+                <div className="text-left">
+                  <div className="font-medium text-gray-900">Nöbet İsteği</div>
+                  <div className="text-sm text-gray-500">Nöbet değişimi veya nöbet talebi</div>
+                </div>
+              </button>
+
+              <button
+                onClick={() => handleTalebiClick('izin')}
+                className="w-full flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-blue-300 transition-colors"
+              >
+                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                  <CalendarDays className="w-5 h-5 text-green-600" />
+                </div>
+                <div className="text-left">
+                  <div className="font-medium text-gray-900">İzin/Bosluk Talebi</div>
+                  <div className="text-sm text-gray-500">İzin veya boşluk talebi</div>
+                </div>
+              </button>
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-gray-200">
+              <button
+                onClick={() => setShowPopup(false)}
+                className="w-full px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                İptal
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
