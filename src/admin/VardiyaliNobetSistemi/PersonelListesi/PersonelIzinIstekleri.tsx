@@ -1,9 +1,187 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Calendar, User2, Plus, Filter } from 'lucide-react';
+import { useAuthContext } from '../../../contexts/AuthContext';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import { tr } from 'date-fns/locale';
+import { addDays, differenceInCalendarDays } from 'date-fns';
+
+interface Personnel {
+  id: number;
+  tcno: string;
+  ad: string;
+  soyad: string;
+  unvan: string;
+  email: string;
+  telefon: string;
+  kurum_id: string;
+  departman_id: string;
+  birim_id: string;
+  aktif_mi: boolean;
+}
+
+interface IzinIstek {
+  id: number;
+  personel_id: number;
+  izin_turu: string;
+  baslangic_tarihi: string;
+  bitis_tarihi: string;
+  durum: 'beklemede' | 'onaylandi' | 'reddedildi';
+  aciklama?: string;
+}
 
 const PersonelIzinIstekleri: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuthContext();
+  
+  // State'ler
+  const [personnel, setPersonnel] = useState<Personnel[]>([]);
+  const [izinIstekleri, setIzinIstekleri] = useState<IzinIstek[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [startDate, setStartDate] = useState<Date>(new Date());
+  const [endDate, setEndDate] = useState<Date>(addDays(new Date(), 30));
+  const [selectedMonth, setSelectedMonth] = useState<string>('2025-07');
+
+  // Ay adını al
+  const ayYil = startDate.toLocaleString('tr-TR', { month: 'long', year: 'numeric' });
+
+  // Personel listesini yükle
+  const loadPersonnel = async () => {
+    if (!user) return;
+    
+    try {
+      setLoading(true);
+      
+      const response = await fetch('/.netlify/functions/api-proxy', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          path: '/api/v1/data/table/21',
+          method: 'GET'
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data?.rows) {
+          const filteredPersonnel = result.data.rows.filter((person: Personnel) => 
+            person.kurum_id === user.kurum_id &&
+            person.departman_id === user.departman_id &&
+            person.birim_id === user.birim_id &&
+            person.aktif_mi
+          );
+          
+          setPersonnel(filteredPersonnel);
+        }
+      }
+    } catch (error) {
+      console.error('Personel yükleme hatası:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // İzin isteklerini yükle (demo data)
+  const loadIzinIstekleri = async () => {
+    // Demo data - gerçek API'de bu kısım değişecek
+    const demoIzinIstekleri: IzinIstek[] = [
+      {
+        id: 1,
+        personel_id: 1,
+        izin_turu: 'Yıllık İzin',
+        baslangic_tarihi: '2025-07-15',
+        bitis_tarihi: '2025-07-20',
+        durum: 'onaylandi',
+        aciklama: 'Aile ziyareti'
+      },
+      {
+        id: 2,
+        personel_id: 2,
+        izin_turu: 'Hastalık İzni',
+        baslangic_tarihi: '2025-07-10',
+        bitis_tarihi: '2025-07-12',
+        durum: 'beklemede',
+        aciklama: 'Grip'
+      }
+    ];
+    
+    setIzinIstekleri(demoIzinIstekleri);
+  };
+
+  useEffect(() => {
+    loadPersonnel();
+    loadIzinIstekleri();
+  }, [user]);
+
+  // Tarih değişiklikleri
+  const handleStartDateChange = (date: Date | null) => {
+    if (!date) return;
+    setStartDate(date);
+    const maxEnd = addDays(date, 30);
+    if (!endDate || endDate < date || endDate > maxEnd) {
+      setEndDate(maxEnd);
+    }
+  };
+
+  const handleEndDateChange = (date: Date | null) => {
+    if (!date) return;
+    if (differenceInCalendarDays(date, startDate) > 30 || date < startDate) return;
+    setEndDate(date);
+  };
+
+  // Takvim günlerini hesapla
+  const daysInRange: Date[] = [];
+  if (startDate && endDate && endDate >= startDate) {
+    let currentDate = new Date(startDate);
+    while (currentDate <= endDate) {
+      daysInRange.push(new Date(currentDate));
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+  }
+
+  // Gün adlarını al
+  const getGunAdi = (date: Date) => {
+    const gunAdlari = ['PAZ', 'PZT', 'SAL', 'ÇAR', 'PER', 'CUM', 'CMT'];
+    return gunAdlari[date.getDay()];
+  };
+
+  // İzin durumunu kontrol et
+  const getIzinDurumu = (personelId: number, date: Date) => {
+    const izin = izinIstekleri.find(i => 
+      i.personel_id === personelId &&
+      new Date(i.baslangic_tarihi) <= date &&
+      new Date(i.bitis_tarihi) >= date
+    );
+    
+    if (!izin) return null;
+    
+    return {
+      tur: izin.izin_turu,
+      durum: izin.durum,
+      aciklama: izin.aciklama
+    };
+  };
+
+  // Durum rengini al
+  const getDurumRengi = (durum: string) => {
+    switch (durum) {
+      case 'onaylandi': return 'bg-green-100 text-green-800';
+      case 'reddedildi': return 'bg-red-100 text-red-800';
+      case 'beklemede': return 'bg-yellow-100 text-yellow-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -22,11 +200,131 @@ const PersonelIzinIstekleri: React.FC = () => {
             <p className="text-gray-600">Özel istekler ve izin talepleri</p>
           </div>
         </div>
+        <button
+          onClick={() => navigate('/personel-ekle')}
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          <Plus className="w-5 h-5" />
+          <span>Yeni İzin İsteği</span>
+        </button>
       </div>
 
-      {/* Henüz izin isteği yok mesajı */}
-      <div className="bg-white rounded-xl shadow-sm p-8 text-center border border-gray-200">
-        <p className="text-gray-500">Henüz izin isteği bulunmuyor.</p>
+      {/* Tarih Seçimi */}
+      <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+          <h2 className="text-xl font-bold flex items-center gap-2">
+            <Calendar className="w-6 h-6 text-blue-600" />
+            <span>{ayYil} Dönemi</span>
+          </h2>
+          
+          <div className="flex items-center gap-4 ml-auto">
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">Başlangıç</label>
+              <DatePicker
+                selected={startDate}
+                onChange={handleStartDateChange}
+                dateFormat="dd/MM/yyyy"
+                locale={tr}
+                className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 py-2 px-3"
+                placeholderText="gg/aa/yyyy"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">Bitiş</label>
+              <DatePicker
+                selected={endDate}
+                onChange={handleEndDateChange}
+                dateFormat="dd/MM/yyyy"
+                locale={tr}
+                className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 py-2 px-3"
+                placeholderText="gg/aa/yyyy"
+                minDate={startDate}
+                maxDate={addDays(startDate, 30)}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* İzin Takvimi */}
+      <div className="bg-white rounded-xl shadow-sm overflow-x-auto border border-gray-200">
+        <div className="min-h-[400px] relative">
+          <table className="w-full min-w-max">
+            <thead>
+              <tr className="bg-gray-50">
+                <th className="py-4 px-6 text-left text-sm font-semibold text-gray-600 sticky left-0 bg-gray-50 min-w-[200px] border-b">
+                  PERSONEL
+                </th>
+                {daysInRange.map(dateObj => {
+                  const gun = dateObj.getDay();
+                  const isWeekend = gun === 0 || gun === 6;
+                  const gunAdi = getGunAdi(dateObj);
+                  return (
+                    <th
+                      key={dateObj.toISOString()}
+                      className={`py-4 px-3 text-center text-sm font-semibold border-b min-w-[40px] ${isWeekend ? 'font-bold text-blue-700 bg-blue-50' : 'text-gray-600 bg-gray-50'}`}
+                    >
+                      <div className="flex flex-col">
+                        <span className="text-xs text-gray-500">{gunAdi}</span>
+                        <span>{dateObj.getDate()}</span>
+                      </div>
+                    </th>
+                  );
+                })}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {personnel.map(person => (
+                <tr key={person.id} className="hover:bg-gray-50 align-top">
+                  <td className="py-3 px-6 text-sm sticky left-0 bg-white border-r z-10">
+                    <div>
+                      <div className="font-medium text-gray-900">{person.ad} {person.soyad}</div>
+                      <div className="text-gray-500 text-xs">{person.unvan}</div>
+                    </div>
+                  </td>
+                  {daysInRange.map(dateObj => {
+                    const izinDurumu = getIzinDurumu(person.id, dateObj);
+                    return (
+                      <td key={dateObj.toISOString()} className="py-3 px-3 text-center text-sm align-top">
+                        {izinDurumu ? (
+                          <div className={`px-2 py-1 rounded text-xs font-medium ${getDurumRengi(izinDurumu.durum)}`}>
+                            {izinDurumu.tur}
+                          </div>
+                        ) : (
+                          <div className="w-8 h-8 mx-auto rounded border-2 border-dashed border-gray-200 flex items-center justify-center">
+                            <span className="text-gray-400">-</span>
+                          </div>
+                        )}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {personnel.length === 0 && (
+            <div className="text-center py-12">
+              <User2 className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+              <p className="text-gray-500 mb-4">Henüz personel kaydı bulunmuyor</p>
+              <button
+                onClick={() => navigate('/personel-ekle')}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
+              >
+                <Plus className="w-5 h-5" />
+                <span>İlk Personeli Ekle</span>
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Özet Bilgi */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="text-sm text-blue-800">
+          <div className="font-medium mb-1">Toplam {daysInRange.length} gün için izin planı görüntüleniyor.</div>
+          <div>Tarih aralığı: {startDate.toLocaleDateString('tr-TR')} - {endDate.toLocaleDateString('tr-TR')}</div>
+        </div>
       </div>
     </div>
   );
