@@ -58,6 +58,7 @@ interface TalepItem {
   bitis_tarih?: Date;
   alan?: string;
   izin_turu?: string;
+  mesai_saati?: string;
   aciklama?: string;
 }
 
@@ -81,6 +82,7 @@ const PersonelIzinIstekleri: React.FC = () => {
   const [isTarihAraligi, setIsTarihAraligi] = useState(false);
   const [selectedAlan, setSelectedAlan] = useState<string>('');
   const [selectedIzinTuru, setSelectedIzinTuru] = useState<string>('');
+  const [selectedMesaiSaati, setSelectedMesaiSaati] = useState<string>('');
   const [aciklama, setAciklama] = useState<string>('');
   const [talepler, setTalepler] = useState<TalepItem[]>([]);
   
@@ -285,6 +287,7 @@ const PersonelIzinIstekleri: React.FC = () => {
       bitis_tarih: isTarihAraligi && selectedBitisTarih ? selectedBitisTarih : undefined,
       alan: selectedTip === 'nobet' ? selectedAlan : undefined,
       izin_turu: selectedTip === 'izin' ? selectedIzinTuru : undefined,
+      mesai_saati: selectedTip === 'nobet' ? selectedMesaiSaati : undefined,
       aciklama: aciklama || undefined
     };
 
@@ -296,6 +299,7 @@ const PersonelIzinIstekleri: React.FC = () => {
     setIsTarihAraligi(false);
     setSelectedAlan('');
     setSelectedIzinTuru('');
+    setSelectedMesaiSaati('');
     setAciklama('');
   };
 
@@ -659,24 +663,62 @@ const PersonelIzinIstekleri: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Alan Seçimi (Nöbet için) */}
+                    {/* Alan ve Mesai Seçimi (Nöbet için) */}
                     {selectedTip === 'nobet' && (
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Alan <span className="text-red-500">*</span>
-                        </label>
-                        <select
-                          value={selectedAlan}
-                          onChange={(e) => setSelectedAlan(e.target.value)}
-                          className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 py-2 px-3"
-                        >
-                          <option value="">Alan seçin</option>
-                          {alanTanimlamalari.map((alan) => (
-                            <option key={alan.id} value={alan.alan_adi}>
-                              {alan.alan_adi}
-                            </option>
-                          ))}
-                        </select>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Alan <span className="text-red-500">*</span>
+                          </label>
+                          <select
+                            value={selectedAlan}
+                            onChange={(e) => setSelectedAlan(e.target.value)}
+                            className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 py-2 px-3"
+                          >
+                            <option value="">Alan seçin</option>
+                            {alanTanimlamalari.map((alan) => (
+                              <option key={alan.id} value={alan.alan_adi}>
+                                <div className="flex items-center gap-2">
+                                  <div 
+                                    className="w-3 h-3 rounded-full" 
+                                    style={{ backgroundColor: alan.renk }}
+                                  ></div>
+                                  {alan.alan_adi}
+                                </div>
+                              </option>
+                            ))}
+                          </select>
+                          {selectedAlan && (
+                            <div className="mt-2 text-xs text-gray-500">
+                              {alanTanimlamalari.find(alan => alan.alan_adi === selectedAlan)?.renk && (
+                                <div className="flex items-center gap-2">
+                                  <div 
+                                    className="w-3 h-3 rounded-full" 
+                                    style={{ backgroundColor: alanTanimlamalari.find(alan => alan.alan_adi === selectedAlan)?.renk }}
+                                  ></div>
+                                  <span>Renk: {alanTanimlamalari.find(alan => alan.alan_adi === selectedAlan)?.renk}</span>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Mesai Saatleri
+                          </label>
+                          <select
+                            value={selectedMesaiSaati}
+                            onChange={(e) => setSelectedMesaiSaati(e.target.value)}
+                            className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 py-2 px-3"
+                          >
+                            <option value="">Mesai saati seçin</option>
+                            <option value="08:00-16:00">08:00-16:00 (Sabah)</option>
+                            <option value="16:00-24:00">16:00-24:00 (Akşam)</option>
+                            <option value="00:00-08:00">00:00-08:00 (Gece)</option>
+                            <option value="08:00-20:00">08:00-20:00 (Uzun)</option>
+                          </select>
+                        </div>
                       </div>
                     )}
 
@@ -694,10 +736,26 @@ const PersonelIzinIstekleri: React.FC = () => {
                           <option value="">İzin türü seçin</option>
                           {izinTanimlamalari.map((izin) => (
                             <option key={izin.id} value={izin.izin_turu}>
-                              {izin.izin_turu}
+                              {izin.izin_turu} ({izin.kisaltma})
                             </option>
                           ))}
                         </select>
+                        {selectedIzinTuru && (
+                          <div className="mt-2 text-xs text-gray-500">
+                            {izinTanimlamalari.find(izin => izin.izin_turu === selectedIzinTuru) && (
+                              <div className="flex items-center gap-2">
+                                <div 
+                                  className="w-3 h-3 rounded-full" 
+                                  style={{ backgroundColor: izinTanimlamalari.find(izin => izin.izin_turu === selectedIzinTuru)?.renk }}
+                                ></div>
+                                <span>Renk: {izinTanimlamalari.find(izin => izin.izin_turu === selectedIzinTuru)?.renk}</span>
+                                {izinTanimlamalari.find(izin => izin.izin_turu === selectedIzinTuru)?.mesai_dusumu && (
+                                  <span className="text-orange-600">• Mesai düşümü</span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     )}
 
@@ -763,6 +821,7 @@ const PersonelIzinIstekleri: React.FC = () => {
                               }
                               {talep.alan && ` • ${talep.alan}`}
                               {talep.izin_turu && ` • ${talep.izin_turu}`}
+                              {talep.mesai_saati && ` • ${talep.mesai_saati}`}
                             </div>
                             {talep.aciklama && (
                               <div className="text-xs text-gray-400 mt-1">
