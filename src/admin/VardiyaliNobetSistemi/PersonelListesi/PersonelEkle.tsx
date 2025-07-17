@@ -11,6 +11,13 @@ interface Unvan {
   aciklama?: string;
 }
 
+interface MesaiTuru {
+  id: number;
+  mesai_adi: string;
+  gunler: string;
+  mesai_saati: number;
+}
+
 interface PersonelFormData {
   ad: string;
   soyad: string;
@@ -34,10 +41,39 @@ const PersonelEkle: React.FC = () => {
     telefon: ''
   });
   const [unvanlar, setUnvanlar] = useState<Unvan[]>([]);
+  const [mesaiTurleri, setMesaiTurleri] = useState<MesaiTuru[]>([]);
   const [loading, setLoading] = useState(false);
+  const [mesaiLoading, setMesaiLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+
+  // Mesai türlerini yükle
+  const loadMesaiTurleri = async () => {
+    if (!user?.kurum_id || !user?.departman_id || !user?.birim_id) return;
+    
+    setMesaiLoading(true);
+    try {
+      console.log('🔍 Mesai türleri yükleniyor...');
+      
+      const response = await apiRequest(`/api/v1/data/table/24?kurum_id=${user.kurum_id}&departman_id=${user.departman_id}&birim_id=${user.birim_id}`, {
+        method: 'GET'
+      });
+      
+      console.log('📦 Mesai API Response:', response);
+      
+      if (response.success) {
+        console.log('✅ Mesai türleri başarıyla yüklendi:', response.data.rows);
+        setMesaiTurleri(response.data.rows);
+      } else {
+        console.error('❌ Mesai API Error:', response.error);
+      }
+    } catch (error) {
+      console.error('🚨 Mesai türleri yüklenemedi:', error);
+    } finally {
+      setMesaiLoading(false);
+    }
+  };
 
   // Unvanları yükle
   useEffect(() => {
@@ -62,6 +98,7 @@ const PersonelEkle: React.FC = () => {
 
     if (user) {
       loadUnvanlar();
+      loadMesaiTurleri();
     }
   }, [user]);
 
@@ -316,9 +353,13 @@ const PersonelEkle: React.FC = () => {
                   required
                 >
                   <option value="">Mesai hesap seçiniz</option>
-                  <option value="evet">Evet</option>
-                  <option value="hayir">Hayır</option>
+                  {mesaiTurleri.map((mesai) => (
+                    <option key={mesai.id} value={mesai.id}>
+                      {mesai.mesai_adi}
+                    </option>
+                  ))}
                 </select>
+                {mesaiLoading && <p className="mt-1 text-xs text-gray-500">Mesai türleri yükleniyor...</p>}
               </div>
             </div>
 

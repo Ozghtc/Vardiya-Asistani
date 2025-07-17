@@ -252,6 +252,35 @@ const UnvanTanimlama: React.FC = () => {
     setMesaiTanımları(prev => prev.filter(mesai => mesai.id !== id));
   };
 
+  // Mesai türünü veritabanından sil
+  const handleMesaiTuruSil = async (mesaiId: number) => {
+    if (!confirm('Bu mesai türünü silmek istediğinizden emin misiniz?')) {
+      return;
+    }
+
+    try {
+      console.log('🗑️ Mesai türü siliniyor:', mesaiId);
+      
+      const response = await apiRequest(`/api/v1/data/table/24/rows/${mesaiId}`, {
+        method: 'DELETE'
+      });
+      
+      console.log('📥 Silme API yanıtı:', response);
+      
+      if (response.success) {
+        console.log('✅ Mesai türü başarıyla silindi');
+        // Listeyi güncelle
+        setKaydedilenMesaiTurleri(prev => prev.filter(mesai => mesai.id !== mesaiId));
+      } else {
+        console.error('❌ Silme API Hatası:', response.error);
+        alert('Mesai türü silinemedi: ' + (response.error || 'Bilinmeyen hata'));
+      }
+    } catch (error) {
+      console.error('🚨 Mesai türü silme hatası:', error);
+      alert('Mesai türü silinirken hata oluştu. Lütfen tekrar deneyin.');
+    }
+  };
+
   if (!user?.kurum_id || !user?.departman_id || !user?.birim_id) {
     return <div>Yükleniyor, lütfen bekleyin...</div>;
   }
@@ -406,29 +435,26 @@ const UnvanTanimlama: React.FC = () => {
             <p className="text-gray-500">Henüz kaydedilmiş mesai türü bulunmuyor</p>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {kaydedilenMesaiTurleri.map((mesai) => (
-              <div key={mesai.id} className="bg-gray-50 p-4 rounded-lg">
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-gray-800 text-lg">{mesai.mesai_adi}</h3>
-                    <div className="text-gray-600 text-sm mt-1">
-                      <span className="font-medium">Günler:</span> {JSON.parse(mesai.gunler).join(', ')}
-                    </div>
-                    <div className="text-gray-600 text-sm">
-                      <span className="font-medium">Saat:</span> {mesai.mesai_saati} saat
-                    </div>
-                  </div>
+              <div key={mesai.id} className="bg-gray-50 p-4 rounded-lg border border-gray-200 hover:shadow-md transition-shadow">
+                <div className="flex justify-between items-start mb-3">
+                  <h3 className="font-semibold text-gray-800 text-lg flex-1">{mesai.mesai_adi}</h3>
                   <button
-                    onClick={() => {
-                      // Mesai silme fonksiyonu buraya eklenebilir
-                      console.log('Mesai silme:', mesai.id);
-                    }}
-                    className="text-red-500 hover:text-red-700 transition-colors ml-4"
+                    onClick={() => handleMesaiTuruSil(mesai.id)}
+                    className="text-red-500 hover:text-red-700 transition-colors ml-2 flex-shrink-0"
                     title="Mesai türünü sil"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
+                </div>
+                <div className="space-y-2">
+                  <div className="text-gray-600 text-sm">
+                    <span className="font-medium">Günler:</span> {JSON.parse(mesai.gunler).join(', ')}
+                  </div>
+                  <div className="text-gray-600 text-sm">
+                    <span className="font-medium">Saat:</span> {mesai.mesai_saati} saat
+                  </div>
                 </div>
               </div>
             ))}
