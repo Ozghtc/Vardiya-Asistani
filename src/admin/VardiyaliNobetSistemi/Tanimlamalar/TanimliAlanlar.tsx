@@ -240,16 +240,37 @@ const TanimliAlanlar: React.FC = () => {
       setLoading(true);
       console.log('🗑️ Alan siliniyor, ID:', alanId);
       
-      const response = await apiRequest(`/api/v1/data/table/25/rows/${alanId}`, {
-        method: 'DELETE',
+      // Netlify proxy üzerinden silme işlemi
+      const response = await fetch('/.netlify/functions/api-proxy', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          path: `/api/v1/data/table/25/rows/${alanId}`,
+          method: 'DELETE',
+          apiKey: 'hzm_1ce98c92189d4a109cd604b22bfd86b7'
+        })
       });
       
-      if (response.success) {
-        console.log('✅ Alan başarıyla silindi:', response.data);
+      const result = await response.json();
+      console.log('🗑️ Silme response:', result);
+      
+      if (response.ok && result.success) {
+        console.log('✅ Alan başarıyla silindi:', result.data);
+        alert('Alan başarıyla silindi!');
         loadAlanlar(); // Listeyi yenile
       } else {
-        console.error('❌ Alan silme hatası:', response.error);
-        alert('Alan silinirken hata oluştu: ' + (response.error || 'Bilinmeyen hata'));
+        console.error('❌ Alan silme hatası:', result);
+        let errorMessage = 'Alan silinirken hata oluştu';
+        
+        if (result.message) {
+          errorMessage = result.message;
+        } else if (result.error) {
+          errorMessage = result.error;
+        }
+        
+        alert('Alan silinirken hata oluştu: ' + errorMessage);
       }
     } catch (error: any) {
       console.error('❌ Alan silme exception:', error);
@@ -257,12 +278,14 @@ const TanimliAlanlar: React.FC = () => {
       // Hata türüne göre mesaj
       let errorMessage = 'Alan silinirken hata oluştu';
       
-      if (error.message && error.message.includes('Row not found')) {
+      if (error?.message?.includes('Failed to fetch')) {
+        errorMessage = 'Ağ bağlantısı hatası. Lütfen internet bağlantınızı kontrol edin.';
+      } else if (error?.message?.includes('Row not found')) {
         errorMessage = 'Bu alan bulunamadı. Sayfayı yenileyin.';
         loadAlanlar(); // Listeyi yenile
-      } else if (error.message && error.message.includes('Failed to delete row')) {
+      } else if (error?.message?.includes('Failed to delete row')) {
         errorMessage = 'Silme işlemi başarısız. Lütfen tekrar deneyin.';
-      } else if (error.message) {
+      } else if (error?.message) {
         errorMessage = error.message;
       }
       
@@ -357,8 +380,13 @@ const TanimliAlanlar: React.FC = () => {
                     <FileText className="w-5 h-5" />
                   </button>
                   <button
-                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                    title="Sil"
+                    className={`p-2 rounded-lg transition-colors ${
+                      loading 
+                        ? 'text-gray-300 cursor-not-allowed' 
+                        : 'text-gray-400 hover:text-red-600 hover:bg-red-50'
+                    }`}
+                    title={loading ? "Siliniyor..." : "Sil"}
+                    disabled={loading}
                     onClick={(e) => {
                       e.stopPropagation();
                       handleDelete(alan.id);
