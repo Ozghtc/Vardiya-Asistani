@@ -243,11 +243,11 @@ const YeniAlan: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Günlük Mesai Bilgileri */}
-                {area.dayHours && Object.keys(area.dayHours).length > 0 && (
+                {/* Günlük Mesai Bilgileri - Sadece vardiya ekleme aşamasında görünür */}
+                {showShiftAddition && area.dayHours && Object.keys(area.dayHours).length > 0 && (
                   <div className="p-3 border-t">
                     <h4 className="text-sm font-medium text-gray-700 mb-2">Günlük Toplam Mesailer</h4>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                       {weekDays.map((day) => {
                         const dayHour = area.dayHours[day.value] || 0;
                         const isActive = area.activeDays.includes(day.value);
@@ -255,15 +255,28 @@ const YeniAlan: React.FC = () => {
                         return (
                           <div 
                             key={day.value}
-                            className={`p-2 rounded text-xs ${
+                            className={`p-4 rounded-lg border-2 ${
                               isActive 
-                                ? 'bg-blue-50 text-blue-800 border border-blue-200'
-                                : 'bg-gray-50 text-gray-500 border border-gray-200'
+                                ? 'border-blue-500 bg-blue-50'
+                                : 'border-gray-200 bg-gray-50'
                             }`}
                           >
-                            <div className="font-medium">{day.short}</div>
-                            <div className="text-xs">
-                              {isActive ? `${dayHour} saat` : 'Pasif'}
+                            <div className="text-center space-y-2">
+                              <div className="font-semibold text-lg">{day.name}</div>
+                              <div className="grid grid-cols-3 gap-2 text-xs">
+                                <div className="text-center">
+                                  <div className="font-medium text-gray-600">T</div>
+                                  <div className="text-blue-600 font-semibold">{dayHour}</div>
+                                </div>
+                                <div className="text-center">
+                                  <div className="font-medium text-gray-600">Ek Mes</div>
+                                  <div className="text-green-600 font-semibold">0</div>
+                                </div>
+                                <div className="text-center">
+                                  <div className="font-medium text-gray-600">Kalan Mes</div>
+                                  <div className="text-red-600 font-semibold">{dayHour}</div>
+                                </div>
+                              </div>
                             </div>
                           </div>
                         );
