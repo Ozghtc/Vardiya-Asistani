@@ -36,6 +36,7 @@ interface Area {
   description: string;
   dailyHours: number;
   activeDays: string[];
+  dayHours: DayHours;
 }
 
 interface DayHours {
@@ -82,7 +83,8 @@ const YeniAlan: React.FC = () => {
       color: selectedColor,
       description: description.trim(),
       dailyHours: dailyWorkHours,
-      activeDays: [...selectedDays]
+      activeDays: [...selectedDays],
+      dayHours: { ...dayHours }
     };
 
     setAreas([...areas, newArea]);
@@ -92,6 +94,27 @@ const YeniAlan: React.FC = () => {
     handleNameChange({ target: { value: '' } } as React.ChangeEvent<HTMLInputElement>);
     setDescription('');
     setSelectedColor('');
+  };
+
+  const handleAddShiftSettings = () => {
+    if (selectedDays.length === 0) {
+      alert('Lütfen en az bir gün seçin!');
+      return;
+    }
+
+    // Son eklenen alanı güncelle
+    setAreas(prevAreas => {
+      const updatedAreas = [...prevAreas];
+      if (updatedAreas.length > 0) {
+        const lastArea = updatedAreas[updatedAreas.length - 1];
+        lastArea.activeDays = [...selectedDays];
+        lastArea.dayHours = { ...dayHours };
+        lastArea.dailyHours = dailyWorkHours;
+      }
+      return updatedAreas;
+    });
+
+    alert('Vardiya ayarları alana eklendi!');
   };
 
   const toggleDay = (day: string) => {
@@ -252,7 +275,7 @@ const YeniAlan: React.FC = () => {
                       {isSelected && (
                         <div className="space-y-2">
                           <label className="block text-xs font-medium text-gray-600">
-                            Saat
+                            Günlük Toplam Mesai
                           </label>
                           <input
                             type="number"
@@ -268,6 +291,20 @@ const YeniAlan: React.FC = () => {
                 })}
               </div>
             </div>
+          </div>
+
+          <div className="pt-6">
+            <button
+              onClick={handleAddShiftSettings}
+              disabled={selectedDays.length === 0}
+              className={`w-full py-3 rounded-lg transition-colors ${
+                selectedDays.length > 0
+                  ? 'bg-green-600 hover:bg-green-700 text-white'
+                  : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+              }`}
+            >
+              Ekle
+            </button>
           </div>
         </div>
       </div>
