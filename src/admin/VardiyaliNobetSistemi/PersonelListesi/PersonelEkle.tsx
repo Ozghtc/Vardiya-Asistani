@@ -410,20 +410,14 @@ const PersonelEkle: React.FC = () => {
                 {formData.mesai_hesap && (() => {
                   const secilenMesai = mesaiTurleri.find(mesai => mesai.id.toString() === formData.mesai_hesap);
                   if (secilenMesai) {
-                    try {
-                      const gunler = JSON.parse(secilenMesai.gunler);
-                      return (
-                        <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                          <div className="text-sm font-medium text-blue-800">{secilenMesai.mesai_adi}</div>
-                          <div className="text-xs text-blue-600 mt-1">
-                            Günler: {gunler.join(', ')} | {secilenMesai.mesai_saati} saat
-                          </div>
+                    return (
+                      <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <div className="text-sm font-medium text-blue-800">{secilenMesai.mesai_adi}</div>
+                        <div className="text-xs text-blue-600 mt-1">
+                          Haftalık Kapasite: {secilenMesai.mesai_saati} saat
                         </div>
-                      );
-                    } catch (error) {
-                      console.error('JSON parse hatası:', error);
-                      return null;
-                    }
+                      </div>
+                    );
                   }
                   return null;
                 })()}

@@ -11,7 +11,6 @@ interface Unvan {
 
 interface MesaiTanimi {
   id: string;
-  gunler: string[];
   mesaiAdi: string;
   mesaiSaati: number;
 }
@@ -35,17 +34,12 @@ const UnvanTanimlama: React.FC = () => {
   
   // Popup state'leri
   const [showMesaiPopup, setShowMesaiPopup] = useState(false);
-  const [selectedDays, setSelectedDays] = useState<string[]>(['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz']);
   const [mesaiAdi, setMesaiAdi] = useState('');
   const [mesaiSaati, setMesaiSaati] = useState<number>(8);
-  const [mesaiTanımları, setMesaiTanımları] = useState<MesaiTanimi[]>([]);
-  const [kaydedilenMesai, setKaydedilenMesai] = useState<any>(null);
   
   // Tüm kaydedilen mesai türleri için state
   const [kaydedilenMesaiTurleri, setKaydedilenMesaiTurleri] = useState<KaydedilenMesai[]>([]);
   const [mesaiLoading, setMesaiLoading] = useState(false);
-
-  const gunler = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
 
   // Mesai türlerini fresh olarak yükle
   const loadMesaiTurleri = async () => {
@@ -161,41 +155,13 @@ const UnvanTanimlama: React.FC = () => {
 
   const handleMesaiPopupOpen = () => {
     setShowMesaiPopup(true);
-    setSelectedDays(['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz']);
-    setMesaiAdi('');
-    setMesaiSaati(8);
-    setMesaiTanımları([]);
-  };
-
-  const handleDayToggle = (gun: string) => {
-    setSelectedDays(prev => 
-      prev.includes(gun) 
-        ? prev.filter(g => g !== gun)
-        : [...prev, gun]
-    );
-  };
-
-  const handleMesaiEkle = () => {
-    if (!mesaiAdi.trim() || selectedDays.length === 0) {
-      showErrorToast('Lütfen mesai adı girin ve en az bir gün seçin');
-      return;
-    }
-
-    const yeniMesai: MesaiTanimi = {
-      id: Date.now().toString(),
-      gunler: [...selectedDays],
-      mesaiAdi: mesaiAdi.trim(),
-      mesaiSaati: mesaiSaati
-    };
-
-    setMesaiTanımları(prev => [...prev, yeniMesai]);
     setMesaiAdi('');
     setMesaiSaati(8);
   };
 
-  const handleMesaiKaydet = async () => {
-    if (!mesaiAdi || !selectedDays.length || !mesaiSaati) {
-      showErrorToast('Lütfen tüm alanları doldurun');
+  const handleMesaiEkle = async () => {
+    if (!mesaiAdi.trim() || !mesaiSaati || mesaiSaati <= 0) {
+      showErrorToast('Lütfen mesai adı girin ve geçerli bir saat girin');
       return;
     }
 
@@ -206,7 +172,7 @@ const UnvanTanimlama: React.FC = () => {
 
     const mesaiData = {
       mesai_adi: mesaiAdi,
-      gunler: JSON.stringify(selectedDays),
+      gunler: JSON.stringify(['Haftalık']),
       mesai_saati: parseInt(mesaiSaati.toString()),
       kurum_id: user.kurum_id,
       departman_id: user.departman_id,
@@ -228,10 +194,8 @@ const UnvanTanimlama: React.FC = () => {
         // Cache'i tekrar temizle ve fresh data çek
         clearTableCache('24');
         
-        // Modal'ı kapat ve formu temizle
-        setShowMesaiPopup(false);
+        // Formu temizle
         setMesaiAdi('');
-        setSelectedDays([]);
         setMesaiSaati(8);
         
         // Fresh data çek
@@ -248,9 +212,7 @@ const UnvanTanimlama: React.FC = () => {
     }
   };
 
-  const handleMesaiSil = (id: string) => {
-    setMesaiTanımları(prev => prev.filter(mesai => mesai.id !== id));
-  };
+
 
   // Mesai türünü veritabanından sil
   const handleMesaiTuruSil = async (mesaiId: number) => {
@@ -342,22 +304,22 @@ const UnvanTanimlama: React.FC = () => {
         ))}
       </div>
 
-      {/* Personel Gün Mesai Tanımlama Butonu */}
+      {/* Haftalık Mesai Tanımlama Butonu */}
       <button
         onClick={handleMesaiPopupOpen}
         className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors"
       >
         <Clock className="w-5 h-5" />
-        Personel Gün Mesai Tanımlama
+        Haftalık Mesai Tanımlama
       </button>
 
       {/* Mesai Tanımlama Popup */}
       {showMesaiPopup && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-bold text-gray-800">Personel Gün Mesai Tanımlama</h2>
+                <h2 className="text-xl font-bold text-gray-800">Haftalık Mesai Tanımlama</h2>
                 <button
                   onClick={() => setShowMesaiPopup(false)}
                   className="text-gray-500 hover:text-gray-700"
@@ -366,106 +328,41 @@ const UnvanTanimlama: React.FC = () => {
                 </button>
               </div>
 
-              {/* Üst Kısım - Gün Seçimi ve Mesai Ekleme */}
-              <div className="space-y-4 mb-6">
-                {/* Gün Seçimi */}
+              {/* Mesai Bilgileri */}
+              <div className="space-y-4">
                 <div>
-                  <p className="text-sm font-medium text-gray-700 mb-2">Vardiya Eklenecek Günler</p>
-                  <div className="grid grid-cols-7 gap-2">
-                    {gunler.map((gun) => (
-                      <button
-                        key={gun}
-                        onClick={() => handleDayToggle(gun)}
-                        className={`py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
-                          selectedDays.includes(gun)
-                            ? 'bg-green-500 text-white'
-                            : 'bg-gray-200 text-gray-600'
-                        }`}
-                      >
-                        {gun}
-                      </button>
-                    ))}
-                  </div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Mesai Adı
+                  </label>
+                  <input
+                    type="text"
+                    value={mesaiAdi}
+                    onChange={(e) => setMesaiAdi(e.target.value)}
+                    placeholder="Örn: Tam Mesai"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
                 </div>
-
-                {/* Mesai Bilgileri */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Mesai Adı
-                    </label>
-                    <input
-                      type="text"
-                      value={mesaiAdi}
-                      onChange={(e) => setMesaiAdi(e.target.value)}
-                      placeholder="Örn: Gündüz Mesai"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Mesai Saati
-                    </label>
-                    <input
-                      type="number"
-                      value={mesaiSaati}
-                      onChange={(e) => setMesaiSaati(Number(e.target.value))}
-                      min="1"
-                      max="24"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Haftalık Saat
+                  </label>
+                  <input
+                    type="number"
+                    value={mesaiSaati}
+                    onChange={(e) => setMesaiSaati(Number(e.target.value))}
+                    min="1"
+                    max="168"
+                    placeholder="40"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
                 </div>
 
                 <button
                   onClick={handleMesaiEkle}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                  className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
                 >
+                  <Plus className="w-5 h-5" />
                   Ekle
-                </button>
-              </div>
-
-              {/* Alt Kısım - Eklenen Mesai Tanımları */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-800">Eklenen Mesai Tanımları</h3>
-                
-                {mesaiTanımları.length === 0 ? (
-                  <p className="text-gray-500 text-center py-4">Henüz mesai tanımı eklenmedi</p>
-                ) : (
-                  <div className="space-y-3">
-                    {mesaiTanımları.map((mesai) => (
-                      <div key={mesai.id} className="bg-gray-50 p-4 rounded-lg flex justify-between items-center">
-                        <div>
-                          <p className="font-medium text-gray-800">{mesai.mesaiAdi}</p>
-                          <p className="text-sm text-gray-600">
-                            Günler: {mesai.gunler.join(', ')} | {mesai.mesaiSaati} saat
-                          </p>
-                        </div>
-                        <button
-                          onClick={() => handleMesaiSil(mesai.id)}
-                          className="text-red-500 hover:text-red-700"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Kaydet Butonu */}
-              <div className="mt-6 flex gap-3">
-                <button
-                  onClick={() => setShowMesaiPopup(false)}
-                  className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-2 px-4 rounded-lg transition-colors"
-                >
-                  İptal
-                </button>
-                <button
-                  onClick={handleMesaiKaydet}
-                  className="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
-                >
-                  Kaydet
                 </button>
               </div>
             </div>
@@ -497,7 +394,7 @@ const UnvanTanimlama: React.FC = () => {
                   <div className="flex-1">
                     <h3 className="font-semibold text-gray-800 text-lg mb-2">{mesai.mesai_adi}</h3>
                     <div className="text-gray-600 text-sm">
-                      <span className="font-medium">Günler:</span> {JSON.parse(mesai.gunler).join(', ')} | {mesai.mesai_saati} saat
+                      <span className="font-medium">Haftalık Kapasite:</span> {mesai.mesai_saati} saat
                     </div>
                   </div>
                   <button
