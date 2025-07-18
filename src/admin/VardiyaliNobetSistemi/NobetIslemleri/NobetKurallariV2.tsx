@@ -79,7 +79,7 @@ const NobetKurallariV2: React.FC = () => {
         
         // API'den çekilen vardiyaları varsayılan kural değerleriyle birleştir
         const defaultRules = shiftData.map((shift: any) => ({
-          vardiya: `${shift.name} (${shift.startHour}-${shift.endHour})`,
+          vardiya: `${shift.name} (${shift.startHour}-${shift.endHour}) - ${shift.calismaSaati} saat`,
           minDinlenme: 1,
           maxDinlenme: 3
         }));
@@ -134,9 +134,9 @@ const NobetKurallariV2: React.FC = () => {
     const maxBasla = addHoursToTime(izin.cikisSaati, Number(izin.maxIzin));
     
     setDinlenmeKurallari(prev => ([
-      ...prev.filter(k => k.vardiya !== `${v.name} (${v.startHour}-${v.endHour})`),
+      ...prev.filter(k => k.vardiya !== `${v.name} (${v.startHour}-${v.endHour}) - ${v.calismaSaati} saat`),
       {
-        vardiya: `${v.name} (${v.startHour}-${v.endHour})`,
+        vardiya: `${v.name} (${v.startHour}-${v.endHour}) - ${v.calismaSaati} saat`,
         cikisSaati: izin.cikisSaati,
         minDinlenme: Number(izin.minIzin),
         minBasla,
@@ -166,7 +166,7 @@ const NobetKurallariV2: React.FC = () => {
           >
             <option value="">Vardiya seçiniz</option>
             {vardiyaSecenekleri.map((v, i) => (
-              <option key={v.id} value={v.name}>{v.name} ({v.startHour}-{v.endHour})</option>
+              <option key={v.id} value={v.name}>{v.name} ({v.startHour}-{v.endHour}) - {v.calismaSaati} saat</option>
             ))}
           </select>
           <button
