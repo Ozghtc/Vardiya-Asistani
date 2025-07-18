@@ -458,7 +458,10 @@ const PersonelIzinIstekleri: React.FC = () => {
           izin_renk: izinRenk,
           saat_araligi: saatAraligi,
           saat_suresi: saatSuresi,
-          alan_kisaltma: alanKisaltma
+          alan_kisaltma: alanKisaltma,
+          // HZM renkli görünüm sütunları
+          alan_adi_color: alanRenk,
+          izin_turu_color: izinRenk
         };
 
         console.log('Kaydedilecek talep verisi:', talepData);

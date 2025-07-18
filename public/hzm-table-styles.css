@@ -1,0 +1,85 @@
+/* HZM Tablo Renk Stilleri */
+/* Bu CSS dosyası HZM veri tabanı arayüzünde renk kodlarını arka plan rengi olarak göstermek için kullanılır */
+
+/* Alan rengi sütunu için stil */
+td[data-field="alan_renk"] {
+  background-color: var(--cell-value) !important;
+  color: white !important;
+  font-weight: bold !important;
+  text-align: center !important;
+  border-radius: 4px !important;
+  padding: 4px 8px !important;
+}
+
+/* İzin rengi sütunu için stil */
+td[data-field="izin_renk"] {
+  background-color: var(--cell-value) !important;
+  color: white !important;
+  font-weight: bold !important;
+  text-align: center !important;
+  border-radius: 4px !important;
+  padding: 4px 8px !important;
+}
+
+/* Alan adı sütunu için renk uygulama */
+td[data-field="alan_adi"] {
+  background-color: var(--alan-renk) !important;
+  color: white !important;
+  font-weight: bold !important;
+  text-align: center !important;
+  border-radius: 4px !important;
+  padding: 4px 8px !important;
+}
+
+/* İzin türü sütunu için renk uygulama */
+td[data-field="izin_turu"] {
+  background-color: var(--izin-renk) !important;
+  color: white !important;
+  font-weight: bold !important;
+  text-align: center !important;
+  border-radius: 4px !important;
+  padding: 4px 8px !important;
+}
+
+/* Saat aralığı sütunu için stil */
+td[data-field="saat_araligi"] {
+  background-color: #f3f4f6 !important;
+  color: #374151 !important;
+  font-weight: 500 !important;
+  text-align: center !important;
+  border-radius: 4px !important;
+  padding: 4px 8px !important;
+}
+
+/* Saat süresi sütunu için stil */
+td[data-field="saat_suresi"] {
+  background-color: #dbeafe !important;
+  color: #1e40af !important;
+  font-weight: 500 !important;
+  text-align: center !important;
+  border-radius: 4px !important;
+  padding: 4px 8px !important;
+}
+
+/* Alan kısaltması sütunu için stil */
+td[data-field="alan_kisaltma"] {
+  background-color: #fef3c7 !important;
+  color: #92400e !important;
+  font-weight: 500 !important;
+  text-align: center !important;
+  border-radius: 4px !important;
+  padding: 4px 8px !important;
+}
+
+/* JavaScript ile dinamik renk uygulama için yardımcı sınıflar */
+.alan-renk-kirmizi { background-color: #DC2626 !important; }
+.alan-renk-yesil { background-color: #059669 !important; }
+.alan-renk-mavi { background-color: #2563EB !important; }
+.alan-renk-mor { background-color: #7C3AED !important; }
+.alan-renk-turuncu { background-color: #92400E !important; }
+
+.izin-renk-yesil { background-color: #10B981 !important; }
+.izin-renk-kirmizi { background-color: #EF4444 !important; }
+.izin-renk-mavi { background-color: #3B82F6 !important; }
+.izin-renk-turuncu { background-color: #F59E0B !important; }
+.izin-renk-mor { background-color: #8B5CF6 !important; } 
