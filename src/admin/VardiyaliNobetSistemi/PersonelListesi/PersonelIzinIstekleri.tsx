@@ -12,7 +12,8 @@ interface Personnel {
   tcno?: string;
   ad?: string;
   soyad?: string;
-  unvan?: string;
+  unvan?: string; // ID olarak geliyor
+  unvan_adi?: string; // Metin olarak da kaydediliyor
   email?: string;
   telefon?: string;
   kurum_id: string;
@@ -23,7 +24,6 @@ interface Personnel {
   ad_soyad?: string;
   personel_adi?: string;
   personel_soyadi?: string;
-  unvan_adi?: string;
 }
 
 interface IzinIstek {
@@ -109,6 +109,7 @@ const PersonelIzinIstekleri: React.FC = () => {
   const [izinTanimlamalari, setIzinTanimlamalari] = useState<IzinTanimlama[]>([]);
   const [alanTanimlamalari, setAlanTanimlamalari] = useState<AlanTanimlama[]>([]);
   const [vardiyaTanimlamalari, setVardiyaTanimlamalari] = useState<VardiyaTanimlama[]>([]);
+  const [unvanTanimlamalari, setUnvanTanimlamalari] = useState<any[]>([]);
 
   // Ay adını al
   const ayYil = startDate.toLocaleString('tr-TR', { month: 'long', year: 'numeric' });
@@ -201,6 +202,24 @@ const PersonelIzinIstekleri: React.FC = () => {
     }
   };
 
+  // Ünvan tanımlamalarını yükle
+  const loadUnvanTanimlamalari = async () => {
+    if (!user) return;
+    
+    try {
+      const rows = await apiCall('/api/v1/data/table/15');
+      const filteredUnvanlar = rows.filter((unvan: any) => 
+        unvan.kurum_id === user.kurum_id &&
+        unvan.departman_id === user.departman_id &&
+        unvan.birim_id === user.birim_id
+      );
+      setUnvanTanimlamalari(filteredUnvanlar);
+      console.log('📊 Yüklenen ünvanlar:', filteredUnvanlar);
+    } catch (error) {
+      console.error('Ünvan tanımlamaları yükleme hatası:', error);
+    }
+  };
+
   // Personel listesini yükle
   const loadPersonnel = async () => {
     if (!user) return;
@@ -270,6 +289,7 @@ const PersonelIzinIstekleri: React.FC = () => {
         loadIzinTanimlamalari(),
         loadAlanTanimlamalari(),
         loadVardiyaTanimlamalari(),
+        loadUnvanTanimlamalari(),
         loadPersonnel()
       ]);
       setLoading(false);
@@ -372,6 +392,20 @@ const PersonelIzinIstekleri: React.FC = () => {
       durum: istek.durum,
       aciklama: istek.aciklama
     };
+  };
+
+  // Ünvan adını al (ID'den metne çevir veya direkt metin kullan)
+  const getUnvanAdi = (person: Personnel) => {
+    // Önce direkt metin varsa onu kullan
+    if (person.unvan_adi) return person.unvan_adi;
+    
+    // ID varsa metne çevir
+    if (person.unvan) {
+      const unvan = unvanTanimlamalari.find(u => u.id.toString() === person.unvan!.toString());
+      return unvan ? unvan.unvan_adi : `Ünvan ${person.unvan}`;
+    }
+    
+    return 'Ünvan belirtilmemiş';
   };
 
   // Durum rengini al
@@ -502,7 +536,7 @@ const PersonelIzinIstekleri: React.FC = () => {
                         }
                       </div>
                       <div className="text-gray-500 text-xs">
-                        {person.unvan || person.unvan_adi || 'Ünvan belirtilmemiş'}
+                        {getUnvanAdi(person)}
                       </div>
                     </div>
                   </td>

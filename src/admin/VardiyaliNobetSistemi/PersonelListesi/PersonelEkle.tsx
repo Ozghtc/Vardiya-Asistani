@@ -182,11 +182,16 @@ const PersonelEkle: React.FC = () => {
       setSaving(true);
       setError(null);
 
+      // Seçilen ünvanın adını bul
+      const secilenUnvan = unvanlar.find(unvan => unvan.id.toString() === formData.unvan_id);
+      const unvanAdi = secilenUnvan ? secilenUnvan.unvan_adi : '';
+
       const personelData = {
         tcno: formData.tc, // API'de tcno olarak geçiyor
         ad: formData.ad,
         soyad: formData.soyad,
-        unvan: formData.unvan_id, // API'de unvan olarak geçiyor
+        unvan: formData.unvan_id, // ID olarak kaydet
+        unvan_adi: unvanAdi, // Metin olarak da kaydet
         mesai_hesap: formData.mesai_hesap,
         email: formData.email || '',
         telefon: formData.telefon || '',
