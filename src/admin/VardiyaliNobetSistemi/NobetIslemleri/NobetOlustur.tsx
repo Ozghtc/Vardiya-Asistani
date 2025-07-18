@@ -643,9 +643,9 @@ export default function NobetOlustur() {
                                 boxShadow: isSelected ? '0 0 0 6px rgba(0,0,0,0.18)' : undefined
                               }}
                             >
-                              {nobet.saat} Saatlik Mesai
+                              {nobet.name}-{nobet.saat}
                               <span className="text-xs font-normal mt-1" style={{color: getContrastYIQ(alanRenk)}}>
-                                {nobet.name}{saatAraligi ? ` (${saatAraligi})` : ''}
+                                {saatAraligi || ''}
                               </span>
                             </button>
                           );
