@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Calendar, User2, Plus, Filter, Clock, CalendarDays, X, MapPin, Save } from 'lucide-react';
+import { ArrowLeft, Calendar, User2, Plus, Filter, Clock, CalendarDays, X, MapPin, Save, AlertTriangle, CheckCircle } from 'lucide-react';
 import { useAuthContext } from '../../../contexts/AuthContext';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { tr } from 'date-fns/locale';
-import { addDays, differenceInCalendarDays } from 'date-fns';
+import { addDays, differenceInCalendarDays, format } from 'date-fns';
 
 interface Personnel {
   id: number;
@@ -61,6 +61,28 @@ interface VardiyaTanimlama {
   kurum_id: string;
   departman_id: string;
   birim_id: string;
+  gunler?: string[];
+  alan_id?: number;
+}
+
+interface VardiyaTanimlamaDetay {
+  id: number;
+  vardiya_adi: string;
+  baslangic_saati: string;
+  bitis_saati: string;
+  calisma_saati: number;
+  gunler: string[];
+  alan_id: number;
+  aktif_mi: boolean;
+}
+
+interface Alan {
+  id: number;
+  alan_adi: string;
+  name?: string;
+  renk: string;
+  color?: string;
+  aciklama?: string;
 }
 
 interface TalepItem {
@@ -102,6 +124,16 @@ const PersonelIzinIstekleri: React.FC = () => {
   const [izinTanimlamalari, setIzinTanimlamalari] = useState<IzinTanimlama[]>([]);
   const [alanTanimlamalari, setAlanTanimlamalari] = useState<AlanTanimlama[]>([]);
   const [vardiyaTanimlamalari, setVardiyaTanimlamalari] = useState<VardiyaTanimlama[]>([]);
+  
+  // Gelişmiş mesai seçimi için yeni state'ler
+  const [vardiyaTanimlamalariDetay, setVardiyaTanimlamalariDetay] = useState<VardiyaTanimlamaDetay[]>([]);
+  const [availableAlanlar, setAvailableAlanlar] = useState<Alan[]>([]);
+  const [unavailableAlanlar, setUnavailableAlanlar] = useState<Alan[]>([]);
+  const [selectedAlanObj, setSelectedAlanObj] = useState<Alan | null>(null);
+  const [availableMesailer, setAvailableMesailer] = useState<any[]>([]);
+  const [showWarning, setShowWarning] = useState(false);
+  const [warningMessage, setWarningMessage] = useState('');
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   // Ay adını al
   const ayYil = startDate.toLocaleString('tr-TR', { month: 'long', year: 'numeric' });
@@ -204,14 +236,34 @@ const PersonelIzinIstekleri: React.FC = () => {
           vardiya_adi: vardiya.vardiya_adi,
           baslangic_saati: vardiya.baslangic_saati,
           bitis_saati: vardiya.bitis_saati,
-          calisma_saati: vardiya.calisma_saati || 8,
+          calisma_saati: vardiya.calisma_saati,
           aktif_mi: vardiya.aktif_mi,
           kurum_id: vardiya.kurum_id,
           departman_id: vardiya.departman_id,
           birim_id: vardiya.birim_id
         }));
       setVardiyaTanimlamalari(filteredVardiyalar);
-      console.log('📊 Yüklenen vardiyalar:', filteredVardiyalar);
+      
+      // Detaylı vardiya tanımlamalarını da yükle
+      const detayliVardiyalar = rows
+        .filter((vardiya: any) => 
+          vardiya.kurum_id === user.kurum_id &&
+          vardiya.departman_id === user.departman_id &&
+          vardiya.birim_id === user.birim_id &&
+          vardiya.aktif_mi
+        )
+        .map((vardiya: any) => ({
+          id: vardiya.id,
+          vardiya_adi: vardiya.vardiya_adi,
+          baslangic_saati: vardiya.baslangic_saati,
+          bitis_saati: vardiya.bitis_saati,
+          calisma_saati: vardiya.calisma_saati,
+          gunler: vardiya.gunler ? JSON.parse(vardiya.gunler) : [],
+          alan_id: vardiya.alan_id,
+          aktif_mi: vardiya.aktif_mi
+        }));
+      setVardiyaTanimlamalariDetay(detayliVardiyalar);
+      console.log('📊 Yüklenen detaylı vardiyalar:', detayliVardiyalar);
     } catch (error) {
       console.error('Vardiya tanımlamaları yükleme hatası:', error);
     }
@@ -307,6 +359,131 @@ const PersonelIzinIstekleri: React.FC = () => {
     setEndDate(date);
   };
 
+  // Gelişmiş mesai seçimi fonksiyonları
+  const filterAlanlarByDate = (date: Date) => {
+    if (!date || vardiyaTanimlamalariDetay.length === 0) {
+      setAvailableAlanlar([]);
+      setUnavailableAlanlar(alanTanimlamalari.map(alan => ({
+        id: parseInt(alan.id),
+        alan_adi: alan.alan_adi,
+        renk: alan.renk
+      })));
+      return;
+    }
+
+    const dayOfWeek = date.getDay(); // 0: Pazar, 1: Pazartesi, ...
+    const dayNames = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
+    const currentDayName = dayNames[dayOfWeek];
+
+    const available: Alan[] = [];
+    const unavailable: Alan[] = [];
+
+    alanTanimlamalari.forEach(alan => {
+      // Bu alan için seçilen günde vardiya tanımı var mı?
+      const hasVardiya = vardiyaTanimlamalariDetay.some(vardiya => 
+        vardiya.alan_id === parseInt(alan.id) && 
+        vardiya.aktif_mi && 
+        vardiya.gunler && 
+        vardiya.gunler.includes(currentDayName)
+      );
+
+      const alanObj = {
+        id: parseInt(alan.id),
+        alan_adi: alan.alan_adi,
+        renk: alan.renk
+      };
+
+      if (hasVardiya) {
+        available.push(alanObj);
+      } else {
+        unavailable.push(alanObj);
+      }
+    });
+
+    setAvailableAlanlar(available);
+    setUnavailableAlanlar(unavailable);
+  };
+
+  const filterMesailerByAlan = (alan: Alan) => {
+    if (!alan || !selectedTarih) {
+      setAvailableMesailer([]);
+      return;
+    }
+
+    const dayOfWeek = selectedTarih.getDay();
+    const dayNames = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
+    const currentDayName = dayNames[dayOfWeek];
+
+    const mesailer = vardiyaTanimlamalariDetay
+      .filter(vardiya => 
+        vardiya.alan_id === alan.id && 
+        vardiya.aktif_mi && 
+        vardiya.gunler && 
+        vardiya.gunler.includes(currentDayName)
+      )
+      .map(vardiya => ({
+        id: vardiya.id,
+        name: vardiya.vardiya_adi,
+        baslangic: vardiya.baslangic_saati,
+        bitis: vardiya.bitis_saati,
+        saat: vardiya.calisma_saati,
+        hours: `${vardiya.baslangic_saati} - ${vardiya.bitis_saati}`
+      }));
+
+    setAvailableMesailer(mesailer);
+  };
+
+  const handleDateChange = (date: Date | null) => {
+    setSelectedDate(date);
+    setSelectedTarih(date);
+    setSelectedAlanObj(null);
+    setAvailableMesailer([]);
+    setShowWarning(false);
+    setSelectedMesaiSaati('');
+    
+    if (date) {
+      filterAlanlarByDate(date);
+    }
+  };
+
+  const handleAlanChange = (alan: Alan) => {
+    setSelectedAlanObj(alan);
+    setAvailableMesailer([]);
+    setShowWarning(false);
+    setSelectedMesaiSaati('');
+    
+    if (alan) {
+      filterMesailerByAlan(alan);
+    }
+  };
+
+  const checkWarning = () => {
+    if (!selectedAlanObj || !selectedTarih) return;
+
+    const dayOfWeek = selectedTarih.getDay();
+    const dayNames = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
+    const currentDayName = dayNames[dayOfWeek];
+
+    const hasVardiya = vardiyaTanimlamalariDetay.some(vardiya => 
+      vardiya.alan_id === selectedAlanObj.id && 
+      vardiya.aktif_mi && 
+      vardiya.gunler && 
+      vardiya.gunler.includes(currentDayName)
+    );
+
+    if (!hasVardiya) {
+      setShowWarning(true);
+      setWarningMessage(`Bu günde ${selectedAlanObj.alan_adi} alanı için nöbet tanımı yok`);
+    } else {
+      setShowWarning(false);
+      setWarningMessage('');
+    }
+  };
+
+  useEffect(() => {
+    checkWarning();
+  }, [selectedAlanObj, selectedTarih]);
+
   // Popup işlemleri
   const handleTipSecimi = (tip: 'nobet' | 'izin') => {
     // Eğer aynı tip seçilirse, seçimi kaldır (toggle)
@@ -333,7 +510,7 @@ const PersonelIzinIstekleri: React.FC = () => {
   const handleEkle = () => {
     if (!selectedTip || !selectedTarih) return;
     
-    if (selectedTip === 'nobet' && !selectedAlan) return;
+    if (selectedTip === 'nobet' && !selectedAlanObj) return;
     if (selectedTip === 'izin' && !selectedIzinTuru) return;
 
     // Tarih aralığı kontrolü
@@ -347,7 +524,7 @@ const PersonelIzinIstekleri: React.FC = () => {
       tip: selectedTip,
       tarih: selectedTarih,
       bitis_tarih: isTarihAraligi && selectedBitisTarih ? selectedBitisTarih : undefined,
-      alan: selectedTip === 'nobet' ? selectedAlan : undefined,
+      alan: selectedTip === 'nobet' ? selectedAlanObj?.alan_adi : undefined,
       izin_turu: selectedTip === 'izin' ? selectedIzinTuru : undefined,
       mesai_saati: selectedTip === 'nobet' ? selectedMesaiSaati : undefined,
       aciklama: aciklama || undefined
@@ -358,11 +535,16 @@ const PersonelIzinIstekleri: React.FC = () => {
     // Form'u temizle
     setSelectedTarih(null);
     setSelectedBitisTarih(null);
+    setSelectedDate(null);
     setIsTarihAraligi(false);
-    setSelectedAlan('');
+    setSelectedAlanObj(null);
     setSelectedIzinTuru('');
     setSelectedMesaiSaati('');
     setAciklama('');
+    setShowWarning(false);
+    setAvailableAlanlar([]);
+    setUnavailableAlanlar([]);
+    setAvailableMesailer([]);
   };
 
   const handleKaydet = async () => {
@@ -729,57 +911,153 @@ const PersonelIzinIstekleri: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Alan ve Mesai Seçimi (Nöbet için) */}
+                    {/* Gelişmiş Alan ve Mesai Seçimi (Nöbet için) */}
                     {selectedTip === 'nobet' && (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-4">
+                        {/* Tarih Seçimi - Öncelik */}
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Alan <span className="text-red-500">*</span>
+                            Tarih <span className="text-red-500">*</span>
                           </label>
-                          <select
-                            value={selectedAlan}
-                            onChange={(e) => setSelectedAlan(e.target.value)}
+                          <DatePicker
+                            selected={selectedTarih}
+                            onChange={(date: Date | null) => {
+                              setSelectedTarih(date);
+                              setSelectedDate(date);
+                              handleDateChange(date);
+                            }}
+                            dateFormat="dd/MM/yyyy"
+                            locale={tr}
                             className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 py-2 px-3"
-                          >
-                            <option value="">Alan seçin</option>
-                            {alanTanimlamalari.map((alan) => (
-                              <option key={alan.id} value={alan.alan_adi}>
-                                {alan.alan_adi}
-                              </option>
-                            ))}
-                          </select>
-                          {selectedAlan && (
-                            <div className="mt-2 text-xs text-gray-500">
-                              {alanTanimlamalari.find(alan => alan.alan_adi === selectedAlan)?.renk && (
-                                <div className="flex items-center gap-2">
-                                  <div 
-                                    className="w-3 h-3 rounded-full" 
-                                    style={{ backgroundColor: alanTanimlamalari.find(alan => alan.alan_adi === selectedAlan)?.renk }}
-                                  ></div>
-                                  <span>Renk: {alanTanimlamalari.find(alan => alan.alan_adi === selectedAlan)?.renk}</span>
-                                </div>
-                              )}
-                            </div>
+                            placeholderText="Önce günü seçin"
+                            minDate={startDate}
+                            maxDate={endDate}
+                          />
+                          {!selectedTarih && (
+                            <p className="mt-1 text-sm text-orange-600 flex items-center gap-1">
+                              <AlertTriangle className="w-4 h-4" />
+                              Önce günü seçin
+                            </p>
                           )}
                         </div>
-                        
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Mesai Saatleri
-                          </label>
-                          <select
-                            value={selectedMesaiSaati}
-                            onChange={(e) => setSelectedMesaiSaati(e.target.value)}
-                            className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 py-2 px-3"
-                          >
-                            <option value="">Mesai saati seçin</option>
-                            {vardiyaTanimlamalari.map((vardiya) => (
-                              <option key={vardiya.id} value={`${vardiya.baslangic_saati}-${vardiya.bitis_saati}`}>
-                                {vardiya.baslangic_saati}-{vardiya.bitis_saati} ({vardiya.vardiya_adi})
-                              </option>
-                            ))}
-                          </select>
-                        </div>
+
+                        {/* Alan Seçimi - Gün bazlı filtreleme */}
+                        {selectedTarih && (
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Alan <span className="text-red-500">*</span>
+                            </label>
+                            
+                            {/* Bu günde olan alanlar */}
+                            {availableAlanlar.length > 0 && (
+                              <div className="mb-4">
+                                <h4 className="text-sm font-medium text-green-700 mb-2 flex items-center gap-1">
+                                  <CheckCircle className="w-4 h-4" />
+                                  Bu günde olan alanlar
+                                </h4>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                  {availableAlanlar.map((alan) => (
+                                    <button
+                                      key={alan.id}
+                                      onClick={() => handleAlanChange(alan)}
+                                      className={`p-3 rounded-lg border text-left transition-colors ${
+                                        selectedAlanObj?.id === alan.id
+                                          ? 'border-blue-500 bg-blue-50'
+                                          : 'border-gray-200 hover:border-gray-300'
+                                      }`}
+                                    >
+                                      <div className="flex items-center gap-2">
+                                        <div 
+                                          className="w-4 h-4 rounded-full" 
+                                          style={{ backgroundColor: alan.renk }}
+                                        />
+                                        <span className="font-medium">{alan.alan_adi}</span>
+                                      </div>
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Bu günde olmayan alanlar */}
+                            {unavailableAlanlar.length > 0 && (
+                              <div>
+                                <h4 className="text-sm font-medium text-orange-700 mb-2 flex items-center gap-1">
+                                  <AlertTriangle className="w-4 h-4" />
+                                  Bu günde olmayan alanlar
+                                </h4>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                  {unavailableAlanlar.map((alan) => (
+                                    <button
+                                      key={alan.id}
+                                      onClick={() => handleAlanChange(alan)}
+                                      className={`p-3 rounded-lg border text-left transition-colors opacity-60 ${
+                                        selectedAlanObj?.id === alan.id
+                                          ? 'border-orange-500 bg-orange-50'
+                                          : 'border-gray-200 hover:border-gray-300'
+                                      }`}
+                                    >
+                                      <div className="flex items-center gap-2">
+                                        <div 
+                                          className="w-4 h-4 rounded-full" 
+                                          style={{ backgroundColor: alan.renk }}
+                                        />
+                                        <span className="font-medium">{alan.alan_adi}</span>
+                                      </div>
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Uyarı mesajı */}
+                            {showWarning && (
+                              <div className="mt-3 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                                <div className="flex items-center gap-2 text-orange-700">
+                                  <AlertTriangle className="w-4 h-4" />
+                                  <span className="text-sm font-medium">{warningMessage}</span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Mesai Seçimi - Alan bazlı filtreleme */}
+                        {selectedTarih && selectedAlanObj && (
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Mesai Saatleri
+                            </label>
+                            
+                            {availableMesailer.length > 0 ? (
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                {availableMesailer.map((mesai) => (
+                                  <button
+                                    key={mesai.id}
+                                    onClick={() => setSelectedMesaiSaati(mesai.hours)}
+                                    className={`p-3 rounded-lg border text-left transition-colors ${
+                                      selectedMesaiSaati === mesai.hours
+                                        ? 'border-blue-500 bg-blue-50'
+                                        : 'border-gray-200 hover:border-gray-300'
+                                    }`}
+                                  >
+                                    <div className="font-medium">{mesai.name}</div>
+                                    <div className="text-sm text-gray-600">{mesai.hours} ({mesai.saat} saat)</div>
+                                  </button>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                                <p className="text-sm text-gray-500">
+                                  {showWarning 
+                                    ? "Bu alan için bu günde mesai tanımı yok"
+                                    : "Bu alan için mesai seçenekleri yükleniyor..."
+                                  }
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     )}
 
@@ -838,7 +1116,7 @@ const PersonelIzinIstekleri: React.FC = () => {
                     <div className="flex justify-end">
                       <button
                         onClick={handleEkle}
-                        disabled={!selectedTarih || (selectedTip === 'nobet' && !selectedAlan) || (selectedTip === 'izin' && !selectedIzinTuru)}
+                        disabled={!selectedTarih || (selectedTip === 'nobet' && !selectedAlanObj) || (selectedTip === 'izin' && !selectedIzinTuru)}
                         className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
                       >
                         <Plus className="w-4 h-4" />

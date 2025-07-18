@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Check, X, Clock, Save } from 'lucide-react';
 import { useCapitalization } from '../../../hooks/useCapitalization';
 import { useAuthContext } from '../../../contexts/AuthContext';
+import { useToast } from '../../../components/ui/ToastContainer';
 
 const colorMap = {
   '#DC2626': 'Kırmızı',
@@ -76,6 +77,7 @@ const vardiyalar = [
 
 const YeniAlan: React.FC = () => {
   const { user } = useAuthContext();
+  const { showToast } = useToast();
   const [name, handleNameChange] = useCapitalization('');
   const [description, setDescription] = useState('');
   const [selectedColor, setSelectedColor] = useState('');
@@ -92,6 +94,7 @@ const YeniAlan: React.FC = () => {
   const [selectedShiftDays, setSelectedShiftDays] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [hasShownCompletionToast, setHasShownCompletionToast] = useState(false);
 
   // Textarea için ayrı handler
   const handleDescriptionTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -203,6 +206,14 @@ const YeniAlan: React.FC = () => {
     const remainingDays = selectedDays.filter(day => getRemainingHoursForDay(day) > 0);
     setSelectedShiftDays(remainingDays);
     
+    // Toast notification göster
+    showToast({
+      type: 'success',
+      title: 'Vardiya başarıyla eklendi!',
+      message: `${shift.name} vardiyası seçilen günlere eklendi.`,
+      duration: 3000
+    });
+    
     setIsProcessing(false);
   };
 
@@ -251,7 +262,15 @@ const handleSaveToDatabase = async () => {
     if (response.ok) {
       const result = await response.json();
       console.log('✅ Kaydetme başarılı:', result);
-      alert('Alan başarıyla kaydedildi!');
+      
+      // Toast notification göster
+      showToast({
+        type: 'success',
+        title: 'Alan başarıyla kaydedildi!',
+        message: 'Tüm günlere vardiya başarılı bir şekilde eklendi.',
+        duration: 4000
+      });
+      
       // Sayfayı eski haline döndür
       setAreas([]);
       setShowShiftSettings(false);
@@ -271,7 +290,14 @@ const handleSaveToDatabase = async () => {
         console.error('❌ Response parse hatası:', parseError);
         errorMessage = `HTTP ${response.status}: ${response.statusText}`;
       }
-      alert(`Kaydetme hatası: ${errorMessage}`);
+      
+      // Hata toast notification'ı göster
+      showToast({
+        type: 'error',
+        title: 'Kaydetme hatası!',
+        message: errorMessage,
+        duration: 5000
+      });
     }
   } catch (error: any) {
     console.error('🚨 Kaydetme hatası:', error);
@@ -285,7 +311,13 @@ const handleSaveToDatabase = async () => {
       errorMessage = error?.message || 'Bilinmeyen hata';
     }
     
-    alert(`Kaydetme sırasında bir hata oluştu: ${errorMessage}`);
+    // Hata toast notification'ı göster
+    showToast({
+      type: 'error',
+      title: 'Kaydetme hatası!',
+      message: `Kaydetme sırasında bir hata oluştu: ${errorMessage}`,
+      duration: 5000
+    });
   } finally {
     setIsSaving(false);
     setIsProcessing(false);
@@ -384,6 +416,19 @@ const handleSaveToDatabase = async () => {
 
   // Tüm günlerin kalan mesaisi 0 mı kontrol et
   const allDaysCompleted = selectedDays.every(day => getRemainingHoursForDay(day) === 0);
+
+  // Tüm günler tamamlandığında toast notification göster
+  React.useEffect(() => {
+    if (showShiftAddition && allDaysCompleted && !hasShownCompletionToast) {
+      showToast({
+        type: 'success',
+        title: 'Tüm günlere vardiya başarılı bir şekilde eklendi!',
+        message: 'Bu alan için tüm günlere vardiya tanımlaması tamamlandı.',
+        duration: 4000
+      });
+      setHasShownCompletionToast(true);
+    }
+  }, [showShiftAddition, allDaysCompleted, hasShownCompletionToast, showToast]);
 
   if (showShiftSettings) {
     return (
@@ -735,30 +780,21 @@ const handleSaveToDatabase = async () => {
           </div>
         )}
 
-        {/* Tüm günlere vardiya eklendiğinde gösterilecek mesaj */}
+        {/* Kaydet Butonu - Tüm günler tamamlandığında göster */}
         {showShiftAddition && allDaysCompleted && (
-          <div className="bg-green-50 border border-green-200 rounded-xl p-4 sm:p-6 mt-6">
-            <div className="flex items-center gap-2">
-              <Check className="w-5 h-5 text-green-600" />
-              <h3 className="text-green-800 font-semibold">Tüm günlere vardiya eklendi!</h3>
-            </div>
-            <p className="text-green-700 mt-2">Bu alan için tüm günlere vardiya tanımlaması tamamlandı.</p>
-            
-            {/* Kaydet Butonu */}
-            <div className="mt-4">
-              <button
-                onClick={handleSaveToDatabase}
-                disabled={isSaving || isProcessing}
-                className={`w-full py-3 rounded-lg transition-colors flex items-center justify-center gap-2 ${
-                  isSaving || isProcessing
-                    ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
-                    : 'bg-red-600 hover:bg-red-700 text-white'
-                }`}
-              >
-                <Save className="w-4 h-4" />
-                {isSaving ? 'Kaydediliyor...' : isProcessing ? 'İşleniyor...' : 'Kaydet'}
-              </button>
-            </div>
+          <div className="mt-6">
+            <button
+              onClick={handleSaveToDatabase}
+              disabled={isSaving || isProcessing}
+              className={`w-full py-3 rounded-lg transition-colors flex items-center justify-center gap-2 ${
+                isSaving || isProcessing
+                  ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                  : 'bg-green-600 hover:bg-green-700 text-white'
+              }`}
+            >
+              <Save className="w-4 h-4" />
+              {isSaving ? 'Kaydediliyor...' : isProcessing ? 'İşleniyor...' : 'Kaydet'}
+            </button>
           </div>
         )}
       </div>

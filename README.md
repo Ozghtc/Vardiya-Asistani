@@ -2,17 +2,17 @@
 
 Bu proje, React ve Vite ile geliştirilmiş bir vardiya yönetim sistemidir.
 
-## Başlatma
+## Canlı Uygulama
 
-Projeyi geliştirme modunda başlatmak için aşağıdaki komutu kullanabilirsiniz:
-
-```bash
-npm run dev
-```
-
-Başlatıldıktan sonra uygulamaya şu adresten erişebilirsiniz:
+Uygulamaya şu adresten erişebilirsiniz:
 
 [https://vardiyaasistani.netlify.app](https://vardiyaasistani.netlify.app)
+
+## Production Ortamı
+
+Bu uygulama tamamen production ortamında çalışmaktadır:
+- **Frontend**: https://vardiyaasistani.netlify.app
+- **Backend**: https://hzmbackandveritabani-production-c660.up.railway.app
 
 ## Kurulum
 

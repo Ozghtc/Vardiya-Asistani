@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Calendar, ChevronDown, ChevronUp, Clock, Calendar as CalendarIcon, User2, Save, Trash2, X, ChevronLeft } from 'lucide-react';
+import { Calendar, ChevronDown, ChevronUp, Clock, Calendar as CalendarIcon, User2, Save, Trash2, X, ChevronLeft, AlertTriangle, CheckCircle } from 'lucide-react';
 import DatePicker, { registerLocale } from "react-datepicker";
 import { tr } from "date-fns/locale/tr";
-import { startOfMonth, endOfMonth, addDays, differenceInCalendarDays } from "date-fns";
+import { startOfMonth, endOfMonth, addDays, differenceInCalendarDays, format } from "date-fns";
 import "react-datepicker/dist/react-datepicker.css";
 import { useNavigate } from 'react-router-dom';
 import { apiRequest } from '../../../lib/api';
@@ -13,6 +13,27 @@ interface Personnel {
   name: string;
   surname: string;
   title: string;
+}
+
+interface VardiyaTanimlama {
+  id: number;
+  vardiya_adi: string;
+  baslangic_saati: string;
+  bitis_saati: string;
+  calisma_saati: number;
+  gunler: string[];
+  alan_id: number;
+  aktif_mi: boolean;
+}
+
+interface Alan {
+  id: number;
+  alan_adi: string;
+  name?: string;
+  renk: string;
+  color?: string;
+  aciklama?: string;
+  nobetler?: any[];
 }
 
 export default function NobetOlustur() {
@@ -33,7 +54,7 @@ export default function NobetOlustur() {
   const [modalDay, setModalDay] = useState<number | null>(null);
   const [modalSelectedAlan, setModalSelectedAlan] = useState<string>('');
   const [modalSelectedMesai, setModalSelectedMesai] = useState<any>(null);
-  const [modalAlanlar, setModalAlanlar] = useState<any[]>([]);
+  const [modalAlanlar, setModalAlanlar] = useState<Alan[]>([]);
   const [modalNobetler, setModalNobetler] = useState<any[]>([]);
   const [cellAssignments, setCellAssignments] = useState<{ [key: string]: { alan?: string; mesai?: any; istekOzet?: string } }>({});
   const [modalDateObj, setModalDateObj] = useState<Date | null>(null);
@@ -42,7 +63,196 @@ export default function NobetOlustur() {
   const [personelIstekTurleri, setPersonelIstekTurleri] = useState<any[]>([]);
   const [selectedIstekTuru, setSelectedIstekTuru] = useState('');
   const [eklenenIstekOzet, setEklenenIstekOzet] = useState<string | null>(null);
+  
+  // Yeni state'ler gelişmiş mesai seçimi için
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [vardiyaTanimlamalari, setVardiyaTanimlamalari] = useState<VardiyaTanimlama[]>([]);
+  const [availableAlanlar, setAvailableAlanlar] = useState<Alan[]>([]);
+  const [unavailableAlanlar, setUnavailableAlanlar] = useState<Alan[]>([]);
+  const [selectedAlan, setSelectedAlan] = useState<Alan | null>(null);
+  const [availableMesailer, setAvailableMesailer] = useState<any[]>([]);
+  const [showWarning, setShowWarning] = useState(false);
+  const [warningMessage, setWarningMessage] = useState('');
+  const [eklenenTalepler, setEklenenTalepler] = useState<any[]>([]);
+  const [istekTuru, setIstekTuru] = useState<'nobet' | 'izin'>('nobet');
+  
   const navigate = useNavigate();
+
+  // Vardiya tanımlamalarını yükle
+  const loadVardiyaTanimlamalari = async () => {
+    try {
+      const response = await apiRequest('/api/v1/data/table/17');
+      if (response.success) {
+        setVardiyaTanimlamalari(response.data.rows);
+      }
+    } catch (error) {
+      console.error('Vardiya tanımlamaları yükleme hatası:', error);
+    }
+  };
+
+  // Alanları yükle
+  const loadAlanlar = async () => {
+    try {
+      const response = await apiRequest('/api/v1/data/table/18');
+      if (response.success) {
+        setModalAlanlar(response.data.rows);
+      }
+    } catch (error) {
+      console.error('Alanlar yükleme hatası:', error);
+    }
+  };
+
+  // Seçilen güne göre alanları filtrele
+  const filterAlanlarByDate = (date: Date) => {
+    if (!date || vardiyaTanimlamalari.length === 0) {
+      setAvailableAlanlar([]);
+      setUnavailableAlanlar(modalAlanlar);
+      return;
+    }
+
+    const dayOfWeek = date.getDay(); // 0: Pazar, 1: Pazartesi, ...
+    const dayNames = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
+    const currentDayName = dayNames[dayOfWeek];
+
+    const available: Alan[] = [];
+    const unavailable: Alan[] = [];
+
+    modalAlanlar.forEach(alan => {
+      // Bu alan için seçilen günde vardiya tanımı var mı?
+      const hasVardiya = vardiyaTanimlamalari.some(vardiya => 
+        vardiya.alan_id === alan.id && 
+        vardiya.aktif_mi && 
+        vardiya.gunler && 
+        vardiya.gunler.includes(currentDayName)
+      );
+
+      if (hasVardiya) {
+        available.push(alan);
+      } else {
+        unavailable.push(alan);
+      }
+    });
+
+    setAvailableAlanlar(available);
+    setUnavailableAlanlar(unavailable);
+  };
+
+  // Seçilen alana göre mesaileri filtrele
+  const filterMesailerByAlan = (alan: Alan) => {
+    if (!alan || !selectedDate) {
+      setAvailableMesailer([]);
+      return;
+    }
+
+    const dayOfWeek = selectedDate.getDay();
+    const dayNames = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
+    const currentDayName = dayNames[dayOfWeek];
+
+    const mesailer = vardiyaTanimlamalari
+      .filter(vardiya => 
+        vardiya.alan_id === alan.id && 
+        vardiya.aktif_mi && 
+        vardiya.gunler && 
+        vardiya.gunler.includes(currentDayName)
+      )
+      .map(vardiya => ({
+        id: vardiya.id,
+        name: vardiya.vardiya_adi,
+        baslangic: vardiya.baslangic_saati,
+        bitis: vardiya.bitis_saati,
+        saat: vardiya.calisma_saati,
+        hours: `${vardiya.baslangic_saati} - ${vardiya.bitis_saati}`
+      }));
+
+    setAvailableMesailer(mesailer);
+  };
+
+  // Tarih seçimi değiştiğinde
+  const handleDateChange = (date: Date | null) => {
+    setSelectedDate(date);
+    setSelectedAlan(null);
+    setAvailableMesailer([]);
+    setShowWarning(false);
+    
+    if (date) {
+      filterAlanlarByDate(date);
+    }
+  };
+
+  // Alan seçimi değiştiğinde
+  const handleAlanChange = (alan: Alan) => {
+    setSelectedAlan(alan);
+    setAvailableMesailer([]);
+    setShowWarning(false);
+    
+    if (alan) {
+      filterMesailerByAlan(alan);
+    }
+  };
+
+  // Mesai seçimi
+  const handleMesaiSelect = (mesai: any) => {
+    setModalSelectedMesai(mesai);
+    setShowWarning(false);
+  };
+
+  // Talep ekleme
+  const handleAddRequest = () => {
+    if (!selectedDate || !selectedAlan) return;
+
+    const newRequest = {
+      id: Date.now(),
+      date: selectedDate,
+      alan: selectedAlan,
+      mesai: modalSelectedMesai,
+      type: istekTuru,
+      warning: showWarning
+    };
+
+    setEklenenTalepler(prev => [...prev, newRequest]);
+    
+    // Formu sıfırla
+    setSelectedDate(null);
+    setSelectedAlan(null);
+    setModalSelectedMesai(null);
+    setShowWarning(false);
+    setAvailableAlanlar([]);
+    setUnavailableAlanlar([]);
+    setAvailableMesailer([]);
+  };
+
+  // Uyarı kontrolü
+  const checkWarning = () => {
+    if (!selectedAlan || !selectedDate) return;
+
+    const dayOfWeek = selectedDate.getDay();
+    const dayNames = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
+    const currentDayName = dayNames[dayOfWeek];
+
+    const hasVardiya = vardiyaTanimlamalari.some(vardiya => 
+      vardiya.alan_id === selectedAlan.id && 
+      vardiya.aktif_mi && 
+      vardiya.gunler && 
+      vardiya.gunler.includes(currentDayName)
+    );
+
+    if (!hasVardiya) {
+      setShowWarning(true);
+      setWarningMessage(`Bu günde ${selectedAlan.alan_adi} alanı için nöbet tanımı yok`);
+    } else {
+      setShowWarning(false);
+      setWarningMessage('');
+    }
+  };
+
+  useEffect(() => {
+    checkWarning();
+  }, [selectedAlan, selectedDate]);
+
+  useEffect(() => {
+    loadVardiyaTanimlamalari();
+    loadAlanlar();
+  }, []);
 
   useEffect(() => {
     const year = currentMonth.getFullYear();
@@ -57,9 +267,9 @@ export default function NobetOlustur() {
 
     // KURAL 16: Production ortamında localStorage yasak - demo data sistemi
     const demoPersonel = [
-      { id: 1, name: 'Dr. Ahmet Yılmaz', birim: 'Acil Servis' },
-      { id: 2, name: 'Hemşire Ayşe Kaya', birim: 'Dahiliye' },
-      { id: 3, name: 'Dr. Mehmet Öz', birim: 'Cerrahi' }
+      { id: 1, name: 'Dr. Ahmet', surname: 'Yılmaz', title: 'Acil Servis' },
+      { id: 2, name: 'Hemşire Ayşe', surname: 'Kaya', title: 'Dahiliye' },
+      { id: 3, name: 'Dr. Mehmet', surname: 'Öz', title: 'Cerrahi' }
     ];
     setPersonnel(demoPersonel);
 

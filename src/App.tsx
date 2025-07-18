@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { DepartmanBirimProvider } from './admin/VardiyaliNobetSistemi/Tanimlamalar/DepartmanBirimContext';
 import { AuthProvider } from './contexts/AuthContext';
+import { ToastProvider } from './components/ui/ToastContainer';
 
 // Layout components
 import Layout from './components/layout/Layout';
@@ -35,7 +36,8 @@ import Register from './admin/Register';
 function App() {
   return (
     <AuthProvider>
-      <Router>
+      <ToastProvider>
+        <Router>
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/admin" element={
@@ -139,6 +141,7 @@ function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
+      </ToastProvider>
     </AuthProvider>
   );
 }

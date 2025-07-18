@@ -246,8 +246,6 @@ X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7
 - `https://vardiyaasistani.netlify.app`
 - `https://hzmfrontendveritabani.netlify.app`
 - `https://hzmsoft.com`
-- `http://localhost:5173` (development)
-- `http://localhost:5174` (development)
 
 ### JavaScript/Fetch Örneği:
 ```javascript
