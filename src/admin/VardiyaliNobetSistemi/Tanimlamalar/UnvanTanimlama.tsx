@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuthContext } from '../../../contexts/AuthContext';
-import { apiRequest, getTableData, addTableData, deleteTableData, clearTableCache, updateTableData } from '../../../lib/api';
-import { Trash2, Plus, Clock } from 'lucide-react';
+import { apiRequest, getTableData, addTableData, deleteTableData, clearTableCache, updateTableData, clearAllCache } from '../../../lib/api';
+import { Trash2, Plus, Clock, CheckCircle, X } from 'lucide-react';
 
 interface Unvan {
   id: number;
@@ -47,21 +47,23 @@ const UnvanTanimlama: React.FC = () => {
 
   const gunler = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
 
-  // Mesai türlerini yükle
+  // Mesai türlerini fresh olarak yükle
   const loadMesaiTurleri = async () => {
     if (!user?.kurum_id || !user?.departman_id || !user?.birim_id) return;
-    
+
     setMesaiLoading(true);
     try {
-      console.log('🔍 Mesai türleri yükleniyor...');
+      // Cache'i zorla temizle
+      clearTableCache('24');
       
+      // Fresh data çek
       const filterParams = `kurum_id=${user.kurum_id}&departman_id=${user.departman_id}&birim_id=${user.birim_id}`;
-      const data = await getTableData('24', filterParams);
+      const data = await getTableData('24', filterParams, true); // Force fresh
       
-      console.log('📦 Mesai türleri yüklendi:', data);
+      console.log('📋 Fresh mesai türleri:', data);
       setKaydedilenMesaiTurleri(data);
     } catch (error) {
-      console.error('🚨 Mesai türleri yüklenemedi:', error);
+      console.error('Mesai türleri yüklenirken hata:', error);
     } finally {
       setMesaiLoading(false);
     }
@@ -175,7 +177,7 @@ const UnvanTanimlama: React.FC = () => {
 
   const handleMesaiEkle = () => {
     if (!mesaiAdi.trim() || selectedDays.length === 0) {
-      alert('Lütfen mesai adı girin ve en az bir gün seçin');
+      showErrorToast('Lütfen mesai adı girin ve en az bir gün seçin');
       return;
     }
 
@@ -192,19 +194,20 @@ const UnvanTanimlama: React.FC = () => {
   };
 
   const handleMesaiKaydet = async () => {
-    if (mesaiTanımları.length === 0) {
-      alert('En az bir mesai tanımı ekleyin.');
+    if (!mesaiAdi || !selectedDays.length || !mesaiSaati) {
+      showErrorToast('Lütfen tüm alanları doldurun');
       return;
     }
+
     if (!user?.kurum_id || !user?.departman_id || !user?.birim_id) {
-      alert('Kullanıcı kurum, departman veya birim bilgisi eksik!');
+      showErrorToast('Kullanıcı bilgisi bulunamadı');
       return;
     }
-    const mesai = mesaiTanımları[mesaiTanımları.length - 1];
-    const payload = {
-      mesai_adi: mesai.mesaiAdi,
-      gunler: JSON.stringify(mesai.gunler),
-      mesai_saati: mesai.mesaiSaati,
+
+    const mesaiData = {
+      mesai_adi: mesaiAdi,
+      gunler: JSON.stringify(selectedDays),
+      mesai_saati: parseInt(mesaiSaati.toString()),
       kurum_id: user.kurum_id,
       departman_id: user.departman_id,
       birim_id: user.birim_id,
@@ -212,31 +215,36 @@ const UnvanTanimlama: React.FC = () => {
     };
 
     try {
-      console.log('API gonderilen veri:', payload);
-      const result = await addTableData('24', payload);
+      console.log('🚀 Mesai kaydediliyor:', mesaiData);
       
-      console.log('📥 API yanıtı:', result);
+      // Tüm cache'i temizle
+      clearAllCache();
+      
+      const result = await addTableData('24', mesaiData);
+      
       if (result.success) {
-        setKaydedilenMesai(result.data);
-        console.log('✅ Kayıt başarılı:', result.data);
+        console.log('✅ Mesai başarıyla kaydedildi');
         
-        // Kaydetme başarılı olduktan sonra tüm mesai türlerini yeniden yükle
-        await loadMesaiTurleri();
+        // Cache'i tekrar temizle ve fresh data çek
+        clearTableCache('24');
         
-        // Popup'ı kapat ve formu temizle
+        // Modal'ı kapat ve formu temizle
         setShowMesaiPopup(false);
-        setMesaiTanımları([]);
         setMesaiAdi('');
+        setSelectedDays([]);
         setMesaiSaati(8);
         
-        alert('Mesai türü başarıyla kaydedildi!');
+        // Fresh data çek
+        await loadMesaiTurleri();
+        
+        showSuccessToast('Mesai türü başarıyla kaydedildi!');
       } else {
-        console.error('❌ API Hatası:', result.error);
-        alert('Kayıt başarısız: ' + (result.error || 'Bilinmeyen hata'));
+        console.error('❌ Mesai kaydetme hatası:', result.error);
+        showErrorToast('Mesai türü kaydedilemedi: ' + (result.error || 'Bilinmeyen hata'));
       }
-    } catch (err) {
-      console.error('🚨 Kayıt hatası:', err);
-      alert('Kayıt sırasında hata oluştu: ' + err);
+    } catch (error) {
+      console.error('🚨 Mesai kaydetme hatası:', error);
+      showErrorToast('Mesai türü kaydedilirken hata oluştu');
     }
   };
 
@@ -263,23 +271,42 @@ const UnvanTanimlama: React.FC = () => {
       if (result.success) {
         console.log('✅ Mesai türü başarıyla silindi');
         
-        // Cache'i tekrar temizle ve listeyi yeniden yükle
-        clearTableCache('24');
+        // Cache'i tekrar temizle ve fresh data çek
+        clearAllCache();
+        await loadMesaiTurleri();
         
-        if (user?.kurum_id && user?.departman_id && user?.birim_id) {
-          const filterParams = `kurum_id=${user.kurum_id}&departman_id=${user.departman_id}&birim_id=${user.birim_id}`;
-          const data = await getTableData('24', filterParams, true);
-          setKaydedilenMesaiTurleri(data);
-        }
-        alert('Mesai türü başarıyla silindi!');
+        showSuccessToast('Mesai türü başarıyla silindi!');
       } else {
         console.error('❌ Silme API Hatası:', result.error);
-        alert('Mesai türü silinemedi: ' + (result.error || 'Bilinmeyen hata'));
+        showErrorToast('Mesai türü silinemedi: ' + (result.error || 'Bilinmeyen hata'));
       }
     } catch (error) {
       console.error('🚨 Mesai türü silme hatası:', error);
-      alert('Mesai türü silinirken hata oluştu: ' + error);
+      showErrorToast('Mesai türü silinirken hata oluştu');
     }
+  };
+
+  // Toast mesajları
+  const [toasts, setToasts] = useState<Array<{id: number, message: string, type: 'success' | 'error'}>>([]);
+
+  const showSuccessToast = (message: string) => {
+    const id = Date.now();
+    setToasts(prev => [...prev, { id, message, type: 'success' }]);
+    setTimeout(() => {
+      setToasts(prev => prev.filter(toast => toast.id !== id));
+    }, 3000);
+  };
+
+  const showErrorToast = (message: string) => {
+    const id = Date.now();
+    setToasts(prev => [...prev, { id, message, type: 'error' }]);
+    setTimeout(() => {
+      setToasts(prev => prev.filter(toast => toast.id !== id));
+    }, 4000);
+  };
+
+  const removeToast = (id: number) => {
+    setToasts(prev => prev.filter(toast => toast.id !== id));
   };
 
   if (!user?.kurum_id || !user?.departman_id || !user?.birim_id) {
@@ -288,6 +315,33 @@ const UnvanTanimlama: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Toast Container */}
+      <div className="fixed top-4 right-4 z-50 space-y-2">
+        {toasts.map(toast => (
+          <div
+            key={toast.id}
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg min-w-[300px] animate-slide-in ${
+              toast.type === 'success' 
+                ? 'bg-green-100 text-green-800 border border-green-200' 
+                : 'bg-red-100 text-red-800 border border-red-200'
+            }`}
+          >
+            {toast.type === 'success' ? (
+              <CheckCircle className="w-5 h-5 text-green-600" />
+            ) : (
+              <X className="w-5 h-5 text-red-600" />
+            )}
+            <span className="flex-1 font-medium">{toast.message}</span>
+            <button
+              onClick={() => removeToast(toast.id)}
+              className="text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        ))}
+      </div>
+
       {/* Personel Gün Mesai Tanımlama Butonu */}
       <button
         onClick={handleMesaiPopupOpen}
