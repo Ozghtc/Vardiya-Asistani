@@ -741,12 +741,23 @@ const PersonelIzinIstekleri: React.FC = () => {
                     return (
                       <td key={dateObj.toISOString()} className="py-3 px-3 text-center text-sm align-top">
                         {izinDurumu ? (
-                          <div className={`px-2 py-1 rounded text-xs font-medium ${getDurumRengi(izinDurumu.durum)}`}>
+                          <div 
+                            className={`px-3 py-2 rounded-lg text-sm font-semibold text-white shadow-sm min-h-[40px] flex items-center justify-center ${getDurumRengi(izinDurumu.durum)}`}
+                            style={{
+                              backgroundColor: izinDurumu.tur === 'KİRMİZİ' ? '#DC2626' : 
+                                              izinDurumu.tur === 'MAVİ' ? '#2563EB' :
+                                              izinDurumu.tur === 'YEŞİL' ? '#16A34A' :
+                                              izinDurumu.tur === 'SARI' ? '#CA8A04' :
+                                              izinDurumu.tur === 'MOR' ? '#9333EA' :
+                                              izinDurumu.tur === 'TURUNCU' ? '#EA580C' :
+                                              '#6B7280'
+                            }}
+                          >
                             {izinDurumu.tur}
                           </div>
                         ) : (
-                          <div className="w-8 h-8 mx-auto rounded border-2 border-dashed border-gray-200 flex items-center justify-center">
-                            <span className="text-gray-400">-</span>
+                          <div className="w-12 h-12 mx-auto rounded-lg border-2 border-dashed border-gray-200 flex items-center justify-center bg-gray-50">
+                            <span className="text-gray-400 text-lg">-</span>
                           </div>
                         )}
                       </td>
