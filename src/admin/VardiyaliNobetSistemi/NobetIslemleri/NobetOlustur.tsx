@@ -872,7 +872,7 @@ export default function NobetOlustur() {
                                 style={{ color: getContrastYIQ(alanColor) }}
                                 title={`${assignment.alan} - ${assignment.mesai.saat}h`}
                               >
-                                {assignment.mesai.saat}h
+                                {assignment.mesai.name || assignment.alan}-{assignment.mesai.saat}
                               </span>
                             </>
                           ) : null}
