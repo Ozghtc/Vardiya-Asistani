@@ -411,7 +411,7 @@ const PersonelIzinIstekleri: React.FC = () => {
             path: '/api/v1/data/table/23/rows',
             method: 'POST',
             apiKey: 'hzm_1ce98c92189d4a109cd604b22bfd86b7',
-            body: JSON.stringify(talepData)
+            body: talepData
           })
         });
 
