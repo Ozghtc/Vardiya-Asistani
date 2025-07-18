@@ -69,12 +69,23 @@ export const getTableData = async (tableId: string, filterParams: string = '', f
       }
     }
     
-    const url = filterParams ? 
-      `/api/v1/data/table/${tableId}?${filterParams}` : 
-      `/api/v1/data/table/${tableId}`;
+    // API'den tüm veriyi al (filtreleme API'de çalışmıyor)
+    const response = await apiRequest(`/api/v1/data/table/${tableId}`);
+    let data = response.data?.rows || [];
     
-    const response = await apiRequest(url);
-    const data = response.data?.rows || [];
+    // Client-side filtreleme yap
+    if (filterParams) {
+      const params = new URLSearchParams(filterParams);
+      data = data.filter((row: any) => {
+        let matches = true;
+        params.forEach((value, key) => {
+          if (row[key] !== value) {
+            matches = false;
+          }
+        });
+        return matches;
+      });
+    }
     
     // Başarılı yanıtı cache'le
     setCachedData(cacheKey, data);
