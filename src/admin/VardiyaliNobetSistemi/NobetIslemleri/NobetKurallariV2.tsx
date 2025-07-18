@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Clock, Shield, Settings } from 'lucide-react';
 import { apiRequest } from '../../../lib/api';
+import { useAuthContext } from '../../../contexts/AuthContext';
 
 interface VardiyaKurali {
   vardiya: string;
@@ -26,12 +27,9 @@ function addHoursToTime(time: string, hours: number): string {
 }
 
 const NobetKurallariV2: React.FC = () => {
+  const { user } = useAuthContext();
   const [vardiyaSecenekleri, setVardiyaSecenekleri] = useState<any[]>([]);
-  const [vardiyaKurallari, setVardiyaKurallari] = useState<VardiyaKurali[]>([
-    { vardiya: 'Sabah (08:00-16:00)', minDinlenme: 1, maxDinlenme: 3 },
-    { vardiya: 'Uzun Gündüz (08:00-00:00)', minDinlenme: 2, maxDinlenme: 4 },
-    { vardiya: 'Gece (16:00-08:00)', minDinlenme: 2, maxDinlenme: 4 }
-  ]);
+  const [vardiyaKurallari, setVardiyaKurallari] = useState<VardiyaKurali[]>([]);
   const [digerKurallar, setDigerKurallar] = useState({
     ayniGunTekNobet: true,
     ayniGunFarkliAlan: true,
@@ -49,22 +47,44 @@ const NobetKurallariV2: React.FC = () => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    loadShifts();
-  }, []);
+    if (user) {
+      loadShifts();
+    }
+  }, [user]);
 
   const loadShifts = async () => {
+    if (!user) return;
+    
     setLoading(true);
     try {
       const response = await apiRequest('/api/v1/data/table/17');
       if (response.success) {
-        const shiftData = response.data.rows.map((row: any) => ({
+        // Kullanıcının kurum/departman/birim bilgilerine göre filtrele
+        const filteredRows = response.data.rows.filter((row: any) => 
+          row.kurum_id === user.kurum_id &&
+          row.departman_id === user.departman_id &&
+          row.birim_id === user.birim_id &&
+          row.aktif_mi === true
+        );
+        
+        const shiftData = filteredRows.map((row: any) => ({
           id: row.id,
           name: row.vardiya_adi,
           startHour: row.baslangic_saati,
           endHour: row.bitis_saati,
           calismaSaati: row.calisma_saati || 8
         }));
+        
         setVardiyaSecenekleri(shiftData);
+        
+        // API'den çekilen vardiyaları varsayılan kural değerleriyle birleştir
+        const defaultRules = shiftData.map((shift: any) => ({
+          vardiya: `${shift.name} (${shift.startHour}-${shift.endHour})`,
+          minDinlenme: 1,
+          maxDinlenme: 3
+        }));
+        
+        setVardiyaKurallari(defaultRules);
       }
     } catch (error) {
       console.error('Vardiya yükleme hatası:', error);
