@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, ArrowLeft, Save, User, UserPlus } from 'lucide-react';
 import { safeStringOperation } from '../../../hooks/useCapitalization';
-import { apiRequest } from '../../../lib/api';
+import { apiRequest, getTableData } from '../../../lib/api';
 import { useAuthContext } from '../../../contexts/AuthContext';
 
 interface Unvan {
@@ -56,18 +56,11 @@ const PersonelEkle: React.FC = () => {
     try {
       console.log('🔍 Mesai türleri yükleniyor...');
       
-      const response = await apiRequest(`/api/v1/data/table/24?kurum_id=${user.kurum_id}&departman_id=${user.departman_id}&birim_id=${user.birim_id}`, {
-        method: 'GET'
-      });
+      const filterParams = `kurum_id=${user.kurum_id}&departman_id=${user.departman_id}&birim_id=${user.birim_id}`;
+      const data = await getTableData('24', filterParams);
       
-      console.log('📦 Mesai API Response:', response);
-      
-      if (response.success) {
-        console.log('✅ Mesai türleri başarıyla yüklendi:', response.data.rows);
-        setMesaiTurleri(response.data.rows);
-      } else {
-        console.error('❌ Mesai API Error:', response.error);
-      }
+      console.log('📦 Mesai türleri yüklendi:', data);
+      setMesaiTurleri(data);
     } catch (error) {
       console.error('🚨 Mesai türleri yüklenemedi:', error);
     } finally {
@@ -78,16 +71,15 @@ const PersonelEkle: React.FC = () => {
   // Unvanları yükle
   useEffect(() => {
     const loadUnvanlar = async () => {
+      if (!user?.kurum_id || !user?.departman_id || !user?.birim_id) return;
+      
       try {
         setLoading(true);
         setError(null);
         
-        const response = await apiRequest('/api/v1/data/table/15');
-        if (response.success && response.data?.rows) {
-          setUnvanlar(response.data.rows);
-        } else {
-          setError('Ünvanlar yüklenemedi');
-        }
+        const filterParams = `kurum_id=${user.kurum_id}&departman_id=${user.departman_id}&birim_id=${user.birim_id}`;
+        const data = await getTableData('15', filterParams);
+        setUnvanlar(data);
       } catch (error) {
         console.error('Unvanlar yüklenirken hata:', error);
         setError('Ünvanlar yüklenirken bir hata oluştu');
