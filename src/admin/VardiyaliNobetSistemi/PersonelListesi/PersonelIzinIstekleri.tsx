@@ -69,7 +69,6 @@ interface TalepItem {
   id: string;
   tip: 'nobet' | 'izin';
   tarih: Date;
-  bitis_tarih?: Date;
   alan?: string;
   izin_turu?: string;
   mesai_saati?: string;
@@ -92,8 +91,6 @@ const PersonelIzinIstekleri: React.FC = () => {
   // Popup state'leri
   const [selectedTip, setSelectedTip] = useState<'nobet' | 'izin' | null>(null);
   const [selectedTarih, setSelectedTarih] = useState<Date | null>(null);
-  const [selectedBitisTarih, setSelectedBitisTarih] = useState<Date | null>(null);
-  const [isTarihAraligi, setIsTarihAraligi] = useState(false);
   const [selectedAlan, setSelectedAlan] = useState<string>('');
   const [selectedIzinTuru, setSelectedIzinTuru] = useState<string>('');
   const [selectedMesaiSaati, setSelectedMesaiSaati] = useState<string>('');
@@ -274,7 +271,6 @@ const PersonelIzinIstekleri: React.FC = () => {
   const handleTipSecimi = (tip: 'nobet' | 'izin') => {
     setSelectedTip(tip);
     setSelectedTarih(null);
-    setSelectedBitisTarih(null);
     setSelectedAlan('');
     setSelectedIzinTuru('');
     setSelectedMesaiSaati('');
@@ -288,7 +284,6 @@ const PersonelIzinIstekleri: React.FC = () => {
       id: Date.now().toString(),
       tip: selectedTip!,
       tarih: selectedTarih,
-      bitis_tarih: isTarihAraligi ? selectedBitisTarih || undefined : undefined,
       alan: selectedTip === 'nobet' ? selectedAlan : undefined,
       izin_turu: selectedTip === 'izin' ? selectedIzinTuru : undefined,
       mesai_saati: selectedTip === 'nobet' ? selectedMesaiSaati : undefined,
@@ -299,7 +294,6 @@ const PersonelIzinIstekleri: React.FC = () => {
     
     // Formu temizle
     setSelectedTarih(null);
-    setSelectedBitisTarih(null);
     setSelectedAlan('');
     setSelectedIzinTuru('');
     setSelectedMesaiSaati('');
@@ -312,6 +306,11 @@ const PersonelIzinIstekleri: React.FC = () => {
     setShowPopup(false);
     setSelectedTip(null);
     setTalepler([]);
+    setSelectedTarih(null);
+    setSelectedAlan('');
+    setSelectedIzinTuru('');
+    setSelectedMesaiSaati('');
+    setAciklama('');
   };
 
   const handleTalepSil = (id: string) => {
@@ -529,6 +528,11 @@ const PersonelIzinIstekleri: React.FC = () => {
                   setShowPopup(false);
                   setSelectedTip(null);
                   setTalepler([]);
+                  setSelectedTarih(null);
+                  setSelectedAlan('');
+                  setSelectedIzinTuru('');
+                  setSelectedMesaiSaati('');
+                  setAciklama('');
                 }}
                 className="text-gray-400 hover:text-gray-600 transition-colors"
               >
@@ -585,107 +589,61 @@ const PersonelIzinIstekleri: React.FC = () => {
                 {/* Form Alanları */}
                 {selectedTip && (
                   <div className="space-y-4">
-                    {/* Tarih Seçimi */}
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-3">
-                        <label className="block text-sm font-medium text-gray-700">
-                          Tarih <span className="text-red-500">*</span>
-                        </label>
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            id="tarihAraligi"
-                            checked={isTarihAraligi}
-                            onChange={(e) => {
-                              setIsTarihAraligi(e.target.checked);
-                              if (!e.target.checked) {
-                                setSelectedBitisTarih(null);
-                              }
-                            }}
-                            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-                          />
-                          <label htmlFor="tarihAraligi" className="text-sm text-gray-600">
-                            Tarih aralığı
-                          </label>
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-600 mb-1">
-                            Başlangıç Tarihi
-                          </label>
-                          <DatePicker
-                            selected={selectedTarih}
-                            onChange={(date: Date | null) => setSelectedTarih(date)}
-                            dateFormat="dd/MM/yyyy"
-                            locale={tr}
-                            className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 py-2 px-3"
-                            placeholderText="Başlangıç tarihi"
-                            minDate={startDate}
-                            maxDate={endDate}
-                          />
-                        </div>
-                        
-                        {isTarihAraligi && (
-                          <div>
-                            <label className="block text-sm font-medium text-gray-600 mb-1">
-                              Bitiş Tarihi
-                            </label>
-                            <DatePicker
-                              selected={selectedBitisTarih}
-                              onChange={(date: Date | null) => setSelectedBitisTarih(date)}
-                              dateFormat="dd/MM/yyyy"
-                              locale={tr}
-                              className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 py-2 px-3"
-                              placeholderText="Bitiş tarihi"
-                              minDate={selectedTarih || startDate}
-                              maxDate={endDate}
-                            />
-                          </div>
-                        )}
-                      </div>
+                    {/* Tarih Seçimi - Sadece tek tarih */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Tarih <span className="text-red-500">*</span>
+                      </label>
+                      <DatePicker
+                        selected={selectedTarih}
+                        onChange={(date: Date | null) => setSelectedTarih(date)}
+                        dateFormat="dd/MM/yyyy"
+                        locale={tr}
+                        className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 py-2 px-3"
+                        placeholderText="Tarih seçin"
+                        minDate={startDate}
+                        maxDate={endDate}
+                      />
                     </div>
 
-                    {/* Alan Seçimi (Nöbet için) */}
+                    {/* Alan ve Mesai Saatleri - Yan yana (Nöbet için) */}
                     {selectedTip === 'nobet' && (
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Alan <span className="text-red-500">*</span>
-                        </label>
-                        <select
-                          value={selectedAlan}
-                          onChange={(e) => setSelectedAlan(e.target.value)}
-                          className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 py-2 px-3"
-                        >
-                          <option value="">Alan seçin</option>
-                          {alanTanimlamalari.map((alan) => (
-                            <option key={alan.id} value={alan.alan_adi}>
-                              {alan.alan_adi}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    )}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Alan <span className="text-red-500">*</span>
+                          </label>
+                          <select
+                            value={selectedAlan}
+                            onChange={(e) => setSelectedAlan(e.target.value)}
+                            className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 py-2 px-3"
+                          >
+                            <option value="">Alan seçin</option>
+                            {alanTanimlamalari.map((alan) => (
+                              <option key={alan.id} value={alan.alan_adi}>
+                                {alan.alan_adi}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
 
-                    {/* Mesai Saatleri (Nöbet için) */}
-                    {selectedTip === 'nobet' && selectedAlan && (
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Mesai Saatleri
-                        </label>
-                        <select
-                          value={selectedMesaiSaati}
-                          onChange={(e) => setSelectedMesaiSaati(e.target.value)}
-                          className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 py-2 px-3"
-                        >
-                          <option value="">Mesai saati seçin</option>
-                          {vardiyaTanimlamalari.map((vardiya) => (
-                            <option key={vardiya.id} value={`${vardiya.baslangic_saati}-${vardiya.bitis_saati}`}>
-                              {vardiya.vardiya_adi} ({vardiya.baslangic_saati}-{vardiya.bitis_saati})
-                            </option>
-                          ))}
-                        </select>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Mesai Saatleri
+                          </label>
+                          <select
+                            value={selectedMesaiSaati}
+                            onChange={(e) => setSelectedMesaiSaati(e.target.value)}
+                            className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 py-2 px-3"
+                          >
+                            <option value="">Mesai saati seçin</option>
+                            {vardiyaTanimlamalari.map((vardiya) => (
+                              <option key={vardiya.id} value={`${vardiya.baslangic_saati}-${vardiya.bitis_saati}`}>
+                                {vardiya.vardiya_adi} ({vardiya.baslangic_saati}-{vardiya.bitis_saati})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
                       </div>
                     )}
 
@@ -796,10 +754,7 @@ const PersonelIzinIstekleri: React.FC = () => {
                               
                               {/* Tarih Bilgisi */}
                               <div className="text-sm text-gray-500 mb-1">
-                                📅 {talep.bitis_tarih 
-                                  ? `${talep.tarih.toLocaleDateString('tr-TR')} - ${talep.bitis_tarih.toLocaleDateString('tr-TR')}`
-                                  : talep.tarih.toLocaleDateString('tr-TR')
-                                }
+                                📅 {talep.tarih.toLocaleDateString('tr-TR')}
                               </div>
                               
                               {/* Alan Bilgisi (Nöbet için) */}
@@ -867,6 +822,11 @@ const PersonelIzinIstekleri: React.FC = () => {
                         setShowPopup(false);
                         setSelectedTip(null);
                         setTalepler([]);
+                        setSelectedTarih(null);
+                        setSelectedAlan('');
+                        setSelectedIzinTuru('');
+                        setSelectedMesaiSaati('');
+                        setAciklama('');
                       }}
                       className="px-4 py-2 text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                     >
