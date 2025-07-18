@@ -7,6 +7,32 @@ import 'react-datepicker/dist/react-datepicker.css';
 import { tr } from 'date-fns/locale';
 import { addDays, differenceInCalendarDays, format } from 'date-fns';
 
+// apiCall fonksiyonu - HZM API'sine direkt erişim
+const apiCall = async (endpoint: string, options: RequestInit = {}) => {
+  try {
+    const response = await fetch('/.netlify/functions/api-proxy', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        path: endpoint,
+        method: options.method || 'GET',
+        body: options.body ? JSON.parse(options.body as string) : undefined,
+        apiKey: 'hzm_1ce98c92189d4a109cd604b22bfd86b7'
+      })
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return data.data?.rows || data.rows || [];
+  } catch (error) {
+    console.error('API Call Error:', error);
+    throw error;
+  }
+};
+
 interface Personnel {
   id: number;
   tcno?: string;
