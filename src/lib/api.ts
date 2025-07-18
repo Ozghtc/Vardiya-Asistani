@@ -189,12 +189,30 @@ export const deleteTableData = async (tableId: string, rowId: string) => {
       response = await apiRequest(`/api/v1/data/table/${tableId}/rows/${rowId}`, {
         method: 'DELETE'
       });
-    } catch (proxyError) {
-      // Proxy başarısız olursa direkt API çağrısı yap
+    } catch (proxyError: any) {
+      // Eğer 404 hatası ise, kayıt zaten yok demektir
+      if (proxyError.message && proxyError.message.includes('404')) {
+        console.log('⚠️ Kayıt bulunamadı, zaten silinmiş olabilir');
+        // Cache'i temizle
+        clearTableCache(tableId);
+        return { success: true, message: 'Kayıt bulunamadı (zaten silinmiş olabilir)' };
+      }
+      
+      // Diğer hatalar için proxy başarısız olursa direkt API çağrısı yap
       console.log('Proxy hatası, direkt API çağrısı yapılıyor...', proxyError);
-      response = await directApiCall(`/api/v1/data/table/${tableId}/rows/${rowId}`, {
-        method: 'DELETE'
-      });
+      try {
+        response = await directApiCall(`/api/v1/data/table/${tableId}/rows/${rowId}`, {
+          method: 'DELETE'
+        });
+      } catch (directError: any) {
+        // Direct API'de de 404 ise kayıt yok demektir
+        if (directError.message && directError.message.includes('404')) {
+          console.log('⚠️ Kayıt bulunamadı (direct API)');
+          clearTableCache(tableId);
+          return { success: true, message: 'Kayıt bulunamadı (zaten silinmiş olabilir)' };
+        }
+        throw directError;
+      }
     }
     
     // Cache'i temizle - bu tablonun tüm cache'lerini temizle
@@ -219,6 +237,21 @@ export const clearTableCache = (tableId: string) => {
     });
   } catch (error) {
     // Hata durumunda görmezden gel
+  }
+};
+
+// Tüm cache'i temizle (production'da kullanım için)
+export const clearAllCache = () => {
+  try {
+    const keys = Object.keys(sessionStorage);
+    keys.forEach(key => {
+      if (key.startsWith('cache_table_')) {
+        sessionStorage.removeItem(key);
+      }
+    });
+    console.log('🧹 Tüm cache temizlendi');
+  } catch (error) {
+    console.log('Cache temizleme hatası:', error);
   }
 };
 
