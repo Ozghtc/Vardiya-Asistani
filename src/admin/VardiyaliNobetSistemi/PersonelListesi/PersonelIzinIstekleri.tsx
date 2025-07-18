@@ -29,6 +29,8 @@ interface Personnel {
 interface IzinIstek {
   id: number;
   kullanici_id: number;
+  personel_id?: number;
+  personel_adi?: string;
   talep_tipi: string;
   baslangic_tarihi: string;
   bitis_tarihi: string;
@@ -44,6 +46,14 @@ interface IzinIstek {
   kurum_id: string;
   departman_id: string;
   birim_id: string;
+  // Yeni sütunlar
+  alan_renk?: string;
+  izin_renk?: string;
+  saat_araligi?: string;
+  saat_suresi?: string;
+  alan_kisaltma?: string;
+  alan_adi_color?: string;
+  izin_turu_color?: string;
 }
 
 interface IzinTanimlama {
@@ -521,7 +531,7 @@ const PersonelIzinIstekleri: React.FC = () => {
 
   const getIzinDurumu = (personelId: number, date: Date) => {
     const istek = izinIstekleri.find(istek => 
-      istek.kullanici_id === personelId &&
+      (istek.personel_id === personelId || istek.kullanici_id === personelId) &&
       new Date(istek.baslangic_tarihi) <= date &&
       new Date(istek.bitis_tarihi) >= date
     );
