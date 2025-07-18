@@ -224,7 +224,7 @@ const PersonelEkle: React.FC = () => {
   };
 
   const handleBack = () => {
-    navigate('/personel-listesi');
+    navigate('/');
   };
 
     // Kullanıcı yoksa loading göster
