@@ -83,6 +83,8 @@ interface VardiyaTanimlama {
 interface TalepItem {
   id: string;
   tip: 'nobet' | 'izin';
+  personel_id: number;
+  personel_adi: string;
   tarih: Date;
   bitis_tarih?: Date;
   alan?: string;
@@ -106,6 +108,7 @@ const PersonelIzinIstekleri: React.FC = () => {
   
   // Popup state'leri
   const [selectedTip, setSelectedTip] = useState<'nobet' | 'izin' | null>(null);
+  const [selectedPersonel, setSelectedPersonel] = useState<number | null>(null);
   const [selectedTarih, setSelectedTarih] = useState<Date | null>(null);
   const [selectedBitisTarih, setSelectedBitisTarih] = useState<Date | null>(null);
   const [isTarihAraligi, setIsTarihAraligi] = useState(false);
@@ -335,6 +338,7 @@ const PersonelIzinIstekleri: React.FC = () => {
 
   const handleTipSecimi = (tip: 'nobet' | 'izin') => {
     setSelectedTip(tip);
+    setSelectedPersonel(null);
     setSelectedTarih(null);
     setSelectedBitisTarih(null);
     setIsTarihAraligi(false);
@@ -345,11 +349,25 @@ const PersonelIzinIstekleri: React.FC = () => {
   };
 
   const handleEkle = () => {
-    if (!selectedTarih) return;
+    if (!selectedTarih || !selectedPersonel) return;
+
+    // Seçilen personelin bilgilerini al
+    const personel = personnel.find(p => p.id === selectedPersonel);
+    if (!personel) return;
+
+    const personelAdi = personel.ad && personel.soyad 
+      ? `${personel.ad} ${personel.soyad}`
+      : personel.ad_soyad 
+      ? personel.ad_soyad
+      : personel.personel_adi && personel.personel_soyadi
+      ? `${personel.personel_adi} ${personel.personel_soyadi}`
+      : `Personel ${personel.id}`;
 
     const yeniTalep: TalepItem = {
       id: Date.now().toString(),
       tip: selectedTip!,
+      personel_id: selectedPersonel,
+      personel_adi: personelAdi,
       tarih: selectedTarih,
       bitis_tarih: isTarihAraligi ? selectedBitisTarih || undefined : undefined,
       alan: selectedTip === 'nobet' ? selectedAlan : undefined,
@@ -361,6 +379,7 @@ const PersonelIzinIstekleri: React.FC = () => {
     setTalepler(prev => [...prev, yeniTalep]);
     
     // Formu temizle
+    setSelectedPersonel(null);
     setSelectedTarih(null);
     setSelectedBitisTarih(null);
     setSelectedAlan('');
@@ -382,7 +401,7 @@ const PersonelIzinIstekleri: React.FC = () => {
       // Her talep için API'ye kaydet
       for (const talep of talepler) {
         const talepData = {
-          kullanici_id: user.id,
+          kullanici_id: talep.personel_id, // Artık personel ID'si kullanılıyor
           talep_tipi: talep.tip === 'nobet' ? 'nobet_istegi' : 'izin_talebi',
           baslangic_tarihi: talep.tarih.toISOString().split('T')[0],
           bitis_tarihi: talep.bitis_tarih ? talep.bitis_tarih.toISOString().split('T')[0] : talep.tarih.toISOString().split('T')[0],
@@ -426,6 +445,7 @@ const PersonelIzinIstekleri: React.FC = () => {
       // Formu temizle
       setShowPopup(false);
       setSelectedTip(null);
+      setSelectedPersonel(null);
       setTalepler([]);
       setSelectedTarih(null);
       setSelectedBitisTarih(null);
@@ -681,15 +701,16 @@ const PersonelIzinIstekleri: React.FC = () => {
               <button
                 onClick={() => {
                   setShowPopup(false);
-                  setSelectedTip(null);
-                  setTalepler([]);
-                  setSelectedTarih(null);
-                  setSelectedBitisTarih(null);
-                  setIsTarihAraligi(false);
-                  setSelectedAlan('');
-                  setSelectedIzinTuru('');
-                  setSelectedMesaiSaati('');
-                  setAciklama('');
+                                          setSelectedTip(null);
+                        setSelectedPersonel(null);
+                        setTalepler([]);
+                        setSelectedTarih(null);
+                        setSelectedBitisTarih(null);
+                        setIsTarihAraligi(false);
+                        setSelectedAlan('');
+                        setSelectedIzinTuru('');
+                        setSelectedMesaiSaati('');
+                        setAciklama('');
                 }}
                 className="text-gray-400 hover:text-gray-600 transition-colors"
               >
@@ -746,6 +767,35 @@ const PersonelIzinIstekleri: React.FC = () => {
                 {/* Form Alanları */}
                 {selectedTip && (
                   <div className="space-y-4">
+                    {/* Personel Seçimi */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Personel <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        value={selectedPersonel || ''}
+                        onChange={(e) => setSelectedPersonel(e.target.value ? Number(e.target.value) : null)}
+                        className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 py-2 px-3"
+                      >
+                        <option value="">Personel seçin</option>
+                        {personnel.map((person) => {
+                          const personelAdi = person.ad && person.soyad 
+                            ? `${person.ad} ${person.soyad}`
+                            : person.ad_soyad 
+                            ? person.ad_soyad
+                            : person.personel_adi && person.personel_soyadi
+                            ? `${person.personel_adi} ${person.personel_soyadi}`
+                            : `Personel ${person.id}`;
+                          
+                          return (
+                            <option key={person.id} value={person.id}>
+                              {personelAdi} - {getUnvanAdi(person)}
+                            </option>
+                          );
+                        })}
+                      </select>
+                    </div>
+
                     {/* Tarih Seçimi */}
                     <div className="space-y-3">
                       <div className="flex items-center gap-3">
@@ -904,7 +954,7 @@ const PersonelIzinIstekleri: React.FC = () => {
                     <div className="flex justify-end">
                       <button
                         onClick={handleEkle}
-                        disabled={!selectedTarih || (selectedTip === 'nobet' && !selectedAlan) || (selectedTip === 'izin' && !selectedIzinTuru)}
+                        disabled={!selectedPersonel || !selectedTarih || (selectedTip === 'nobet' && !selectedAlan) || (selectedTip === 'izin' && !selectedIzinTuru)}
                         className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
                       >
                         <Plus className="w-4 h-4" />
@@ -952,6 +1002,9 @@ const PersonelIzinIstekleri: React.FC = () => {
                             <div className="flex-1">
                               <div className="font-medium text-gray-900">
                                 {talep.tip === 'nobet' ? 'Nöbet İsteği' : 'İzin/Bosluk Talebi'}
+                              </div>
+                              <div className="text-sm text-gray-600 mb-1">
+                                👤 {talep.personel_adi}
                               </div>
                               
                               {/* Tarih Bilgisi */}
