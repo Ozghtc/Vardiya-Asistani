@@ -28,12 +28,22 @@ interface Personnel {
 
 interface IzinIstek {
   id: number;
-  personel_id: number;
-  izin_turu: string;
+  kullanici_id: number;
+  talep_tipi: string;
   baslangic_tarihi: string;
   bitis_tarihi: string;
-  durum: 'beklemede' | 'onaylandi' | 'reddedildi';
+  alan_adi?: string;
+  mesai_baslangic?: string;
+  mesai_bitis?: string;
+  vardiya_adi?: string;
+  izin_turu?: string;
+  izin_kisaltma?: string;
+  mesai_dusumu?: boolean;
   aciklama?: string;
+  durum: 'beklemede' | 'onaylandi' | 'reddedildi';
+  kurum_id: string;
+  departman_id: string;
+  birim_id: string;
 }
 
 interface IzinTanimlama {
@@ -265,10 +275,15 @@ const PersonelIzinIstekleri: React.FC = () => {
     if (!user) return;
     
     try {
-      const rows = await apiCall('/api/v1/data/table/16');
-      const filteredIstekler = rows.filter((istek: IzinIstek) => 
-        personnel.some(person => person.id === istek.personel_id)
+      // personel_talepleri tablosundan veri çek
+      const rows = await apiCall('/api/v1/data/table/23');
+      const filteredIstekler = rows.filter((istek: any) => 
+        istek.kurum_id === user.kurum_id &&
+        istek.departman_id === user.departman_id &&
+        istek.birim_id === user.birim_id
       );
+      
+      console.log('Yüklenen personel talepleri:', filteredIstekler);
       setIzinIstekleri(filteredIstekler);
     } catch (error) {
       console.error('İzin istekleri yükleme hatası:', error);
@@ -355,18 +370,77 @@ const PersonelIzinIstekleri: React.FC = () => {
   };
 
   const handleKaydet = async () => {
-    // Burada API'ye kaydetme işlemi yapılacak
-    console.log('Kaydedilecek talepler:', talepler);
-    setShowPopup(false);
-    setSelectedTip(null);
-    setTalepler([]);
-    setSelectedTarih(null);
-    setSelectedBitisTarih(null);
-    setIsTarihAraligi(false);
-    setSelectedAlan('');
-    setSelectedIzinTuru('');
-    setSelectedMesaiSaati('');
-    setAciklama('');
+    if (!user || talepler.length === 0) {
+      console.log('Kaydedilecek talep yok veya kullanıcı bulunamadı');
+      setShowPopup(false);
+      return;
+    }
+
+    try {
+      console.log('Kaydedilecek talepler:', talepler);
+      
+      // Her talep için API'ye kaydet
+      for (const talep of talepler) {
+        const talepData = {
+          kullanici_id: user.id,
+          talep_tipi: talep.tip === 'nobet' ? 'nobet_istegi' : 'izin_talebi',
+          baslangic_tarihi: talep.tarih.toISOString().split('T')[0],
+          bitis_tarihi: talep.bitis_tarih ? talep.bitis_tarih.toISOString().split('T')[0] : talep.tarih.toISOString().split('T')[0],
+          alan_adi: talep.alan || '',
+          mesai_baslangic: talep.mesai_saati ? talep.mesai_saati.split('-')[0] : '',
+          mesai_bitis: talep.mesai_saati ? talep.mesai_saati.split('-')[1] : '',
+          vardiya_adi: talep.mesai_saati || '',
+          izin_turu: talep.izin_turu || '',
+          izin_kisaltma: talep.izin_turu || '',
+          mesai_dusumu: false,
+          aciklama: talep.aciklama || '',
+          durum: 'beklemede',
+          kurum_id: user.kurum_id,
+          departman_id: user.departman_id,
+          birim_id: user.birim_id
+        };
+
+        console.log('Kaydedilecek talep verisi:', talepData);
+
+        const response = await fetch('/.netlify/functions/api-proxy', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            path: '/api/v1/data/table/23/rows',
+            method: 'POST',
+            apiKey: 'hzm_1ce98c92189d4a109cd604b22bfd86b7',
+            body: JSON.stringify(talepData)
+          })
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          console.log('Talep başarıyla kaydedildi:', result);
+        } else {
+          console.error('Talep kaydedilirken hata:', response.statusText);
+        }
+      }
+
+      // Formu temizle
+      setShowPopup(false);
+      setSelectedTip(null);
+      setTalepler([]);
+      setSelectedTarih(null);
+      setSelectedBitisTarih(null);
+      setIsTarihAraligi(false);
+      setSelectedAlan('');
+      setSelectedIzinTuru('');
+      setSelectedMesaiSaati('');
+      setAciklama('');
+
+      // İzin isteklerini yeniden yükle
+      await loadIzinIstekleri();
+      
+    } catch (error) {
+      console.error('Kaydetme hatası:', error);
+    }
   };
 
   const handleTalepSil = (id: string) => {
@@ -380,7 +454,7 @@ const PersonelIzinIstekleri: React.FC = () => {
 
   const getIzinDurumu = (personelId: number, date: Date) => {
     const istek = izinIstekleri.find(istek => 
-      istek.personel_id === personelId &&
+      istek.kullanici_id === personelId &&
       new Date(istek.baslangic_tarihi) <= date &&
       new Date(istek.bitis_tarihi) >= date
     );
@@ -388,8 +462,8 @@ const PersonelIzinIstekleri: React.FC = () => {
     if (!istek) return null;
     
     return {
-      tur: istek.izin_turu,
-      durum: istek.durum,
+      tur: istek.talep_tipi === 'nobet_istegi' ? (istek.alan_adi || istek.vardiya_adi) : (istek.izin_turu || istek.izin_kisaltma),
+      durum: istek.durum || 'beklemede',
       aciklama: istek.aciklama
     };
   };
