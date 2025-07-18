@@ -223,8 +223,23 @@ const PersonelEkle: React.FC = () => {
     }
   };
 
+  // Kullanıcı rolüne göre ana sayfa route'unu belirle
+  const getHomeRoute = () => {
+    if (!user) return '/';
+    switch (user.rol) {
+      case 'admin':
+        return '/admin';
+      case 'yonetici':
+        return '/vardiyali-nobet';
+      case 'personel':
+        return '/personel/panel';
+      default:
+        return '/';
+    }
+  };
+
   const handleBack = () => {
-    navigate('/');
+    navigate(getHomeRoute());
   };
 
     // Kullanıcı yoksa loading göster

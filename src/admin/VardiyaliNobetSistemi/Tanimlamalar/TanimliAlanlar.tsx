@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, ChevronDown, ChevronUp, Trash2, FileText, BarChart, X } from 'lucide-react';
 import DeleteConfirmDialog from '../../../components/ui/DeleteConfirmDialog';
 import { apiRequest } from '../../../lib/api';
@@ -235,6 +235,22 @@ const TanimliAlanlar: React.FC = () => {
   });
   const [loading, setLoading] = useState(false);
   const { user } = useAuthContext();
+  const navigate = useNavigate();
+
+  // Kullanıcı rolüne göre ana sayfa route'unu belirle
+  const getHomeRoute = () => {
+    if (!user) return '/';
+    switch (user.rol) {
+      case 'admin':
+        return '/admin';
+      case 'yonetici':
+        return '/vardiyali-nobet';
+      case 'personel':
+        return '/personel/panel';
+      default:
+        return '/';
+    }
+  };
 
   // AuthContext'ten gerçek kullanıcı bilgilerini al
   const getCurrentUser = () => {
@@ -578,13 +594,13 @@ const TanimliAlanlar: React.FC = () => {
             </svg>
             <span>{loading ? 'Yenileniyor...' : 'Yenile'}</span>
           </button>
-          <Link
-            to="/"
+          <button
+            onClick={() => navigate(getHomeRoute())}
             className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
             <span>Geri Dön</span>
-          </Link>
+          </button>
         </div>
       </div>
 

@@ -19,6 +19,21 @@ const SistemTanimlamalari: React.FC = () => {
   const { setDepartmanBirim } = useDepartmanBirim();
   const { user } = useAuthContext();
 
+  // Kullanıcı rolüne göre ana sayfa route'unu belirle
+  const getHomeRoute = () => {
+    if (!user) return '/';
+    switch (user.rol) {
+      case 'admin':
+        return '/admin';
+      case 'yonetici':
+        return '/vardiyali-nobet';
+      case 'personel':
+        return '/personel/panel';
+      default:
+        return '/';
+    }
+  };
+
   // Otomatik tablo oluşturma kaldırıldı - Kural 15 gereği
 
   useEffect(() => {
@@ -86,13 +101,13 @@ const SistemTanimlamalari: React.FC = () => {
             <UserPlus className="w-5 h-5" />
             Personel Ekle
           </button>
-          <Link
-            to="/"
+          <button
+            onClick={() => navigate(getHomeRoute())}
             className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
             <span>Geri Dön</span>
-          </Link>
+          </button>
         </div>
       </div>
 
