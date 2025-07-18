@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, User2, Plus, ArrowLeft } from 'lucide-react';
+import { Calendar, User2, ArrowLeft } from 'lucide-react';
 import { useAuthContext } from '../../../contexts/AuthContext';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import { tr } from 'date-fns/locale';
 
 interface Personnel {
   id: number;
@@ -30,8 +33,8 @@ const NobetOlustur: React.FC = () => {
   const [personnel, setPersonnel] = useState<Personnel[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
-  const [startDate] = useState(new Date(2025, 6, 17)); // 17/07/2025
-  const [endDate] = useState(new Date(2025, 7, 16)); // 16/08/2025
+  const [startDate, setStartDate] = useState(new Date(2025, 6, 17)); // 17/07/2025
+  const [endDate, setEndDate] = useState(new Date(2025, 7, 16)); // 16/08/2025
 
   // Demo personel verileri
   useEffect(() => {
@@ -133,6 +136,18 @@ const NobetOlustur: React.FC = () => {
   // Toplam gün sayısı
   const totalDays = daysInRange.length;
 
+  // Dönem adını dinamik olarak oluştur
+  const getDonnemAdi = () => {
+    const baslangicAy = startDate.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
+    const bitisAy = endDate.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
+    
+    if (baslangicAy === bitisAy) {
+      return `${baslangicAy} Dönemi`;
+    } else {
+      return `${startDate.toLocaleDateString('tr-TR', { month: 'long' })} - ${endDate.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' })} Dönemi`;
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -154,14 +169,10 @@ const NobetOlustur: React.FC = () => {
             <span>Geri</span>
           </button>
           <div>
-            <h1 className="text-2xl font-bold text-gray-800">İzin İstekleri</h1>
-            <p className="text-gray-600">Özel istekler ve izin talepleri</p>
+            <h1 className="text-2xl font-bold text-gray-800">Nöbet Raporu Oluşturma</h1>
+            <p className="text-gray-600">Personel nöbet planlaması ve rapor oluşturma</p>
           </div>
         </div>
-        <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-          <Plus className="w-5 h-5" />
-          <span>Personel Talebi</span>
-        </button>
       </div>
 
       {/* Dönem Bilgisi */}
@@ -169,16 +180,28 @@ const NobetOlustur: React.FC = () => {
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <Calendar className="w-6 h-6 text-blue-600" />
-            <h2 className="text-xl font-semibold text-gray-800">Temmuz 2025 Dönemi</h2>
+            <h2 className="text-xl font-semibold text-gray-800">{getDonnemAdi()}</h2>
           </div>
           <div className="flex items-center gap-8">
             <div className="text-center">
-              <div className="text-sm text-gray-600">Başlangıç</div>
-              <div className="text-lg font-semibold">17/07/2025</div>
+              <div className="text-sm text-gray-600 mb-1">Başlangıç</div>
+              <DatePicker
+                selected={startDate}
+                onChange={(date) => date && setStartDate(date)}
+                dateFormat="dd/MM/yyyy"
+                locale={tr}
+                className="text-center text-sm font-semibold border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
             </div>
             <div className="text-center">
-              <div className="text-sm text-gray-600">Bitiş</div>
-              <div className="text-lg font-semibold">16/08/2025</div>
+              <div className="text-sm text-gray-600 mb-1">Bitiş</div>
+              <DatePicker
+                selected={endDate}
+                onChange={(date) => date && setEndDate(date)}
+                dateFormat="dd/MM/yyyy"
+                locale={tr}
+                className="text-center text-sm font-semibold border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
             </div>
           </div>
         </div>
