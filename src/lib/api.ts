@@ -11,6 +11,149 @@ const API_CONFIG = {
 const CACHE_DURATION = 5 * 60 * 1000;
 const cache = new Map();
 
+// Cache temizleme fonksiyonu
+export const clearCache = () => {
+  cache.clear();
+};
+
+// SessionStorage based cache for UI speed
+export const getCachedData = (key: string) => {
+  try {
+    const cached = sessionStorage.getItem(`cache_${key}`);
+    if (cached) {
+      const { data, timestamp } = JSON.parse(cached);
+      // SessionStorage cache 10 dakika geçerli
+      if (Date.now() - timestamp < 10 * 60 * 1000) {
+        return data;
+      } else {
+        sessionStorage.removeItem(`cache_${key}`);
+      }
+    }
+  } catch (error) {
+    // Hata durumunda sessionStorage'ı temizle
+    sessionStorage.removeItem(`cache_${key}`);
+  }
+  return null;
+};
+
+export const setCachedData = (key: string, data: any) => {
+  try {
+    sessionStorage.setItem(`cache_${key}`, JSON.stringify({
+      data,
+      timestamp: Date.now()
+    }));
+  } catch (error) {
+    // SessionStorage doluysa eski verileri temizle
+    sessionStorage.clear();
+  }
+};
+
+export const clearCachedData = (key: string) => {
+  try {
+    sessionStorage.removeItem(`cache_${key}`);
+  } catch (error) {
+    // Hata durumunda görmezden gel
+  }
+};
+
+// Tablo bazında cache yönetimi
+export const getTableData = async (tableId: string, filterParams: string = '', forceRefresh: boolean = false) => {
+  const cacheKey = `table_${tableId}_${filterParams}`;
+  
+  try {
+    // Zorla yenileme değilse önce cache'den kontrol et
+    if (!forceRefresh) {
+      const cachedData = getCachedData(cacheKey);
+      if (cachedData) {
+        return cachedData;
+      }
+    }
+    
+    const url = filterParams ? 
+      `/api/v1/data/table/${tableId}?${filterParams}` : 
+      `/api/v1/data/table/${tableId}`;
+    
+    const response = await apiRequest(url);
+    const data = response.data?.rows || [];
+    
+    // Başarılı yanıtı cache'le
+    setCachedData(cacheKey, data);
+    
+    return data;
+  } catch (error: any) {
+    logError(`Tablo ${tableId} veri hatası`, error);
+    return [];
+  }
+};
+
+// Tablo verisi ekle ve cache'i temizle
+export const addTableData = async (tableId: string, data: any) => {
+  try {
+    const response = await apiRequest(`/api/v1/data/table/${tableId}/rows`, {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    
+    // Cache'i temizle - bu tablonun tüm cache'lerini temizle
+    clearTableCache(tableId);
+    
+    return { success: true, data: response.data || response };
+  } catch (error: any) {
+    logError(`Tablo ${tableId} ekleme hatası`, error);
+    return { success: false, error: error.message };
+  }
+};
+
+// Tablo verisi güncelle ve cache'i temizle
+export const updateTableData = async (tableId: string, rowId: string, data: any) => {
+  try {
+    const response = await apiRequest(`/api/v1/data/table/${tableId}/rows/${rowId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    });
+    
+    // Cache'i temizle - bu tablonun tüm cache'lerini temizle
+    clearTableCache(tableId);
+    
+    return { success: true, data: response.data || response };
+  } catch (error: any) {
+    logError(`Tablo ${tableId} güncelleme hatası`, error);
+    return { success: false, error: error.message };
+  }
+};
+
+// Tablo verisi sil ve cache'i temizle
+export const deleteTableData = async (tableId: string, rowId: string) => {
+  try {
+    const response = await apiRequest(`/api/v1/data/table/${tableId}/rows/${rowId}`, {
+      method: 'DELETE'
+    });
+    
+    // Cache'i temizle - bu tablonun tüm cache'lerini temizle
+    clearTableCache(tableId);
+    
+    return { success: true, data: response.data || response };
+  } catch (error: any) {
+    logError(`Tablo ${tableId} silme hatası`, error);
+    return { success: false, error: error.message };
+  }
+};
+
+// Belirli tablo için tüm cache'leri temizle
+export const clearTableCache = (tableId: string) => {
+  try {
+    // SessionStorage'daki tüm cache keylerini kontrol et
+    const keys = Object.keys(sessionStorage);
+    keys.forEach(key => {
+      if (key.startsWith(`cache_table_${tableId}_`)) {
+        sessionStorage.removeItem(key);
+      }
+    });
+  } catch (error) {
+    // Hata durumunda görmezden gel
+  }
+};
+
 // Production logging - sadece kritik hatalar
 const logError = (message: string, error?: any) => {
   console.error(`❌ ${message}`, error || '');
@@ -289,10 +432,25 @@ const getMockResponse = (endpoint: string, method: string) => {
 };
 
 // Kurumları getir - DOKÜMANTASYON VERSİYONU
-export const getKurumlar = async () => {
+export const getKurumlar = async (forceRefresh: boolean = false) => {
   try {
+    const cacheKey = 'kurumlar';
+    
+    // Zorla yenileme değilse önce cache'den kontrol et
+    if (!forceRefresh) {
+      const cachedData = getCachedData(cacheKey);
+      if (cachedData) {
+        return cachedData;
+      }
+    }
+    
     const response = await apiRequest(`/api/v1/data/table/${API_CONFIG.tableId}?page=1&limit=100&sort=id&order=DESC`);
-    return response.data?.rows || [];
+    const data = response.data?.rows || [];
+    
+    // Başarılı yanıtı cache'le
+    setCachedData(cacheKey, data);
+    
+    return data;
   } catch (error) {
     logError('getKurumlar hatası', error);
     return [];
@@ -327,6 +485,9 @@ export const addKurum = async (kurumData: {
       body: JSON.stringify(requestBody),
     });
     
+    // Cache'i temizle çünkü yeni kurum eklendi
+    clearCachedData('kurumlar');
+    
     return {
       success: true,
       data: response.data || response,
@@ -359,6 +520,10 @@ export const updateKurum = async (kurumId: string, kurumData: {
       method: 'PUT',
       body: JSON.stringify(kurumData),
     });
+    
+    // Cache'i temizle çünkü kurum güncellendi
+    clearCachedData('kurumlar');
+    
     return { success: true, data: response };
   } catch (error) {
     logError('updateKurum hatası', error);
@@ -377,6 +542,10 @@ export const deleteKurum = async (kurumId: string) => {
     const response = await apiRequest(`/api/v1/data/table/${API_CONFIG.tableId}/rows/${kurumId}`, {
       method: 'DELETE',
     });
+    
+    // Cache'i temizle çünkü kurum silindi
+    clearCachedData('kurumlar');
+    
     return { success: true, data: response };
   } catch (error) {
     logError('deleteKurum hatası', error);

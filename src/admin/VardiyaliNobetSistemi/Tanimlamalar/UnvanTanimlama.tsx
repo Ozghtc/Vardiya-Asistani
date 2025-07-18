@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuthContext } from '../../../contexts/AuthContext';
-import { apiRequest } from '../../../lib/api';
+import { apiRequest, getTableData, addTableData, deleteTableData, clearTableCache } from '../../../lib/api';
 import { Trash2, Plus, Clock } from 'lucide-react';
 
 interface Unvan {
@@ -55,18 +55,11 @@ const UnvanTanimlama: React.FC = () => {
     try {
       console.log('🔍 Mesai türleri yükleniyor...');
       
-      const response = await apiRequest(`/api/v1/data/table/24?kurum_id=${user.kurum_id}&departman_id=${user.departman_id}&birim_id=${user.birim_id}`, {
-        method: 'GET'
-      });
+      const filterParams = `kurum_id=${user.kurum_id}&departman_id=${user.departman_id}&birim_id=${user.birim_id}`;
+      const data = await getTableData('24', filterParams);
       
-      console.log('📦 Mesai API Response:', response);
-      
-      if (response.success) {
-        console.log('✅ Mesai türleri başarıyla yüklendi:', response.data.rows);
-        setKaydedilenMesaiTurleri(response.data.rows);
-      } else {
-        console.error('❌ Mesai API Error:', response.error);
-      }
+      console.log('📦 Mesai türleri yüklendi:', data);
+      setKaydedilenMesaiTurleri(data);
     } catch (error) {
       console.error('🚨 Mesai türleri yüklenemedi:', error);
     } finally {
@@ -88,19 +81,11 @@ const UnvanTanimlama: React.FC = () => {
             birim_id: user.birim_id
           });
           
-          const response = await apiRequest(`/api/v1/data/table/15?kurum_id=${user.kurum_id}&departman_id=${user.departman_id}&birim_id=${user.birim_id}`, {
-            method: 'GET'
-          });
+          const filterParams = `kurum_id=${user.kurum_id}&departman_id=${user.departman_id}&birim_id=${user.birim_id}`;
+          const data = await getTableData('15', filterParams);
           
-          console.log('📦 API Response:', response);
-          
-          if (response.success) {
-            console.log('✅ Ünvanlar başarıyla yüklendi:', response.data.rows);
-            setUnvanlar(response.data.rows);
-          } else {
-            console.error('❌ API Error:', response.error);
-            setError('Ünvanlar yüklenemedi: ' + (response.error || 'Bilinmeyen hata'));
-          }
+          console.log('📦 Ünvanlar yüklendi:', data);
+          setUnvanlar(data);
         } catch (error) {
           console.error('🚨 Ünvanlar yüklenemedi:', error);
           setError('Ünvanlar yüklenemedi. Lütfen tekrar deneyin.');
@@ -135,19 +120,18 @@ const UnvanTanimlama: React.FC = () => {
         aktif_mi: true
       };
 
-      const response = await apiRequest('/api/v1/data/table/15/rows', {
-        method: 'POST',
-        body: JSON.stringify(newUnvan)
-      });
+      const result = await addTableData('15', newUnvan);
 
-      if (response.success) {
-        const updatedUnvanlar = [...unvanlar, response.data.row];
-        setUnvanlar(updatedUnvanlar);
+      if (result.success) {
+        // Veriyi yeniden yükle
+        const filterParams = `kurum_id=${user.kurum_id}&departman_id=${user.departman_id}&birim_id=${user.birim_id}`;
+        const data = await getTableData('15', filterParams, true);
+        setUnvanlar(data);
         
         setYeniUnvan('');
         setError(null);
       } else {
-        setError('Ünvan eklenemedi: ' + response.error);
+        setError('Ünvan eklenemedi: ' + result.error);
       }
     } catch (error) {
       console.error('Ünvan ekleme hatası:', error);
@@ -157,15 +141,15 @@ const UnvanTanimlama: React.FC = () => {
 
   const handleUnvanSil = async (unvanId: number) => {
     try {
-      const response = await apiRequest(`/api/v1/data/table/15/rows/${unvanId}`, {
-        method: 'DELETE'
-      });
+      const result = await deleteTableData('15', unvanId.toString());
 
-      if (response.success) {
-        const updatedUnvanlar = unvanlar.filter(unvan => unvan.id !== unvanId);
-        setUnvanlar(updatedUnvanlar);
+      if (result.success && user) {
+        // Veriyi yeniden yükle
+        const filterParams = `kurum_id=${user.kurum_id}&departman_id=${user.departman_id}&birim_id=${user.birim_id}`;
+        const data = await getTableData('15', filterParams, true);
+        setUnvanlar(data);
       } else {
-        setError('Ünvan silinemedi: ' + response.error);
+        setError('Ünvan silinemedi: ' + result.error);
       }
     } catch (error) {
       console.error('Ünvan silme hatası:', error);

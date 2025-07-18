@@ -22,6 +22,7 @@ const Kurumlar = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
+        // Normal sayfa yüklendiğinde cache'den al (hızlı)
         const apiKurumlar = await getKurumlar();
         setKurumlar(apiKurumlar);
       } catch (error: any) {
@@ -37,7 +38,8 @@ const Kurumlar = () => {
   // Veri yenileme fonksiyonu
   const refreshData = async () => {
     try {
-      const apiKurumlar = await getKurumlar();
+      // Zorla yenileme - API'den fresh veri çek
+      const apiKurumlar = await getKurumlar(true);
       setKurumlar(apiKurumlar);
       setSuccessMsg('Veriler yenilendi!');
       setTimeout(() => setSuccessMsg(''), 3000);

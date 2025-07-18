@@ -3,7 +3,7 @@ import { Plus, Trash2, Calendar, Palette, ChevronDown, Clock } from 'lucide-reac
 import { useCapitalization } from '../../../hooks/useCapitalization';
 import { SuccessNotification } from '../../../components/ui/Notification';
 import { useDepartmanBirim } from './DepartmanBirimContext';
-import { apiRequest } from '../../../lib/api';
+import { apiRequest, getTableData, addTableData, deleteTableData } from '../../../lib/api';
 
 interface IzinIstek {
   id: string;
@@ -54,18 +54,9 @@ const IzinTanimlama: React.FC = () => {
     const loadIzinIstekleri = async () => {
       if (kurum_id && departman_id && birim_id) {
         try {
-          const response = await apiRequest('/api/v1/data/table/16', {
-            method: 'GET'
-          });
-          
-          if (response.success) {
-            const filteredIzinIstekleri = response.data.rows.filter((i: any) => 
-              i.kurum_id === kurum_id && 
-              i.departman_id === departman_id && 
-              i.birim_id === birim_id
-            );
-            setPersonnelRequests(filteredIzinIstekleri);
-          }
+          const filterParams = `kurum_id=${kurum_id}&departman_id=${departman_id}&birim_id=${birim_id}`;
+          const data = await getTableData('16', filterParams);
+          setPersonnelRequests(data);
         } catch (error) {
           console.error('İzin istekleri yüklenemedi:', error);
         }
@@ -98,14 +89,13 @@ const IzinTanimlama: React.FC = () => {
         aktif_mi: true
       };
 
-      const response = await apiRequest('/api/v1/data/table/16/rows', {
-        method: 'POST',
-        body: JSON.stringify(newIzinIstek)
-      });
+      const result = await addTableData('16', newIzinIstek);
 
-      if (response.success) {
-        const updatedIzinIstekleri = [...personnelRequests, response.data.row];
-        setPersonnelRequests(updatedIzinIstekleri);
+      if (result.success) {
+        // Veriyi yeniden yükle
+        const filterParams = `kurum_id=${kurum_id}&departman_id=${departman_id}&birim_id=${birim_id}`;
+        const data = await getTableData('16', filterParams, true);
+        setPersonnelRequests(data);
         
         setShowSuccess(true);
         setTimeout(() => setShowSuccess(false), 2000);
@@ -116,7 +106,7 @@ const IzinTanimlama: React.FC = () => {
         setSeciliRenk('#3B82F6');
         setMesaiDusumu(false);
       } else {
-        setErrorMsg('İzin türü eklenemedi: ' + response.error);
+        setErrorMsg('İzin türü eklenemedi: ' + result.error);
       }
     } catch (error) {
       console.error('İzin türü ekleme hatası:', error);
@@ -126,15 +116,15 @@ const IzinTanimlama: React.FC = () => {
 
   const handleRemoveRequest = async (id: string) => {
     try {
-      const response = await apiRequest(`/api/v1/data/table/16/rows/${id}`, {
-        method: 'DELETE'
-      });
+      const result = await deleteTableData('16', id);
 
-      if (response.success) {
-        const updatedIzinIstekleri = personnelRequests.filter(r => r.id !== id);
-        setPersonnelRequests(updatedIzinIstekleri);
+      if (result.success) {
+        // Veriyi yeniden yükle
+        const filterParams = `kurum_id=${kurum_id}&departman_id=${departman_id}&birim_id=${birim_id}`;
+        const data = await getTableData('16', filterParams, true);
+        setPersonnelRequests(data);
       } else {
-        setErrorMsg('İzin türü silinemedi: ' + response.error);
+        setErrorMsg('İzin türü silinemedi: ' + result.error);
       }
     } catch (error) {
       console.error('İzin türü silme hatası:', error);

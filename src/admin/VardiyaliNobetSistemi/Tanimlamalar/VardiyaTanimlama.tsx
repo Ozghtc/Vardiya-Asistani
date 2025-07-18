@@ -4,7 +4,7 @@ import { useCapitalization } from '../../../hooks/useCapitalization';
 import QuickShiftButton from '../../../components/shifts/QuickShiftButton';
 import { SuccessNotification } from '../../../components/ui/Notification';
 import TanimliVardiyalar from './TanimliVardiyalar';
-import { apiRequest } from '../../../lib/api';
+import { apiRequest, getTableData, addTableData, deleteTableData } from '../../../lib/api';
 import { useAuthContext } from '../../../contexts/AuthContext';
 
 interface Shift {
@@ -54,27 +54,21 @@ const VardiyaTanimlama: React.FC = () => {
         return;
       }
 
-      const response = await apiRequest('/api/v1/data/table/17');
-      if (response.success) {
-        const shiftData = response.data.rows
-          .filter((row: any) => 
-            row.kurum_id === currentUser.kurum_id && 
-            row.departman_id === currentUser.departman_id && 
-            row.birim_id === currentUser.birim_id
-          )
-          .map((row: any) => ({
-            id: row.id,
-            vardiya_adi: row.vardiya_adi,
-            baslangic_saati: row.baslangic_saati,
-            bitis_saati: row.bitis_saati,
-            calisma_saati: row.calisma_saati || 8,
-            aktif_mi: row.aktif_mi,
-            kurum_id: row.kurum_id,
-            departman_id: row.departman_id,
-            birim_id: row.birim_id
-          }));
-        setShifts(shiftData);
-      }
+      const filterParams = `kurum_id=${currentUser.kurum_id}&departman_id=${currentUser.departman_id}&birim_id=${currentUser.birim_id}`;
+      const data = await getTableData('17', filterParams);
+      
+      const shiftData = data.map((row: any) => ({
+        id: row.id,
+        vardiya_adi: row.vardiya_adi,
+        baslangic_saati: row.baslangic_saati,
+        bitis_saati: row.bitis_saati,
+        calisma_saati: row.calisma_saati || 8,
+        aktif_mi: row.aktif_mi,
+        kurum_id: row.kurum_id,
+        departman_id: row.departman_id,
+        birim_id: row.birim_id
+      }));
+      setShifts(shiftData);
     } catch (error) {
       console.error('Vardiya yükleme hatası:', error);
       setError('Vardiyalar yüklenirken hata oluştu');
