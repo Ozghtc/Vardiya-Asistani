@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuthContext } from '../../../contexts/AuthContext';
-import { apiRequest, getTableData, addTableData, deleteTableData, clearTableCache } from '../../../lib/api';
+import { apiRequest, getTableData, addTableData, deleteTableData, clearTableCache, updateTableData } from '../../../lib/api';
 import { Trash2, Plus, Clock } from 'lucide-react';
 
 interface Unvan {
@@ -210,26 +210,34 @@ const UnvanTanimlama: React.FC = () => {
       birim_id: user.birim_id,
       aktif_mi: true
     };
-          try {
-        console.log('API gonderilen veri:', payload);
-        const response = await apiRequest('/api/v1/data/table/24/rows', {
-          method: 'POST',
-          body: JSON.stringify(payload)
-        });
-        console.log('📥 API yanıtı:', response);
-        if (response.success) {
-          setKaydedilenMesai(response.data.row);
-          console.log('✅ Kayıt başarılı:', response.data.row);
-          // Kaydetme başarılı olduktan sonra tüm mesai türlerini yeniden yükle
-          await loadMesaiTurleri();
-        } else {
-          console.error('❌ API Hatası:', response.error);
-          alert('Kayıt başarısız: ' + (response.error || 'Bilinmeyen hata'));
-        }
-      } catch (err) {
-        console.error('🚨 Kayıt hatası:', err);
-        alert('Kayıt sırasında hata oluştu: ' + err);
+
+    try {
+      console.log('API gonderilen veri:', payload);
+      const result = await addTableData('24', payload);
+      
+      console.log('📥 API yanıtı:', result);
+      if (result.success) {
+        setKaydedilenMesai(result.data);
+        console.log('✅ Kayıt başarılı:', result.data);
+        
+        // Kaydetme başarılı olduktan sonra tüm mesai türlerini yeniden yükle
+        await loadMesaiTurleri();
+        
+        // Popup'ı kapat ve formu temizle
+        setShowMesaiPopup(false);
+        setMesaiTanımları([]);
+        setMesaiAdi('');
+        setMesaiSaati(8);
+        
+        alert('Mesai türü başarıyla kaydedildi!');
+      } else {
+        console.error('❌ API Hatası:', result.error);
+        alert('Kayıt başarısız: ' + (result.error || 'Bilinmeyen hata'));
       }
+    } catch (err) {
+      console.error('🚨 Kayıt hatası:', err);
+      alert('Kayıt sırasında hata oluştu: ' + err);
+    }
   };
 
   const handleMesaiSil = (id: string) => {
@@ -245,19 +253,22 @@ const UnvanTanimlama: React.FC = () => {
     try {
       console.log('🗑️ Mesai türü siliniyor:', mesaiId);
       
-      const response = await apiRequest(`/api/v1/data/table/24/rows/${mesaiId}`, {
-        method: 'DELETE'
-      });
+      const result = await deleteTableData('24', mesaiId.toString());
       
-      console.log('📥 Silme API yanıtı:', response);
+      console.log('📥 Silme API yanıtı:', result);
       
-      if (response.success) {
+      if (result.success) {
         console.log('✅ Mesai türü başarıyla silindi');
-        // Listeyi güncelle
-        setKaydedilenMesaiTurleri(prev => prev.filter(mesai => mesai.id !== mesaiId));
+        // Listeyi yeniden yükle
+        if (user?.kurum_id && user?.departman_id && user?.birim_id) {
+          const filterParams = `kurum_id=${user.kurum_id}&departman_id=${user.departman_id}&birim_id=${user.birim_id}`;
+          const data = await getTableData('24', filterParams, true);
+          setKaydedilenMesaiTurleri(data);
+        }
+        alert('Mesai türü başarıyla silindi!');
       } else {
-        console.error('❌ Silme API Hatası:', response.error);
-        alert('Mesai türü silinemedi: ' + (response.error || 'Bilinmeyen hata'));
+        console.error('❌ Silme API Hatası:', result.error);
+        alert('Mesai türü silinemedi: ' + (result.error || 'Bilinmeyen hata'));
       }
     } catch (error) {
       console.error('🚨 Mesai türü silme hatası:', error);
