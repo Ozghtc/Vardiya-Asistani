@@ -164,13 +164,23 @@ const PersonelIzinIstekleri: React.FC = () => {
     if (!user) return;
     
     try {
-      const rows = await apiCall('/api/v1/data/table/18');
-      const filteredAlanlar = rows.filter((alan: AlanTanimlama) => 
-        alan.kurum_id === user.kurum_id &&
-        alan.departman_id === user.departman_id &&
-        alan.birim_id === user.birim_id
-      );
+      const rows = await apiCall('/api/v1/data/table/25');
+      const filteredAlanlar = rows
+        .filter((alan: any) => 
+          alan.kurum_id === user.kurum_id &&
+          alan.departman_id === user.departman_id &&
+          alan.birim_id === user.birim_id
+        )
+        .map((alan: any) => ({
+          id: alan.id.toString(),
+          alan_adi: alan.alan_adi,
+          renk: alan.renk || '#6B7280',
+          kurum_id: alan.kurum_id,
+          departman_id: alan.departman_id,
+          birim_id: alan.birim_id
+        }));
       setAlanTanimlamalari(filteredAlanlar);
+      console.log('📊 Yüklenen alanlar:', filteredAlanlar);
     } catch (error) {
       console.error('Alan tanımlamaları yükleme hatası:', error);
     }
@@ -182,13 +192,26 @@ const PersonelIzinIstekleri: React.FC = () => {
     
     try {
       const rows = await apiCall('/api/v1/data/table/17');
-      const filteredVardiyalar = rows.filter((vardiya: VardiyaTanimlama) => 
-        vardiya.kurum_id === user.kurum_id &&
-        vardiya.departman_id === user.departman_id &&
-        vardiya.birim_id === user.birim_id &&
-        vardiya.aktif_mi
-      );
+      const filteredVardiyalar = rows
+        .filter((vardiya: any) => 
+          vardiya.kurum_id === user.kurum_id &&
+          vardiya.departman_id === user.departman_id &&
+          vardiya.birim_id === user.birim_id &&
+          vardiya.aktif_mi
+        )
+        .map((vardiya: any) => ({
+          id: vardiya.id.toString(),
+          vardiya_adi: vardiya.vardiya_adi,
+          baslangic_saati: vardiya.baslangic_saati,
+          bitis_saati: vardiya.bitis_saati,
+          calisma_saati: vardiya.calisma_saati || 8,
+          aktif_mi: vardiya.aktif_mi,
+          kurum_id: vardiya.kurum_id,
+          departman_id: vardiya.departman_id,
+          birim_id: vardiya.birim_id
+        }));
       setVardiyaTanimlamalari(filteredVardiyalar);
+      console.log('📊 Yüklenen vardiyalar:', filteredVardiyalar);
     } catch (error) {
       console.error('Vardiya tanımlamaları yükleme hatası:', error);
     }
