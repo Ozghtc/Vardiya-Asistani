@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Calendar, User2, Plus, Filter, Clock, CalendarDays, X, MapPin, Save } from 'lucide-react';
 import { useAuthContext } from '../../../contexts/AuthContext';
@@ -96,6 +96,7 @@ interface TalepItem {
 const PersonelIzinIstekleri: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuthContext();
+  const personelDropdownRef = useRef<HTMLDivElement>(null);
   
   // State'ler
   const [personnel, setPersonnel] = useState<Personnel[]>([]);
@@ -117,6 +118,10 @@ const PersonelIzinIstekleri: React.FC = () => {
   const [selectedMesaiSaati, setSelectedMesaiSaati] = useState<string>('');
   const [aciklama, setAciklama] = useState<string>('');
   const [talepler, setTalepler] = useState<TalepItem[]>([]);
+  
+  // Personel arama state'leri
+  const [personelSearchTerm, setPersonelSearchTerm] = useState<string>('');
+  const [showPersonelDropdown, setShowPersonelDropdown] = useState<boolean>(false);
   
   // API verileri
   const [izinTanimlamalari, setIzinTanimlamalari] = useState<IzinTanimlama[]>([]);
@@ -380,6 +385,8 @@ const PersonelIzinIstekleri: React.FC = () => {
     
     // Formu temizle
     setSelectedPersonel(null);
+    setPersonelSearchTerm('');
+    setShowPersonelDropdown(false);
     setSelectedTarih(null);
     setSelectedBitisTarih(null);
     setSelectedAlan('');
@@ -446,6 +453,8 @@ const PersonelIzinIstekleri: React.FC = () => {
       setShowPopup(false);
       setSelectedTip(null);
       setSelectedPersonel(null);
+      setPersonelSearchTerm('');
+      setShowPersonelDropdown(false);
       setTalepler([]);
       setSelectedTarih(null);
       setSelectedBitisTarih(null);
@@ -501,6 +510,51 @@ const PersonelIzinIstekleri: React.FC = () => {
     
     return 'Ünvan belirtilmemiş';
   };
+
+  // Personel adını al
+  const getPersonelAdi = (person: Personnel) => {
+    if (person.ad && person.soyad) {
+      return `${person.ad} ${person.soyad}`;
+    }
+    if (person.ad_soyad) {
+      return person.ad_soyad;
+    }
+    if (person.personel_adi && person.personel_soyadi) {
+      return `${person.personel_adi} ${person.personel_soyadi}`;
+    }
+    return `Personel ${person.id}`;
+  };
+
+  // Arama terimine göre personel filtrele
+  const filteredPersonnel = personnel.filter(person => {
+    const personelAdi = getPersonelAdi(person).toLowerCase();
+    const unvanAdi = getUnvanAdi(person).toLowerCase();
+    const searchTerm = personelSearchTerm.toLowerCase();
+    
+    return personelAdi.includes(searchTerm) || unvanAdi.includes(searchTerm);
+  });
+
+  // Seçili personelin adını al
+  const getSelectedPersonelAdi = () => {
+    if (!selectedPersonel) return '';
+    const person = personnel.find(p => p.id === selectedPersonel);
+    if (!person) return '';
+    return getPersonelAdi(person);
+  };
+
+  // Click outside handler for dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (personelDropdownRef.current && !personelDropdownRef.current.contains(event.target as Node)) {
+        setShowPersonelDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   // Durum rengini al
   const getDurumRengi = (durum: string) => {
@@ -701,16 +755,18 @@ const PersonelIzinIstekleri: React.FC = () => {
               <button
                 onClick={() => {
                   setShowPopup(false);
-                                          setSelectedTip(null);
-                        setSelectedPersonel(null);
-                        setTalepler([]);
-                        setSelectedTarih(null);
-                        setSelectedBitisTarih(null);
-                        setIsTarihAraligi(false);
-                        setSelectedAlan('');
-                        setSelectedIzinTuru('');
-                        setSelectedMesaiSaati('');
-                        setAciklama('');
+                  setSelectedTip(null);
+                  setSelectedPersonel(null);
+                  setPersonelSearchTerm('');
+                  setShowPersonelDropdown(false);
+                  setTalepler([]);
+                  setSelectedTarih(null);
+                  setSelectedBitisTarih(null);
+                  setIsTarihAraligi(false);
+                  setSelectedAlan('');
+                  setSelectedIzinTuru('');
+                  setSelectedMesaiSaati('');
+                  setAciklama('');
                 }}
                 className="text-gray-400 hover:text-gray-600 transition-colors"
               >
@@ -768,32 +824,59 @@ const PersonelIzinIstekleri: React.FC = () => {
                 {selectedTip && (
                   <div className="space-y-4">
                     {/* Personel Seçimi */}
-                    <div>
+                    <div className="relative" ref={personelDropdownRef}>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Personel <span className="text-red-500">*</span>
                       </label>
-                      <select
-                        value={selectedPersonel || ''}
-                        onChange={(e) => setSelectedPersonel(e.target.value ? Number(e.target.value) : null)}
-                        className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 py-2 px-3"
-                      >
-                        <option value="">Personel seçin</option>
-                        {personnel.map((person) => {
-                          const personelAdi = person.ad && person.soyad 
-                            ? `${person.ad} ${person.soyad}`
-                            : person.ad_soyad 
-                            ? person.ad_soyad
-                            : person.personel_adi && person.personel_soyadi
-                            ? `${person.personel_adi} ${person.personel_soyadi}`
-                            : `Personel ${person.id}`;
-                          
-                          return (
-                            <option key={person.id} value={person.id}>
-                              {personelAdi} - {getUnvanAdi(person)}
-                            </option>
-                          );
-                        })}
-                      </select>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={selectedPersonel ? getSelectedPersonelAdi() : personelSearchTerm}
+                          onChange={(e) => {
+                            setPersonelSearchTerm(e.target.value);
+                            setSelectedPersonel(null);
+                            setShowPersonelDropdown(true);
+                          }}
+                          onFocus={() => setShowPersonelDropdown(true)}
+                          placeholder="Personel adı yazın veya seçin..."
+                          className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 py-2 px-3 pr-10"
+                        />
+                        <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                          <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </div>
+                      </div>
+                      
+                      {/* Dropdown */}
+                      {showPersonelDropdown && (
+                        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                          {filteredPersonnel.length > 0 ? (
+                            filteredPersonnel.map((person) => (
+                              <button
+                                key={person.id}
+                                onClick={() => {
+                                  setSelectedPersonel(person.id);
+                                  setPersonelSearchTerm('');
+                                  setShowPersonelDropdown(false);
+                                }}
+                                className="w-full text-left px-4 py-3 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none border-b border-gray-100 last:border-b-0"
+                              >
+                                <div className="font-medium text-gray-900">
+                                  {getPersonelAdi(person)}
+                                </div>
+                                <div className="text-sm text-gray-500">
+                                  {getUnvanAdi(person)}
+                                </div>
+                              </button>
+                            ))
+                          ) : (
+                            <div className="px-4 py-3 text-gray-500 text-sm">
+                              {personelSearchTerm ? 'Aranan kriterlere uygun personel bulunamadı' : 'Personel listesi yükleniyor...'}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     {/* Tarih Seçimi */}
