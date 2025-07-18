@@ -407,6 +407,33 @@ const PersonelIzinIstekleri: React.FC = () => {
       
       // Her talep için API'ye kaydet
       for (const talep of talepler) {
+        // Alan rengi ve kısaltma bul
+        const alanBilgisi = alanTanimlamalari.find(alan => alan.alan_adi === talep.alan);
+        const alanRenk = alanBilgisi ? alanBilgisi.renk : '';
+        const alanKisaltma = alanBilgisi ? alanBilgisi.alan_adi.substring(0, 8) : talep.alan || '';
+
+        // İzin rengi bul
+        const izinBilgisi = izinTanimlamalari.find(izin => izin.izin_turu === talep.izin_turu);
+        const izinRenk = izinBilgisi ? izinBilgisi.renk : '';
+
+        // Saat hesaplamaları
+        const mesaiBaslangic = talep.mesai_saati ? talep.mesai_saati.split('-')[0] : '';
+        const mesaiBitis = talep.mesai_saati ? talep.mesai_saati.split('-')[1] : '';
+        const saatAraligi = mesaiBaslangic && mesaiBitis ? `${mesaiBaslangic} - ${mesaiBitis}` : '';
+        
+        // Saat süresi hesapla
+        let saatSuresi = '';
+        if (mesaiBaslangic && mesaiBitis) {
+          const baslangic = new Date(`2000-01-01T${mesaiBaslangic}:00`);
+          const bitis = new Date(`2000-01-01T${mesaiBitis}:00`);
+          if (bitis < baslangic) {
+            bitis.setDate(bitis.getDate() + 1); // Ertesi güne geç
+          }
+          const fark = bitis.getTime() - baslangic.getTime();
+          const saat = Math.floor(fark / (1000 * 60 * 60));
+          saatSuresi = `${saat} saat`;
+        }
+
         const talepData = {
           kullanici_id: user.id, // Talep eden kullanıcının ID'si
           personel_id: talep.personel_id, // Talep yapılan personelin ID'si
@@ -415,8 +442,8 @@ const PersonelIzinIstekleri: React.FC = () => {
           baslangic_tarihi: talep.tarih.toISOString().split('T')[0],
           bitis_tarihi: talep.bitis_tarih ? talep.bitis_tarih.toISOString().split('T')[0] : talep.tarih.toISOString().split('T')[0],
           alan_adi: talep.alan || '',
-          mesai_baslangic: talep.mesai_saati ? talep.mesai_saati.split('-')[0] : '',
-          mesai_bitis: talep.mesai_saati ? talep.mesai_saati.split('-')[1] : '',
+          mesai_baslangic: mesaiBaslangic,
+          mesai_bitis: mesaiBitis,
           vardiya_adi: talep.mesai_saati || '',
           izin_turu: talep.izin_turu || '',
           izin_kisaltma: talep.izin_turu || '',
@@ -425,7 +452,13 @@ const PersonelIzinIstekleri: React.FC = () => {
           durum: 'beklemede',
           kurum_id: user.kurum_id,
           departman_id: user.departman_id,
-          birim_id: user.birim_id
+          birim_id: user.birim_id,
+          // Yeni sütunlar
+          alan_renk: alanRenk,
+          izin_renk: izinRenk,
+          saat_araligi: saatAraligi,
+          saat_suresi: saatSuresi,
+          alan_kisaltma: alanKisaltma
         };
 
         console.log('Kaydedilecek talep verisi:', talepData);
