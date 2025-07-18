@@ -851,15 +851,7 @@ export default function NobetOlustur() {
                           }}
                           style={assignment ? { background: alanColor, borderColor: alanColor, borderStyle: 'solid' } : {}}
                         >
-                          {assignment && assignment.istekOzet ? (
-                            <span
-                              className="text-xs font-bold select-none px-4 py-2 rounded-lg"
-                              style={{ background: '#444', color: '#fff', display: 'inline-block' }}
-                              title="Personel İstek"
-                            >
-                              {assignment.istekOzet}
-                            </span>
-                          ) : assignment && assignment.mesai ? (
+                          {assignment && assignment.mesai ? (
                             <>
                               {/* Saat aralığı üstte küçük */}
                               {assignment.mesai.hours && (
@@ -875,6 +867,14 @@ export default function NobetOlustur() {
                                 {assignment.mesai.name || assignment.alan}-{assignment.mesai.saat}
                               </span>
                             </>
+                          ) : assignment && assignment.istekOzet ? (
+                            <span
+                              className="text-xs font-bold select-none px-4 py-2 rounded-lg"
+                              style={{ background: '#444', color: '#fff', display: 'inline-block' }}
+                              title="Personel İstek"
+                            >
+                              {assignment.istekOzet}
+                            </span>
                           ) : null}
                         </div>
                       </td>
