@@ -253,13 +253,19 @@ const UnvanTanimlama: React.FC = () => {
     try {
       console.log('🗑️ Mesai türü siliniyor:', mesaiId);
       
+      // Cache'i temizle
+      clearTableCache('24');
+      
       const result = await deleteTableData('24', mesaiId.toString());
       
       console.log('📥 Silme API yanıtı:', result);
       
       if (result.success) {
         console.log('✅ Mesai türü başarıyla silindi');
-        // Listeyi yeniden yükle
+        
+        // Cache'i tekrar temizle ve listeyi yeniden yükle
+        clearTableCache('24');
+        
         if (user?.kurum_id && user?.departman_id && user?.birim_id) {
           const filterParams = `kurum_id=${user.kurum_id}&departman_id=${user.departman_id}&birim_id=${user.birim_id}`;
           const data = await getTableData('24', filterParams, true);
@@ -272,7 +278,7 @@ const UnvanTanimlama: React.FC = () => {
       }
     } catch (error) {
       console.error('🚨 Mesai türü silme hatası:', error);
-      alert('Mesai türü silinirken hata oluştu. Lütfen tekrar deneyin.');
+      alert('Mesai türü silinirken hata oluştu: ' + error);
     }
   };
 
