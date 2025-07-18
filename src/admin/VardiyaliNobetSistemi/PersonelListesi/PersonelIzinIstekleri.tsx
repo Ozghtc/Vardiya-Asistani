@@ -530,11 +530,42 @@ const PersonelIzinIstekleri: React.FC = () => {
   };
 
   const getIzinDurumu = (personelId: number, date: Date) => {
-    const istek = izinIstekleri.find(istek => 
-      (istek.personel_id === personelId || istek.kullanici_id === personelId) &&
-      new Date(istek.baslangic_tarihi) <= date &&
-      new Date(istek.bitis_tarihi) >= date
-    );
+    const istek = izinIstekleri.find(istek => {
+      // personel_id ve kullanici_id kontrolü (hem string hem number olabilir)
+      const personelIdMatch = (
+        istek.personel_id === personelId || 
+        istek.personel_id?.toString() === personelId.toString() ||
+        istek.kullanici_id === personelId ||
+        istek.kullanici_id?.toString() === personelId.toString()
+      );
+      
+      // Tarih kontrolü
+      const istekBaslangic = new Date(istek.baslangic_tarihi);
+      const istekBitis = new Date(istek.bitis_tarihi);
+      const kontrol = new Date(date);
+      
+      // Saat kısımlarını sıfırla (sadece tarih karşılaştırması)
+      istekBaslangic.setHours(0, 0, 0, 0);
+      istekBitis.setHours(0, 0, 0, 0);
+      kontrol.setHours(0, 0, 0, 0);
+      
+      const tarihMatch = istekBaslangic <= kontrol && istekBitis >= kontrol;
+      
+      console.log('Debug getIzinDurumu:', {
+        personelId,
+        date: date.toISOString(),
+        istekPersonelId: istek.personel_id,
+        istekKullaniciId: istek.kullanici_id,
+        istekBaslangic: istekBaslangic.toISOString(),
+        istekBitis: istekBitis.toISOString(),
+        kontrol: kontrol.toISOString(),
+        personelIdMatch,
+        tarihMatch,
+        sonuc: personelIdMatch && tarihMatch
+      });
+      
+      return personelIdMatch && tarihMatch;
+    });
     
     if (!istek) return null;
     
