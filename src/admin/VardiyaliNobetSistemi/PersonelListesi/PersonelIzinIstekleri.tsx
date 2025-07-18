@@ -9,16 +9,21 @@ import { addDays, differenceInCalendarDays, format } from 'date-fns';
 
 interface Personnel {
   id: number;
-  tcno: string;
-  ad: string;
-  soyad: string;
-  unvan: string;
-  email: string;
-  telefon: string;
+  tcno?: string;
+  ad?: string;
+  soyad?: string;
+  unvan?: string;
+  email?: string;
+  telefon?: string;
   kurum_id: string;
   departman_id: string;
   birim_id: string;
   aktif_mi: boolean;
+  // personel_bilgileri tablosundaki alternatif alan isimleri
+  ad_soyad?: string;
+  personel_adi?: string;
+  personel_soyadi?: string;
+  unvan_adi?: string;
 }
 
 interface IzinIstek {
@@ -201,16 +206,38 @@ const PersonelIzinIstekleri: React.FC = () => {
     if (!user) return;
     
     try {
-      const rows = await apiCall('/api/v1/data/table/13');
-      const filteredPersonnel = rows.filter((person: Personnel) => 
+      // Önce personel_bilgileri tablosundan yükle (tablo 21)
+      const rows = await apiCall('/api/v1/data/table/21');
+      console.log('📊 Yüklenen personel verileri:', rows);
+      
+      const filteredPersonnel = rows.filter((person: any) => 
         person.kurum_id === user.kurum_id &&
         person.departman_id === user.departman_id &&
         person.birim_id === user.birim_id &&
-        person.aktif_mi
+        person.aktif_mi === true
       );
+      
+      console.log('🔍 Filtrelenmiş personel:', filteredPersonnel);
+      console.log('👤 Kullanıcı bilgileri:', user);
+      
       setPersonnel(filteredPersonnel);
     } catch (error) {
       console.error('Personel yükleme hatası:', error);
+      
+      // Fallback: kullanicilar tablosundan dene
+      try {
+        const fallbackRows = await apiCall('/api/v1/data/table/13');
+        const fallbackPersonnel = fallbackRows.filter((person: any) => 
+          person.kurum_id === user.kurum_id &&
+          person.departman_id === user.departman_id &&
+          person.birim_id === user.birim_id &&
+          person.aktif_mi === true
+        );
+        console.log('🔄 Fallback personel verileri:', fallbackPersonnel);
+        setPersonnel(fallbackPersonnel);
+      } catch (fallbackError) {
+        console.error('Fallback personel yükleme hatası:', fallbackError);
+      }
     }
   };
 
@@ -464,8 +491,19 @@ const PersonelIzinIstekleri: React.FC = () => {
                 <tr key={person.id} className="hover:bg-gray-50 align-top">
                   <td className="py-3 px-6 text-sm sticky left-0 bg-white border-r z-10">
                     <div>
-                      <div className="font-medium text-gray-900">{person.ad} {person.soyad}</div>
-                      <div className="text-gray-500 text-xs">{person.unvan}</div>
+                      <div className="font-medium text-gray-900">
+                        {person.ad && person.soyad 
+                          ? `${person.ad} ${person.soyad}`
+                          : person.ad_soyad 
+                          ? person.ad_soyad
+                          : person.personel_adi && person.personel_soyadi
+                          ? `${person.personel_adi} ${person.personel_soyadi}`
+                          : `Personel ${person.id}`
+                        }
+                      </div>
+                      <div className="text-gray-500 text-xs">
+                        {person.unvan || person.unvan_adi || 'Ünvan belirtilmemiş'}
+                      </div>
                     </div>
                   </td>
                   {daysInRange.map(dateObj => {
