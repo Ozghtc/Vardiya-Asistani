@@ -100,10 +100,21 @@ export const getTableData = async (tableId: string, filterParams: string = '', f
 // Tablo verisi ekle ve cache'i temizle
 export const addTableData = async (tableId: string, data: any) => {
   try {
-    const response = await apiRequest(`/api/v1/data/table/${tableId}/rows`, {
-      method: 'POST',
-      body: JSON.stringify(data)
-    });
+    // Önce Netlify proxy dene
+    let response;
+    try {
+      response = await apiRequest(`/api/v1/data/table/${tableId}/rows`, {
+        method: 'POST',
+        body: JSON.stringify(data)
+      });
+    } catch (proxyError) {
+      // Proxy başarısız olursa direkt API çağrısı yap
+      console.log('Proxy hatası, direkt API çağrısı yapılıyor...', proxyError);
+      response = await directApiCall(`/api/v1/data/table/${tableId}/rows`, {
+        method: 'POST',
+        body: JSON.stringify(data)
+      });
+    }
     
     // Cache'i temizle - bu tablonun tüm cache'lerini temizle
     clearTableCache(tableId);
@@ -118,10 +129,21 @@ export const addTableData = async (tableId: string, data: any) => {
 // Tablo verisi güncelle ve cache'i temizle
 export const updateTableData = async (tableId: string, rowId: string, data: any) => {
   try {
-    const response = await apiRequest(`/api/v1/data/table/${tableId}/rows/${rowId}`, {
-      method: 'PUT',
-      body: JSON.stringify(data)
-    });
+    // Önce Netlify proxy dene
+    let response;
+    try {
+      response = await apiRequest(`/api/v1/data/table/${tableId}/rows/${rowId}`, {
+        method: 'PUT',
+        body: JSON.stringify(data)
+      });
+    } catch (proxyError) {
+      // Proxy başarısız olursa direkt API çağrısı yap
+      console.log('Proxy hatası, direkt API çağrısı yapılıyor...', proxyError);
+      response = await directApiCall(`/api/v1/data/table/${tableId}/rows/${rowId}`, {
+        method: 'PUT',
+        body: JSON.stringify(data)
+      });
+    }
     
     // Cache'i temizle - bu tablonun tüm cache'lerini temizle
     clearTableCache(tableId);
@@ -133,12 +155,47 @@ export const updateTableData = async (tableId: string, rowId: string, data: any)
   }
 };
 
+// Direkt API çağrısı (Netlify proxy bypass)
+const directApiCall = async (path: string, options: RequestInit = {}) => {
+  const method = options.method || 'GET';
+  const url = `${API_CONFIG.baseURL}${path}`;
+  
+  const response = await fetch(url, {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      'X-API-Key': API_CONFIG.apiKey,
+      ...options.headers
+    },
+    body: options.body,
+    // Timeout artırıldı
+    signal: AbortSignal.timeout(10000)
+  });
+  
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.message || `API Error: ${response.status}`);
+  }
+  
+  return data;
+};
+
 // Tablo verisi sil ve cache'i temizle
 export const deleteTableData = async (tableId: string, rowId: string) => {
   try {
-    const response = await apiRequest(`/api/v1/data/table/${tableId}/rows/${rowId}`, {
-      method: 'DELETE'
-    });
+    // Önce Netlify proxy dene
+    let response;
+    try {
+      response = await apiRequest(`/api/v1/data/table/${tableId}/rows/${rowId}`, {
+        method: 'DELETE'
+      });
+    } catch (proxyError) {
+      // Proxy başarısız olursa direkt API çağrısı yap
+      console.log('Proxy hatası, direkt API çağrısı yapılıyor...', proxyError);
+      response = await directApiCall(`/api/v1/data/table/${tableId}/rows/${rowId}`, {
+        method: 'DELETE'
+      });
+    }
     
     // Cache'i temizle - bu tablonun tüm cache'lerini temizle
     clearTableCache(tableId);
