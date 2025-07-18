@@ -408,7 +408,9 @@ const PersonelIzinIstekleri: React.FC = () => {
       // Her talep için API'ye kaydet
       for (const talep of talepler) {
         const talepData = {
-          kullanici_id: talep.personel_id, // Artık personel ID'si kullanılıyor
+          kullanici_id: user.id, // Talep eden kullanıcının ID'si
+          personel_id: talep.personel_id, // Talep yapılan personelin ID'si
+          personel_adi: talep.personel_adi, // Talep yapılan personelin adı
           talep_tipi: talep.tip === 'nobet' ? 'nobet_istegi' : 'izin_talebi',
           baslangic_tarihi: talep.tarih.toISOString().split('T')[0],
           bitis_tarihi: talep.bitis_tarih ? talep.bitis_tarih.toISOString().split('T')[0] : talep.tarih.toISOString().split('T')[0],
