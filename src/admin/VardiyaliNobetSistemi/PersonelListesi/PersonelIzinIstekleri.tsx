@@ -662,6 +662,21 @@ const PersonelIzinIstekleri: React.FC = () => {
   }, []);
 
   // Durum rengini al
+  // Renk kontrastına göre yazı rengini belirle
+  const getTextColor = (backgroundColor: string) => {
+    // Hex rengi RGB'ye çevir
+    const hex = backgroundColor.replace('#', '');
+    const r = parseInt(hex.substr(0, 2), 16);
+    const g = parseInt(hex.substr(2, 2), 16);
+    const b = parseInt(hex.substr(4, 2), 16);
+    
+    // Parlaklık hesapla (0-255 arası)
+    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+    
+    // Koyu renk ise beyaz, açık renk ise koyu yazı
+    return brightness < 128 ? '#FFFFFF' : '#000000';
+  };
+
   const getDurumRengi = (durum: string) => {
     switch (durum) {
       case 'onaylandi': return 'bg-green-100 text-green-800';
@@ -798,20 +813,77 @@ const PersonelIzinIstekleri: React.FC = () => {
                     return (
                       <td key={dateObj.toISOString()} className="py-3 px-3 text-center text-sm align-top">
                         {izinDurumu ? (
-                          <div 
-                            className={`px-3 py-2 rounded-lg text-sm font-semibold text-white shadow-sm min-h-[40px] flex items-center justify-center ${getDurumRengi(izinDurumu.durum)}`}
-                            style={{
-                              backgroundColor: izinDurumu.tur === 'KİRMİZİ' ? '#DC2626' : 
-                                              izinDurumu.tur === 'MAVİ' ? '#2563EB' :
-                                              izinDurumu.tur === 'YEŞİL' ? '#16A34A' :
-                                              izinDurumu.tur === 'SARI' ? '#CA8A04' :
-                                              izinDurumu.tur === 'MOR' ? '#9333EA' :
-                                              izinDurumu.tur === 'TURUNCU' ? '#EA580C' :
-                                              '#6B7280'
-                            }}
-                          >
-                            {izinDurumu.tur}
-                          </div>
+                          (() => {
+                            // İzin isteklerinden renk ve bilgileri al
+                            const istek = izinIstekleri.find(i => {
+                              const personelIdMatch = (
+                                i.personel_id === person.id || 
+                                i.personel_id?.toString() === person.id.toString() ||
+                                i.kullanici_id === person.id ||
+                                i.kullanici_id?.toString() === person.id.toString()
+                              );
+                              
+                              const istekBaslangic = new Date(i.baslangic_tarihi);
+                              const istekBitis = new Date(i.bitis_tarihi);
+                              const kontrol = new Date(dateObj);
+                              
+                              istekBaslangic.setHours(0, 0, 0, 0);
+                              istekBitis.setHours(0, 0, 0, 0);
+                              kontrol.setHours(0, 0, 0, 0);
+                              
+                              return personelIdMatch && istekBaslangic <= kontrol && istekBitis >= kontrol;
+                            });
+                            
+                                                         let backgroundColor = '#6B7280'; // Varsayılan gri
+                             let displayText = izinDurumu.tur || '';
+                             let mesaiInfo = '';
+                             
+                             if (istek) {
+                               // Nöbet talebi ise
+                               if (istek.talep_tipi === 'nobet_istegi') {
+                                 backgroundColor = istek.alan_renk || '#6B7280';
+                                 displayText = istek.alan_kisaltma || (izinDurumu.tur ? izinDurumu.tur.substring(0, 3) : '');
+                                 mesaiInfo = istek.saat_araligi || '';
+                               } 
+                               // İzin talebi ise
+                               else {
+                                 backgroundColor = istek.izin_renk || '#6B7280';
+                                 displayText = istek.izin_kisaltma || izinDurumu.tur || '';
+                                 mesaiInfo = '';
+                               }
+                             } else {
+                               // Fallback renk mantığı
+                               if (izinDurumu.tur === 'KİRMİZİ') backgroundColor = '#DC2626';
+                               else if (izinDurumu.tur === 'MAVİ') backgroundColor = '#2563EB';
+                               else if (izinDurumu.tur === 'YEŞİL') backgroundColor = '#16A34A';
+                               else if (izinDurumu.tur === 'SARI') backgroundColor = '#CA8A04';
+                               else if (izinDurumu.tur === 'MOR') backgroundColor = '#9333EA';
+                               else if (izinDurumu.tur === 'TURUNCU') backgroundColor = '#EA580C';
+                               
+                               displayText = izinDurumu.tur ? izinDurumu.tur.substring(0, 3) : '';
+                             }
+                            
+                            const textColor = getTextColor(backgroundColor);
+                            
+                            return (
+                              <div 
+                                className="px-2 py-1 rounded-lg text-xs font-bold shadow-sm min-h-[50px] flex flex-col items-center justify-center"
+                                style={{
+                                  backgroundColor: backgroundColor,
+                                  color: textColor
+                                }}
+                              >
+                                <div className="text-center leading-tight">
+                                  {displayText}
+                                </div>
+                                {mesaiInfo && (
+                                  <div className="text-[10px] mt-1 opacity-90 text-center leading-tight">
+                                    {mesaiInfo}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })()
                         ) : (
                           <div className="w-12 h-12 mx-auto rounded-lg border-2 border-dashed border-gray-200 flex items-center justify-center bg-gray-50">
                             <span className="text-gray-400 text-lg">-</span>
