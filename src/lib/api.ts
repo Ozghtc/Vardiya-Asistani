@@ -79,7 +79,16 @@ export const getTableData = async (tableId: string, filterParams: string = '', f
       data = data.filter((row: any) => {
         let matches = true;
         params.forEach((value, key) => {
-          if (row[key] !== value) {
+          let rowValue = row[key];
+          let filterValue = value;
+          
+          // birim_id için Türkçe karakter normalizasyonu
+          if (key === 'birim_id') {
+            rowValue = normalizeBirimId(String(rowValue || ''));
+            filterValue = normalizeBirimId(String(filterValue || ''));
+          }
+          
+          if (rowValue !== filterValue) {
             matches = false;
           }
         });
@@ -95,6 +104,26 @@ export const getTableData = async (tableId: string, filterParams: string = '', f
     logError(`Tablo ${tableId} veri hatası`, error);
     return [];
   }
+};
+
+// Türkçe karakter normalizasyonu için yardımcı fonksiyon
+const normalizeBirimId = (birimId: string): string => {
+  if (!birimId) return birimId;
+  
+  // Türkçe karakterleri normalize et
+  return birimId
+    .replace(/Ş/g, 'S')
+    .replace(/ş/g, 's')
+    .replace(/Ğ/g, 'G')
+    .replace(/ğ/g, 'g')
+    .replace(/İ/g, 'I')
+    .replace(/ı/g, 'i')
+    .replace(/Ü/g, 'U')
+    .replace(/ü/g, 'u')
+    .replace(/Ö/g, 'O')
+    .replace(/ö/g, 'o')
+    .replace(/Ç/g, 'C')
+    .replace(/ç/g, 'c');
 };
 
 // Tablo verisi ekle ve cache'i temizle
