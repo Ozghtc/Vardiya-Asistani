@@ -3,7 +3,7 @@ import { Plus, Trash2, Calendar, Palette, ChevronDown, Clock } from 'lucide-reac
 import { useCapitalization } from '../../../hooks/useCapitalization';
 import { SuccessNotification } from '../../../components/ui/Notification';
 import { useDepartmanBirim } from './DepartmanBirimContext';
-import { apiRequest, getTableData, addTableData, deleteTableData } from '../../../lib/api';
+import { apiRequest, getTableData, addTableData, deleteTableData, clearAllCache, clearTableCache } from '../../../lib/api';
 
 interface IzinIstek {
   id: string;
@@ -92,7 +92,11 @@ const IzinTanimlama: React.FC = () => {
       const result = await addTableData('16', newIzinIstek);
 
       if (result.success) {
-        // Veriyi yeniden yükle
+        // Cache'i zorla temizle
+        clearAllCache();
+        clearTableCache('16');
+        
+        // Fresh veriyi yeniden yükle
         const filterParams = `kurum_id=${kurum_id}&departman_id=${departman_id}&birim_id=${birim_id}`;
         const data = await getTableData('16', filterParams, true);
         setPersonnelRequests(data);
@@ -105,6 +109,8 @@ const IzinTanimlama: React.FC = () => {
         setKisaltma('');
         setSeciliRenk('#3B82F6');
         setMesaiDusumu(false);
+        
+        console.log('✅ İzin türü eklendi ve liste güncellendi:', data);
       } else {
         setErrorMsg('İzin türü eklenemedi: ' + result.error);
       }
@@ -119,10 +125,16 @@ const IzinTanimlama: React.FC = () => {
       const result = await deleteTableData('16', id);
 
       if (result.success) {
-        // Veriyi yeniden yükle
+        // Cache'i zorla temizle
+        clearAllCache();
+        clearTableCache('16');
+        
+        // Fresh veriyi yeniden yükle
         const filterParams = `kurum_id=${kurum_id}&departman_id=${departman_id}&birim_id=${birim_id}`;
         const data = await getTableData('16', filterParams, true);
         setPersonnelRequests(data);
+        
+        console.log('✅ İzin türü silindi ve liste güncellendi:', data);
       } else {
         setErrorMsg('İzin türü silinemedi: ' + result.error);
       }

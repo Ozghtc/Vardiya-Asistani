@@ -4,7 +4,7 @@ import { useCapitalization } from '../../../hooks/useCapitalization';
 import QuickShiftButton from '../../../components/shifts/QuickShiftButton';
 import { SuccessNotification } from '../../../components/ui/Notification';
 import TanimliVardiyalar from './TanimliVardiyalar';
-import { apiRequest, getTableData, addTableData, deleteTableData } from '../../../lib/api';
+import { apiRequest, getTableData, addTableData, deleteTableData, clearAllCache, clearTableCache } from '../../../lib/api';
 import { useAuthContext } from '../../../contexts/AuthContext';
 
 interface Shift {
@@ -128,6 +128,10 @@ const VardiyaTanimlama: React.FC = () => {
       });
       
       if (response.success) {
+        // Cache'i zorla temizle
+        clearAllCache();
+        clearTableCache('17');
+        
         setError('');
         setShowSuccess(true);
         setTimeout(() => setShowSuccess(false), 2000);
@@ -135,6 +139,8 @@ const VardiyaTanimlama: React.FC = () => {
         setStartHour('');
         setEndHour('');
         loadShifts(); // Listeyi yenile
+        
+        console.log('✅ Vardiya eklendi ve liste güncellendi');
       } else {
         setError(response.error || 'Vardiya eklenirken hata oluştu');
       }
@@ -156,7 +162,13 @@ const VardiyaTanimlama: React.FC = () => {
       });
       
       if (response.success) {
+        // Cache'i zorla temizle
+        clearAllCache();
+        clearTableCache('17');
+        
         loadShifts(); // Listeyi yenile
+        
+        console.log('✅ Vardiya silindi ve liste güncellendi');
       } else {
         setError(response.error || 'Vardiya silinirken hata oluştu');
       }
@@ -208,10 +220,16 @@ const VardiyaTanimlama: React.FC = () => {
       });
       
       if (response.success) {
+        // Cache'i zorla temizle
+        clearAllCache();
+        clearTableCache('17');
+        
         setError('');
         setShowSuccess(true);
         setTimeout(() => setShowSuccess(false), 2000);
         loadShifts(); // Listeyi yenile
+        
+        console.log('✅ Hızlı vardiya eklendi ve liste güncellendi');
       } else {
         setError(response.error || 'Vardiya eklenirken hata oluştu');
       }

@@ -118,13 +118,19 @@ const UnvanTanimlama: React.FC = () => {
       const result = await addTableData('15', newUnvan);
 
       if (result.success) {
-        // Veriyi yeniden yükle
+        // Cache'i zorla temizle
+        clearAllCache();
+        clearTableCache('15');
+        
+        // Fresh veriyi yeniden yükle
         const filterParams = `kurum_id=${user.kurum_id}&departman_id=${user.departman_id}&birim_id=${user.birim_id}`;
         const data = await getTableData('15', filterParams, true);
         setUnvanlar(data);
         
         setYeniUnvan('');
         setError(null);
+        
+        console.log('✅ Ünvan eklendi ve liste güncellendi:', data);
       } else {
         setError('Ünvan eklenemedi: ' + result.error);
       }
@@ -139,10 +145,16 @@ const UnvanTanimlama: React.FC = () => {
       const result = await deleteTableData('15', unvanId.toString());
 
       if (result.success && user) {
-        // Veriyi yeniden yükle
+        // Cache'i zorla temizle
+        clearAllCache();
+        clearTableCache('15');
+        
+        // Fresh veriyi yeniden yükle
         const filterParams = `kurum_id=${user.kurum_id}&departman_id=${user.departman_id}&birim_id=${user.birim_id}`;
         const data = await getTableData('15', filterParams, true);
         setUnvanlar(data);
+        
+        console.log('✅ Ünvan silindi ve liste güncellendi:', data);
       } else {
         setError('Ünvan silinemedi: ' + result.error);
       }
