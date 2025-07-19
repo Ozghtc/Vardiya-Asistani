@@ -92,7 +92,7 @@ function App() {
             <Layout><PersonelIzinIstekleri /></Layout>
           </ProtectedRoute>
         } />
-        <Route path="/vardiyali-nobet" element={
+        <Route path="/admin/vardiyali-nobet" element={
           <ProtectedRoute allowedRoles={['admin', 'yonetici']}>
             <Layout><VardiyaliNobet /></Layout>
           </ProtectedRoute>

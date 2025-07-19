@@ -21,9 +21,13 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles 
     
     // Kullanıcının rolü yoksa veya izin verilen roller arasında değilse
     if (!userRole || !allowedRoles.includes(userRole)) {
-      // Admin değilse ana sayfaya yönlendir
-      if (userRole !== 'admin') {
+      // Admin değilse kendi bölümüne yönlendir
+      if (userRole === 'yonetici') {
+        return <Navigate to="/admin/vardiyali-nobet" replace />;
+      } else if (userRole === 'admin') {
         return <Navigate to="/admin" replace />;
+      } else {
+        return <Navigate to="/admin/vardiyali-nobet" replace />;
       }
     }
   }
