@@ -307,41 +307,46 @@ const UnvanTanimlama: React.FC = () => {
         </h2>
 
         {/* Mesai Ekleme Formu */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="space-y-4 mb-6">
+          {/* Mesai Adı - Üstte tek başına */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Mesai Adı
             </label>
             <input
               type="text"
               value={mesaiAdi}
               onChange={(e) => setMesaiAdi(e.target.value)}
-              placeholder="Örn: Tam Mesai"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Örn: Tam Mesai, Part-Time, Vardiyalı Çalışma, Esnek Mesai"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Haftalık Saat
-            </label>
-            <input
-              type="number"
-              value={mesaiSaati}
-              onChange={(e) => setMesaiSaati(Number(e.target.value))}
-              min="1"
-              max="168"
-              placeholder="40"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-          <div className="flex items-end">
-            <button
-              onClick={handleMesaiEkle}
-              className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
-            >
-              <Plus className="w-5 h-5" />
-              Ekle
-            </button>
+          
+          {/* Haftalık Saat ve Ekle butonu - Altta yan yana */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Haftalık Saat
+              </label>
+              <input
+                type="number"
+                value={mesaiSaati}
+                onChange={(e) => setMesaiSaati(Number(e.target.value))}
+                min="1"
+                max="168"
+                placeholder="40"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+            <div className="flex items-end">
+              <button
+                onClick={handleMesaiEkle}
+                className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+              >
+                <Plus className="w-5 h-5" />
+                Ekle
+              </button>
+            </div>
           </div>
         </div>
       </div>
