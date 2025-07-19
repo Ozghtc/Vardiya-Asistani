@@ -908,7 +908,31 @@ export const getUsers = async (usersTableId: number) => {
   // logInfo('getUsers() çağrıldı'); // Removed logInfo
   try {
     const response = await apiRequest(`/api/v1/data/table/${usersTableId}?page=1&limit=100&sort=id&order=DESC`);
-    return response.data?.rows || [];
+    let users = response.data?.rows || [];
+    
+    // Kurum adlarını ekle
+    try {
+      const kurumlar = await getKurumlar(true); // forceRefresh = true
+      users = users.map((user: any) => {
+        if (user.kurum_id) {
+          const kurum = kurumlar.find((k: any) => k.id === user.kurum_id);
+          if (kurum) {
+            return {
+              ...user,
+              kurum_adi: kurum.kurum_adi
+            };
+          }
+        }
+        return {
+          ...user,
+          kurum_adi: null
+        };
+      });
+    } catch (error) {
+      console.error('Kurum adları eklenirken hata:', error);
+    }
+    
+    return users;
   } catch (error) {
     logError('getUsers hatası', error);
     return [];
@@ -943,8 +967,39 @@ export const addUser = async (usersTableId: number, userData: {
       throw new Error('Gerekli alanlar eksik');
     }
     
+    // Önce mevcut kullanıcıları al ve en yüksek ID'yi bul
+    const existingUsers = await getUsers(usersTableId);
+    let maxId = 0;
+    
+    existingUsers.forEach((user: any) => {
+      const userId = parseInt(user.id);
+      if (userId > maxId) {
+        maxId = userId;
+      }
+    });
+    
+    // Yeni ID'yi hesapla
+    const newId = maxId + 1;
+    
+    // Kullanıcı adının başına ID ekle
+    const formattedUserName = `${newId}_${userData.name}`;
+    
+    // Kurum adını al (eğer kurum_id varsa)
+    let kurumAdi = '';
+    if (userData.kurum_id) {
+      try {
+        const kurumlar = await getKurumlar(true); // forceRefresh = true
+        const kurum = kurumlar.find((k: any) => k.id === userData.kurum_id);
+        if (kurum) {
+          kurumAdi = kurum.kurum_adi;
+        }
+      } catch (error) {
+        console.error('Kurum adı alınamadı:', error);
+      }
+    }
+    
     const requestBody = {
-      name: (userData.name || '').trim(),
+      name: formattedUserName,
       email: (userData.email || '').trim().toLowerCase(),
       password: (userData.password || '').trim(),
       phone: (userData.phone || '').trim(),
@@ -977,7 +1032,9 @@ export const addUser = async (usersTableId: number, userData: {
     return {
       success: true,
       data: response.data || response,
-      message: response.message || 'Kullanıcı başarıyla eklendi'
+      message: response.message || 'Kullanıcı başarıyla eklendi',
+      newId: newId,
+      kurumAdi: kurumAdi
     };
   } catch (error) {
     logError('addUser hatası', error);
