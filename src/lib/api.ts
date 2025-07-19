@@ -599,8 +599,25 @@ export const addKurum = async (kurumData: {
   birimler?: string;
 }) => {
   try {
+    // Önce mevcut kurumları al ve en yüksek ID'yi bul
+    const existingKurumlar = await getKurumlar(true); // forceRefresh = true
+    let maxId = 0;
+    
+    existingKurumlar.forEach((kurum: any) => {
+      const kurumId = parseInt(kurum.id);
+      if (kurumId > maxId) {
+        maxId = kurumId;
+      }
+    });
+    
+    // Yeni ID'yi hesapla
+    const newId = maxId + 1;
+    
+    // Kurum adının başına ID ekle
+    const formattedKurumAdi = `${newId}_${kurumData.kurum_adi}`;
+    
     const requestBody = {
-      kurum_adi: kurumData.kurum_adi,
+      kurum_adi: formattedKurumAdi,
       kurum_turu: kurumData.kurum_turu || '',
       adres: kurumData.adres || '',
       il: kurumData.il || '',
@@ -621,7 +638,8 @@ export const addKurum = async (kurumData: {
     return {
       success: true,
       data: response.data || response,
-      message: response.message || 'Kurum başarıyla eklendi'
+      message: response.message || 'Kurum başarıyla eklendi',
+      newId: newId
     };
   } catch (error) {
     logError('addKurum hatası', error);
