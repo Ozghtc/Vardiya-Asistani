@@ -349,47 +349,44 @@ const UnvanTanimlama: React.FC = () => {
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Kaydedilen Mesai Türleri Listesi */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-          <Clock className="w-5 h-5" />
-          Kaydedilen Mesai Türleri
-        </h2>
-        
-        {mesaiLoading ? (
-          <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-2 text-gray-600">Mesai türleri yükleniyor...</p>
-          </div>
-        ) : kaydedilenMesaiTurleri.length === 0 ? (
-          <div className="text-center py-8">
-            <p className="text-gray-500">Henüz kaydedilmiş mesai türü bulunmuyor</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {kaydedilenMesaiTurleri.map((mesai) => (
-              <div key={mesai.id} className="bg-gray-50 p-4 rounded-lg border border-gray-200 hover:shadow-md transition-shadow">
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-gray-800 text-lg mb-2">{mesai.mesai_adi}</h3>
-                    <div className="text-gray-600 text-sm">
-                      <span className="font-medium">Haftalık Kapasite:</span> {mesai.mesai_saati} saat
+        {/* Kaydedilen Mesai Türleri */}
+        <div className="border-t border-gray-200 pt-6 mt-6">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">Kaydedilen Mesai Türleri</h3>
+          
+          {mesaiLoading ? (
+            <div className="text-center py-6">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
+              <p className="mt-2 text-gray-600 text-sm">Mesai türleri yükleniyor...</p>
+            </div>
+          ) : kaydedilenMesaiTurleri.length === 0 ? (
+            <div className="text-center py-6">
+              <p className="text-gray-500 text-sm">Henüz kaydedilmiş mesai türü bulunmuyor</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {kaydedilenMesaiTurleri.map((mesai) => (
+                <div key={mesai.id} className="bg-gray-50 p-3 rounded-lg border border-gray-200 hover:shadow-sm transition-shadow">
+                  <div className="flex justify-between items-center">
+                    <div className="flex-1">
+                      <h4 className="font-medium text-gray-800">{mesai.mesai_adi}</h4>
+                      <div className="text-gray-600 text-sm">
+                        <span className="font-medium">Haftalık Kapasite:</span> {mesai.mesai_saati} saat
+                      </div>
                     </div>
+                    <button
+                      onClick={() => handleMesaiTuruSil(mesai.id)}
+                      className="text-red-500 hover:text-red-700 transition-colors ml-4 flex-shrink-0"
+                      title="Mesai türünü sil"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
-                  <button
-                    onClick={() => handleMesaiTuruSil(mesai.id)}
-                    className="text-red-500 hover:text-red-700 transition-colors ml-4 flex-shrink-0"
-                    title="Mesai türünü sil"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Mevcut Unvan Tanımları */}
