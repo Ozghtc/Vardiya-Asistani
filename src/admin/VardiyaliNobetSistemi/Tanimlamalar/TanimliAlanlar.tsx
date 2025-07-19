@@ -456,12 +456,33 @@ const TanimliAlanlar: React.FC = () => {
     return uniqueDays.size;
   };
 
-  const genelToplam = alanlar.reduce((acc, alan) => ({
-    haftalikSaat: acc.haftalikSaat + (alan.totalHours || 0),
-    haftalikVardiya: acc.haftalikVardiya + (alan.totalVardiya || 0),
-    aylikSaat: acc.aylikSaat + ((alan.totalHours || 0) * 30/7),
-    aylikVardiya: acc.aylikVardiya + ((alan.totalVardiya || 0) * 30/7)
-  }), {
+  // Doğru hesaplama: Her alan için günlük saatleri topla
+  const genelToplam = alanlar.reduce((acc, alan) => {
+    let alanHaftalikSaat = 0;
+    let alanHaftalikVardiya = 0;
+    
+    try {
+      // Alan'ın günlük saatlerini parse et
+      const gunlukSaatler = JSON.parse(alan.gunluk_saatler || '{}');
+      const aktifGunler = JSON.parse(alan.aktif_gunler || '[]');
+      
+      // Her aktif gün için saatleri topla
+      aktifGunler.forEach((gun: string) => {
+        const gunSaat = gunlukSaatler[gun] || 0;
+        alanHaftalikSaat += gunSaat;
+        alanHaftalikVardiya += 1; // Her gün 1 vardiya
+      });
+    } catch (error) {
+      console.error('Alan hesaplama hatası:', error);
+    }
+    
+    return {
+      haftalikSaat: acc.haftalikSaat + alanHaftalikSaat,
+      haftalikVardiya: acc.haftalikVardiya + alanHaftalikVardiya,
+      aylikSaat: acc.aylikSaat + (alanHaftalikSaat * 4.33), // 30/7 ≈ 4.33
+      aylikVardiya: acc.aylikVardiya + (alanHaftalikVardiya * 4.33)
+    };
+  }, {
     haftalikSaat: 0,
     haftalikVardiya: 0,
     aylikSaat: 0,
