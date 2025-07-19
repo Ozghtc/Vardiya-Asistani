@@ -616,6 +616,24 @@ export const addKurum = async (kurumData: {
     // Kurum adının başına ID ekle
     const formattedKurumAdi = `${newId}_${kurumData.kurum_adi}`;
     
+    // Departmanları formatla: "ACİL SERVİS, YOGUN BAKİM" -> "19_D1_ACİL SERVİS, 19_D2_YOGUN BAKİM"
+    let formattedDepartmanlar = '';
+    if (kurumData.departmanlar) {
+      const departmanList = kurumData.departmanlar.split(',').map(d => d.trim());
+      formattedDepartmanlar = departmanList.map((departman, index) => 
+        `${newId}_D${index + 1}_${departman}`
+      ).join(', ');
+    }
+    
+    // Birimleri formatla: "HEMSİRE, DR" -> "19_B1_HEMSİRE, 19_B2_DR"
+    let formattedBirimler = '';
+    if (kurumData.birimler) {
+      const birimList = kurumData.birimler.split(',').map(b => b.trim());
+      formattedBirimler = birimList.map((birim, index) => 
+        `${newId}_B${index + 1}_${birim}`
+      ).join(', ');
+    }
+    
     const requestBody = {
       kurum_adi: formattedKurumAdi,
       kurum_turu: kurumData.kurum_turu || '',
@@ -623,8 +641,8 @@ export const addKurum = async (kurumData: {
       il: kurumData.il || '',
       ilce: kurumData.ilce || '',
       aktif_mi: kurumData.aktif_mi !== false,
-      departmanlar: kurumData.departmanlar || '',
-      birimler: kurumData.birimler || ''
+      departmanlar: formattedDepartmanlar,
+      birimler: formattedBirimler
     };
     
     const response = await apiRequest(`/api/v1/data/table/${API_CONFIG.tableId}/rows`, {
@@ -639,7 +657,9 @@ export const addKurum = async (kurumData: {
       success: true,
       data: response.data || response,
       message: response.message || 'Kurum başarıyla eklendi',
-      newId: newId
+      newId: newId,
+      formattedDepartmanlar,
+      formattedBirimler
     };
   } catch (error) {
     logError('addKurum hatası', error);
