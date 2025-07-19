@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { User, EnrichedUser } from '../landing/types/auth.types';
-import { getUsers, getKurumlar } from '../lib/api';
+import { getUsers, getKurumlar, clearAllCache } from '../lib/api';
 
 interface AuthContextType {
   user: EnrichedUser | null;
@@ -115,6 +115,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     try {
       console.log('🔄 Kullanıcı bilgileri yenileniyor...');
+      // Cache'i temizle - zorla yenileme
+      clearAllCache();
       const users = await getUsers(13); // Kullanıcılar tablosu ID'si
       const currentUser = users.find((u: any) => u.id === user.id);
       
