@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Calendar, User2, ArrowLeft } from 'lucide-react';
 import { useAuthContext } from '../../../contexts/AuthContext';
+import { getTableData } from '../../../lib/api';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { tr } from 'date-fns/locale';
@@ -36,35 +37,45 @@ const NobetOlustur: React.FC = () => {
   const [startDate, setStartDate] = useState(new Date(2025, 6, 17)); // 17/07/2025
   const [endDate, setEndDate] = useState(new Date(2025, 7, 16)); // 16/08/2025
 
-  // Demo personel verileri
+  // Gerçek personel verilerini API'den çek
   useEffect(() => {
-    const demoPersonnel: Personnel[] = [
-      {
-        id: 1,
-        name: 'AHMET',
-        surname: 'YILMAZ',
-        title: 'Acil Servis',
-        unvan: 'HEMŞİRE'
-      },
-      {
-        id: 2,
-        name: 'HATICE',
-        surname: 'ALTINTAS',
-        title: 'Acil Servis',
-        unvan: 'Hemşire'
-      },
-      {
-        id: 3,
-        name: 'MERT',
-        surname: 'ALTINTAS',
-        title: 'Acil Servis',
-        unvan: 'Hemşire'
+    const loadPersonnel = async () => {
+      if (!user?.kurum_id || !user?.departman_id || !user?.birim_id) {
+        setLoading(false);
+        return;
       }
-    ];
+
+      try {
+        setLoading(true);
+        console.log('🔍 Personel yükleniyor...', {
+          kurum_id: user.kurum_id,
+          departman_id: user.departman_id,
+          birim_id: user.birim_id
+        });
+
+        const filterParams = `kurum_id=${user.kurum_id}&departman_id=${user.departman_id}&birim_id=${user.birim_id}`;
+        const data = await getTableData('21', filterParams, true); // Force fresh data
+        
+        console.log('📦 Personel yüklendi:', data);
+        
+        const personnelData: Personnel[] = data.map((person: any) => ({
+          id: person.id,
+          name: person.ad,
+          surname: person.soyad,
+          title: 'Acil Servis',
+          unvan: person.unvan
+        }));
+        
+        setPersonnel(personnelData);
+      } catch (error) {
+        console.error('🚨 Personel yüklenemedi:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
     
-    setPersonnel(demoPersonnel);
-    setLoading(false);
-  }, []);
+    loadPersonnel();
+  }, [user?.kurum_id, user?.departman_id, user?.birim_id]);
 
   // Demo atama verileri
   useEffect(() => {
