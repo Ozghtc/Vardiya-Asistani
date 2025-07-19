@@ -10,7 +10,7 @@ const AdminPage: React.FC = () => {
       title: 'Vardiyalı Nöbet Sistemi',
       description: 'Nöbet sistemi yönetimi ve planlaması',
       icon: <Clock className="w-8 h-8 text-white" />,
-      route: '/vardiyali-nobet',
+      route: '/admin/vardiyali-nobet',
       bgColor: 'bg-blue-600',
       hoverColor: 'hover:bg-blue-700'
     },
