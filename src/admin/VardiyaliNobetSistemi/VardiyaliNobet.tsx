@@ -81,9 +81,9 @@ const VardiyaliNobet: React.FC = () => {
       // AuthContext'ten gelen gerçek kullanıcı bilgilerini kullan
       const enrichedUser = {
         ...user,
-        kurum_adi: kurumBilgisi?.kurum_adi || 'Serik Devlet Hastanesi',
-        departman_adi: user.departman_id?.replace('6_', '') || 'Acil Servis',
-        birim_adi: user.birim_id?.replace('6_', '') || 'Hemşire'
+        kurum_adi: kurumBilgisi?.kurum_adi || user.kurum_adi || 'Sistem',
+        departman_adi: user.departman_adi || 'Yönetim',
+        birim_adi: user.birim_adi || 'Sistem'
       };
       setCurrentUser(enrichedUser);
     } else {
@@ -93,12 +93,12 @@ const VardiyaliNobet: React.FC = () => {
         name: 'Demo User',
         email: 'demo@example.com',
         rol: 'admin',
-        kurum_id: "6",
-        departman_id: "6_ACİL SERVİS",
-        birim_id: "6_HEMSİRE",
-        kurum_adi: kurumBilgisi?.kurum_adi || 'Serik Devlet Hastanesi',
-        departman_adi: 'Acil Servis',
-        birim_adi: 'Hemşire'
+        kurum_id: "18",
+        departman_id: "18_D1_ACİL SERVİS",
+        birim_id: "18_B1_HEMSİRELİK",
+        kurum_adi: kurumBilgisi?.kurum_adi || 'Sistem',
+        departman_adi: 'Yönetim',
+        birim_adi: 'Sistem'
       };
       setCurrentUser(demoUser);
     }
