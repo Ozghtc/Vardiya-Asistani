@@ -31,7 +31,7 @@ export const useAuth = () => {
     if (userRole === 'admin') {
       navigate('/admin');
     } else if (userRole === 'yonetici') {
-      navigate('/vardiyali-nobet');
+      navigate('/admin/vardiyali-nobet');
     } else {
       navigate('/personel/panel');
     }
