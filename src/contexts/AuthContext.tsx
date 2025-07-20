@@ -106,9 +106,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       departman_adi,
       birim_adi,
       lastActivity: new Date().toISOString(),
-      loginTime: user?.loginTime || new Date().toISOString()
+      loginTime: new Date().toISOString()
     };
-  }, [user]);
+  }, []);
 
   const refreshUser = useCallback(async () => {
     if (!user || !user.id) return;
@@ -133,15 +133,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, [user, enrichUserWithNames, logout]);
 
-  // Kullanıcı bilgilerini periyodik olarak yenile (5 dakikada bir)
-  useEffect(() => {
-    if (user) {
-      const interval = setInterval(() => {
-        refreshUser();
-      }, 5 * 60 * 1000); // 5 dakika
-      return () => clearInterval(interval);
-    }
-  }, [user, refreshUser]);
+  // Periyodik yenileme kaldırıldı - kullanıcı logout sorunu yaratıyordu
 
   const isAuthenticated = !!user;
 
