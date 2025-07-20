@@ -71,7 +71,7 @@ const Header: React.FC = () => {
     if (role === 'admin') {
       navigate('/admin');
     } else if (role === 'yonetici') {
-      navigate('/vardiyali-nobet');
+      navigate('/admin/vardiyali-nobet');
     } else {
       navigate('/personel/panel');
     }
@@ -127,7 +127,7 @@ const Header: React.FC = () => {
                 onClick={() => {
                   const role = (currentUser.rol || '').toLowerCase();
                   if (role === 'admin') navigate('/admin');
-                  else if (role === 'yonetici') navigate('/vardiyali-nobet');
+                  else if (role === 'yonetici') navigate('/admin/vardiyali-nobet');
                   else navigate('/personel/panel');
                 }}
                 className={`mt-1 text-sm font-bold px-3 py-0.5 rounded shadow-sm transition cursor-pointer focus:outline-none
