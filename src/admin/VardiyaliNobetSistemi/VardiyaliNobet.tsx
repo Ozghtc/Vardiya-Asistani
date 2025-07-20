@@ -57,9 +57,6 @@ const VardiyaliNobet: React.FC = () => {
                 k.id === Number(user.kurum_id!) ||
                 String(k.id) === String(user.kurum_id!)
               );
-            } else {
-              // Demo kullanıcısı için sabit kurum
-              kurum = result.data.rows.find((k: KurumBilgisi) => k.id === 6);
             }
             
             if (kurum) {
@@ -86,21 +83,6 @@ const VardiyaliNobet: React.FC = () => {
         birim_adi: user.birim_adi || 'Sistem'
       };
       setCurrentUser(enrichedUser);
-    } else {
-      // Demo kullanıcısı için sabit bilgiler
-      const demoUser = {
-        id: 1,
-        name: 'Demo User',
-        email: 'demo@example.com',
-        rol: 'admin',
-        kurum_id: "18",
-        departman_id: "18_D1_ACİL SERVİS",
-        birim_id: "18_B1_HEMSİRELİK",
-        kurum_adi: kurumBilgisi?.kurum_adi || 'Sistem',
-        departman_adi: 'Yönetim',
-        birim_adi: 'Sistem'
-      };
-      setCurrentUser(demoUser);
     }
     setCheckingAuth(false);
   }, [user, kurumBilgisi]);
