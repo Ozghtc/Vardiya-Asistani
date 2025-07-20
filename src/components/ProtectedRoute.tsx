@@ -28,8 +28,17 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles 
   if (allowedRoles.length > 0) {
     const userRole = user.rol;
     
+    console.log('🔍 Rol Kontrolü:', {
+      userRole,
+      allowedRoles,
+      includes: allowedRoles.includes(userRole),
+      userRoleType: typeof userRole,
+      allowedRolesTypes: allowedRoles.map(r => typeof r)
+    });
+    
     // Kullanıcının rolü yoksa veya izin verilen roller arasında değilse
     if (!userRole || !allowedRoles.includes(userRole)) {
+      console.log('❌ Rol uyumsuzluğu, yönlendirme yapılıyor');
       // Admin değilse kendi bölümüne yönlendir
       if (userRole === 'yonetici') {
         return <Navigate to="/admin/vardiyali-nobet" replace />;
