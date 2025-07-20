@@ -140,7 +140,7 @@ export const useAuth = () => {
       const user = users.find((u: any) => 
         (u.email || '').toLowerCase() === email.toLowerCase() && 
         u.password === password &&
-        u.aktif_mi !== false
+        u.aktif_mi === true
       );
 
       if (!user) {
