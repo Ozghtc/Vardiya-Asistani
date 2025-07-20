@@ -219,7 +219,10 @@ const VardiyaliNobet: React.FC = () => {
           {mainCards.map((card, index) => (
             <div
               key={index}
-              onClick={() => navigate(card.route)}
+              onClick={() => {
+                console.log('🎯 Karta tıklandı:', card.title, 'Route:', card.route);
+                navigate(card.route);
+              }}
               className={`${card.bgColor} ${card.hoverColor} rounded-xl p-6 text-white cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105`}
             >
               <div className="flex items-center justify-between mb-4">
