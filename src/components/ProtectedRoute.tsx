@@ -10,8 +10,17 @@ interface ProtectedRouteProps {
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles = [] }) => {
   const { user, isAuthenticated } = useAuthContext();
 
+  // Debug: Kullanıcı bilgilerini kontrol et
+  console.log('🔍 ProtectedRoute Debug:', {
+    isAuthenticated,
+    user: user ? { id: user.id, name: user.name, rol: user.rol } : null,
+    allowedRoles,
+    currentPath: window.location.pathname
+  });
+
   // Kullanıcı giriş yapmamışsa login sayfasına yönlendir
   if (!isAuthenticated || !user) {
+    console.log('❌ Kullanıcı giriş yapmamış, ana sayfaya yönlendiriliyor');
     return <Navigate to="/" replace />;
   }
 
