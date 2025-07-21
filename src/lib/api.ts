@@ -16,44 +16,43 @@ export const clearCache = () => {
   cache.clear();
 };
 
-// SessionStorage based cache for UI speed
+// In-memory cache system (Production compliant - no localStorage/sessionStorage)
+const inMemoryCache = new Map<string, { data: any; timestamp: number }>();
+const CACHE_DURATION_MS = 5 * 60 * 1000; // 5 minutes
+
 export const getCachedData = (key: string) => {
-  try {
-    const cached = sessionStorage.getItem(`cache_${key}`);
-    if (cached) {
-      const { data, timestamp } = JSON.parse(cached);
-      // SessionStorage cache 10 dakika geçerli
-      if (Date.now() - timestamp < 10 * 60 * 1000) {
-        return data;
-      } else {
-        sessionStorage.removeItem(`cache_${key}`);
-      }
+  const cached = inMemoryCache.get(`cache_${key}`);
+  if (cached) {
+    // Cache 5 dakika geçerli
+    if (Date.now() - cached.timestamp < CACHE_DURATION_MS) {
+      return cached.data;
+    } else {
+      inMemoryCache.delete(`cache_${key}`);
     }
-  } catch (error) {
-    // Hata durumunda sessionStorage'ı temizle
-    sessionStorage.removeItem(`cache_${key}`);
   }
   return null;
 };
 
 export const setCachedData = (key: string, data: any) => {
-  try {
-    sessionStorage.setItem(`cache_${key}`, JSON.stringify({
-      data,
-      timestamp: Date.now()
-    }));
-  } catch (error) {
-    // SessionStorage doluysa eski verileri temizle
-    sessionStorage.clear();
+  inMemoryCache.set(`cache_${key}`, {
+    data,
+    timestamp: Date.now()
+  });
+  
+  // Memory temizliği - 100'den fazla entry varsa eski olanları temizle
+  if (inMemoryCache.size > 100) {
+    const entries = Array.from(inMemoryCache.entries());
+    entries.sort((a, b) => a[1].timestamp - b[1].timestamp);
+    
+    // En eski 20 entry'yi sil
+    for (let i = 0; i < 20 && i < entries.length; i++) {
+      inMemoryCache.delete(entries[i][0]);
+    }
   }
 };
 
 export const clearCachedData = (key: string) => {
-  try {
-    sessionStorage.removeItem(`cache_${key}`);
-  } catch (error) {
-    // Hata durumunda görmezden gel
-  }
+  inMemoryCache.delete(`cache_${key}`);
 };
 
 // Tablo bazında cache yönetimi
@@ -256,32 +255,28 @@ export const deleteTableData = async (tableId: string, rowId: string) => {
 
 // Belirli tablo için tüm cache'leri temizle
 export const clearTableCache = (tableId: string) => {
-  try {
-    // SessionStorage'daki tüm cache keylerini kontrol et
-    const keys = Object.keys(sessionStorage);
-    keys.forEach(key => {
-      if (key.startsWith(`cache_table_${tableId}_`)) {
-        sessionStorage.removeItem(key);
-      }
-    });
-  } catch (error) {
-    // Hata durumunda görmezden gel
+  const keysToDelete: string[] = [];
+  
+  for (const [key] of inMemoryCache.entries()) {
+    if (key.startsWith(`cache_table_${tableId}_`)) {
+      keysToDelete.push(key);
+    }
   }
+  
+  keysToDelete.forEach(key => inMemoryCache.delete(key));
 };
 
 // Tüm cache'i temizle (production'da kullanım için)
 export const clearAllCache = () => {
-  try {
-    const keys = Object.keys(sessionStorage);
-    keys.forEach(key => {
-      if (key.startsWith('cache_table_')) {
-        sessionStorage.removeItem(key);
-      }
-    });
-    console.log('🧹 Tüm cache temizlendi');
-  } catch (error) {
-    console.log('Cache temizleme hatası:', error);
+  const keysToDelete: string[] = [];
+  
+  for (const [key] of inMemoryCache.entries()) {
+    if (key.startsWith('cache_table_')) {
+      keysToDelete.push(key);
+    }
   }
+  
+  keysToDelete.forEach(key => inMemoryCache.delete(key));
 };
 
 // Production logging - sadece kritik hatalar
@@ -959,7 +954,77 @@ export const getUsers = async (usersTableId: number) => {
   }
 };
 
-// Kullanıcı ekle - YENİ FONKSIYON
+// Hiyerarşik ID sistemi için yardımcı fonksiyonlar
+const generateHierarchicalId = async (userData: {
+  kurum_id?: string;
+  departman_id?: string;
+  birim_id?: string;
+  rol: string;
+}) => {
+  // Admin kullanıcılar için basit ID
+  if (userData.rol === 'admin') {
+    const existingUsers = await getUsers(13);
+    let maxId = 0;
+    existingUsers.forEach((user: any) => {
+      const userId = parseInt(user.id);
+      if (userId > maxId) {
+        maxId = userId;
+      }
+    });
+    return `${maxId + 1}`;
+  }
+
+  // Kurum-departman-birim-kullanıcı hiyerarşisi
+  if (!userData.kurum_id || !userData.departman_id || !userData.birim_id) {
+    throw new Error('Kurum, departman ve birim bilgileri gerekli');
+  }
+
+  // Kurum ID'sini al
+  const kurumId = userData.kurum_id;
+
+  // Departman sırasını belirle
+  let departmanSira = 1;
+  if (userData.departman_id.includes('D2')) {
+    departmanSira = 2;
+  } else if (userData.departman_id.includes('D3')) {
+    departmanSira = 3;
+  } else if (userData.departman_id.includes('D4')) {
+    departmanSira = 4;
+  } else if (userData.departman_id.includes('D5')) {
+    departmanSira = 5;
+  }
+
+  // Birim sırasını belirle
+  let birimSira = 1;
+  if (userData.birim_id.includes('B2')) {
+    birimSira = 2;
+  } else if (userData.birim_id.includes('B3')) {
+    birimSira = 3;
+  } else if (userData.birim_id.includes('B4')) {
+    birimSira = 4;
+  } else if (userData.birim_id.includes('B5')) {
+    birimSira = 5;
+  }
+
+  // Aynı kurum-departman-birim'deki kullanıcı sayısını bul
+  const existingUsers = await getUsers(13);
+  const sameHierarchyUsers = existingUsers.filter((user: any) => 
+    user.kurum_id === userData.kurum_id &&
+    user.departman_id === userData.departman_id &&
+    user.birim_id === userData.birim_id
+  );
+
+  const kullaniciSira = sameHierarchyUsers.length + 1;
+
+  // Hiyerarşik ID oluştur: {kurum_id}_{departman_sira}_{birim_sira}_{kullanici_sira}
+  return `${kurumId}_${departmanSira}_${birimSira}_${kullaniciSira}`;
+};
+
+const formatUserNameWithHierarchicalId = (hierarchicalId: string, userName: string) => {
+  return `${hierarchicalId}_${userName}`;
+};
+
+// Kullanıcı ekle - HİYERARŞİK ID SİSTEMİ İLE
 export const addUser = async (usersTableId: number, userData: {
   name: string;
   email: string;
@@ -980,29 +1045,17 @@ export const addUser = async (usersTableId: number, userData: {
   updated_at?: string;
   last_login?: string;
 }) => {
-  // logInfo('addUser() çağrıldı', userData); // Removed logInfo
   try {
     // Veri validasyonu
     if (!userData.name || !userData.email || !userData.password || !userData.phone || !userData.rol) {
       throw new Error('Gerekli alanlar eksik');
     }
     
-    // Önce mevcut kullanıcıları al ve en yüksek ID'yi bul
-    const existingUsers = await getUsers(usersTableId);
-    let maxId = 0;
+    // Hiyerarşik ID oluştur
+    const hierarchicalId = await generateHierarchicalId(userData);
     
-    existingUsers.forEach((user: any) => {
-      const userId = parseInt(user.id);
-      if (userId > maxId) {
-        maxId = userId;
-      }
-    });
-    
-    // Yeni ID'yi hesapla
-    const newId = maxId + 1;
-    
-    // Kullanıcı adının başına ID ekle
-    const formattedUserName = `${newId}_${userData.name}`;
+    // Kullanıcı adını hiyerarşik ID ile formatla
+    const formattedUserName = formatUserNameWithHierarchicalId(hierarchicalId, userData.name);
     
     // Kurum adını al (eğer kurum_id varsa)
     let kurumAdi = '';
@@ -1053,7 +1106,7 @@ export const addUser = async (usersTableId: number, userData: {
       success: true,
       data: response.data || response,
       message: response.message || 'Kullanıcı başarıyla eklendi',
-      newId: newId,
+      hierarchicalId: hierarchicalId,
       kurumAdi: kurumAdi
     };
   } catch (error) {

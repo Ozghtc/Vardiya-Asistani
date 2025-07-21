@@ -79,22 +79,25 @@ const PersonelListesi: React.FC = () => {
         const result = await response.json();
         if (result.success && result.data?.rows) {
           setUnvanlar(result.data.rows);
-          console.log('Yüklenen ünvanlar:', result.data.rows);
         }
       }
-    } catch (error) {
-      console.error('Ünvanlar yüklenirken hata:', error);
-    }
+          } catch (error) {
+        // Ünvan yükleme hatası - sessizce devam et
+      }
   };
 
   const loadPersonnel = async () => {
-    if (!user) return;
+    if (!user) {
+      setError('Kullanıcı bilgileri yüklenemedi');
+      setLoading(false);
+      return;
+    }
     
     try {
       setLoading(true);
       setError(null);
       
-      // Cache'i temizle ve taze veri çek
+      // Personel bilgileri tablosu (ID: 21) - Eğer yoksa boş liste göster
       const response = await fetch('/.netlify/functions/api-proxy', {
         method: 'POST',
         headers: {
@@ -103,31 +106,16 @@ const PersonelListesi: React.FC = () => {
         body: JSON.stringify({
           path: '/api/v1/data/table/21',
           method: 'GET',
-          apiKey: 'hzm_1ce98c92189d4a109cd604b22bfd86b7',
-          // Cache'i bypass et
-          cache: 'no-cache',
-          headers: {
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache',
-            'Expires': '0'
-          }
+          apiKey: 'hzm_1ce98c92189d4a109cd604b22bfd86b7'
         })
       });
 
       if (response.ok) {
         const result = await response.json();
-        console.log('API\'den gelen TAZE personel verileri:', result);
+        console.log('API\'den gelen personel verileri:', result);
         
         if (result.success && result.data?.rows) {
-          // Tüm personelleri göster (MERT ALTİNTAS'ı bulmak için)
           const allPersonnel = result.data.rows;
-          console.log('TÜM personel verileri (filtresiz):', allPersonnel);
-          
-          // MERT ALTİNTAS'ı ara
-          const mertAltintas = allPersonnel.find((person: Personnel) => 
-            person.ad === 'MERT' && person.soyad === 'ALTİNTAS'
-          );
-          console.log('MERT ALTİNTAS bulundu mu?:', mertAltintas);
           
           // Kullanıcının kurum/departman/birim'ine göre filtreleme
           const filteredPersonnel = allPersonnel.filter((person: Personnel) => 
@@ -136,18 +124,26 @@ const PersonelListesi: React.FC = () => {
             person.birim_id === user.birim_id
           );
           
-          console.log('Filtrelenmiş personel verileri:', filteredPersonnel);
           setPersonnel(filteredPersonnel);
         } else {
-          setError('Personel verileri yüklenemedi');
+          // Tablo boş veya veri yok - bu normal bir durum
+          setPersonnel([]);
         }
+      } else if (response.status === 404) {
+        // Tablo henüz oluşturulmamış - bu normal bir durum
+        setPersonnel([]);
+        setError('Personel tablosu henüz oluşturulmamış. Önce personel eklemeniz gerekiyor.');
       } else {
-        setError('API çağrısı başarısız');
+        const result = await response.json();
+        setError(`API Hatası: ${result.message || 'Bilinmeyen hata'}`);
       }
-    } catch (error) {
-      console.error('Personel yükleme hatası:', error);
-      setError('Personel verileri yüklenirken bir hata oluştu');
-    } finally {
+          } catch (error: any) {
+        if (error.message?.includes('Failed to fetch')) {
+          setError('Ağ bağlantısı hatası. İnternet bağlantınızı kontrol edin.');
+        } else {
+          setError('Personel verileri yüklenirken bir hata oluştu: ' + error.message);
+        }
+      } finally {
       setLoading(false);
     }
   };
@@ -159,16 +155,41 @@ const PersonelListesi: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Personel verileri yükleniyor...</p>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-        <p className="text-red-700">{error}</p>
+      <div className="min-h-screen flex items-center justify-center p-6">
+        <div className="max-w-md w-full">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+            <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <User2 className="w-6 h-6 text-red-600" />
+            </div>
+            <h3 className="text-lg font-semibold text-red-900 mb-2">Veri Yükleme Hatası</h3>
+            <p className="text-red-700 mb-4">{error}</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => navigate('/personel-islemleri')}
+                className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                Geri Dön
+              </button>
+              <button
+                onClick={loadPersonnel}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Tekrar Dene
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -207,7 +228,6 @@ const PersonelListesi: React.FC = () => {
         setError('Personel silinirken bir hata oluştu');
       }
     } catch (error) {
-      console.error('Personel silme hatası:', error);
       setError('Personel silinirken bir hata oluştu');
     } finally {
       setDeleting(false);

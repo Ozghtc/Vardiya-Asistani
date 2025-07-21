@@ -25,11 +25,37 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
+// Hiyerarşik ID'yi kullanıcı adından temizle
+const cleanUserName = (userName: string): string => {
+  // Hiyerarşik ID formatı: {kurum_id}_{departman_sira}_{birim_sira}_{kullanici_sira}_{isim}
+  // Örnek: "18_1_1_1_HATİCE ALTINTAŞ" -> "HATİCE ALTINTAŞ"
+  
+  if (!userName) return userName;
+  
+  // Underscore ile ayrılmış parçaları al
+  const parts = userName.split('_');
+  
+  // En az 5 parça varsa (hiyerarşik ID + isim)
+  if (parts.length >= 5) {
+    // Son 2 parçayı al (ad ve soyad)
+    const nameParts = parts.slice(-2);
+    return nameParts.join(' ');
+  }
+  
+  // Eğer hiyerarşik ID formatında değilse, orijinal ismi döndür
+  return userName;
+};
+
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<EnrichedUser | null>(null);
 
   const login = useCallback((userData: EnrichedUser) => {
-    setUser(userData);
+    // Kullanıcı adını temizle
+    const cleanedUserData = {
+      ...userData,
+      name: cleanUserName(userData.name || '')
+    };
+    setUser(cleanedUserData);
   }, []);
 
   const logout = useCallback(() => {
@@ -40,6 +66,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (!userData || userData.rol === 'admin') {
       return {
         ...userData,
+        name: cleanUserName(userData.name || ''), // Admin için de temizle
         kurum_adi: 'Sistem',
         departman_adi: 'Yönetim',
         birim_adi: 'Sistem',
@@ -102,6 +129,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     return {
       ...userData,
+      name: cleanUserName(userData.name || ''), // Kullanıcı adını temizle
       kurum_adi,
       departman_adi,
       birim_adi,

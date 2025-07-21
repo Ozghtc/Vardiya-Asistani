@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, ChevronDown, ChevronUp, Trash2, FileText, BarChart, X } from 'lucide-react';
+import { ArrowLeft, ChevronDown, ChevronUp, Trash2, FileText, BarChart, X, MapPin, Settings } from 'lucide-react';
 import DeleteConfirmDialog from '../../../components/ui/DeleteConfirmDialog';
 import { apiRequest } from '../../../lib/api';
 import { useAuthContext } from '../../../contexts/AuthContext';
@@ -281,7 +281,7 @@ const TanimliAlanlar: React.FC = () => {
       
       console.log('🚀 loadAlanlar başladı, user:', currentUser);
       
-      // 1. HZM API'den veri oku (YeniAlanTanimlama tablosu - ID: 25)
+      // 1. HZM API'den veri oku (TanimliAlanlar tablosu - ID: 18)
       try {
         // Netlify proxy üzerinden API çağrısı
         const response = await fetch('/.netlify/functions/api-proxy', {
@@ -290,14 +290,13 @@ const TanimliAlanlar: React.FC = () => {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            path: '/api/v1/data/table/25',
+            path: '/api/v1/data/table/18',
             method: 'GET',
             apiKey: 'hzm_1ce98c92189d4a109cd604b22bfd86b7'
           })
         });
         
         const result = await response.json();
-        console.log('📊 API\'den gelen ham veri:', result);
         
         // API response yapısını kontrol et
         let rows = [];
@@ -311,21 +310,10 @@ const TanimliAlanlar: React.FC = () => {
           rows = result.data;
         }
         
-        console.log('📊 İşlenmiş rows verisi:', rows);
-        
         if (rows && rows.length > 0) {
-          console.log('📊 API\'den gelen ham veri:', rows);
           
           const apiData = rows
             .filter((row: any) => {
-              console.log('🔍 Filtreleme kontrolü:', {
-                rowKurum: row.kurum_id,
-                userKurum: currentUser.kurum_id,
-                rowDepartman: row.departman_id,
-                userDepartman: currentUser.departman_id,
-                rowBirim: row.birim_id,
-                userBirim: currentUser.birim_id
-              });
               return true; // Tüm alanları göster, filtrelemeyi geçici olarak kaldır
             })
             .map((row: any) => {
@@ -348,7 +336,7 @@ const TanimliAlanlar: React.FC = () => {
                   gunler: vardiya.days || [] // API'de 'days' olarak geliyor
                 }));
               } catch (e) {
-                console.error('JSON parse hatası:', e);
+                // JSON parse hatası - varsayılan değerlerle devam et
               }
               
               // Computed fields'i hesapla - Haftalık toplamlar
@@ -394,28 +382,18 @@ const TanimliAlanlar: React.FC = () => {
                 parsedVardiyalar: parsedVardiyalar
               };
               
-              console.log('🔄 Alan map edildi:', { originalId: row.id, mappedId: mappedRow.id, name: mappedRow.alan_adi });
               return mappedRow;
             });
           
           alanData = [...alanData, ...apiData];
-          console.log('✅ API\'den gelen alan sayısı:', apiData.length);
-          console.log('📋 Final alan ID\'leri:', alanData.map(a => ({ id: a.id, name: a.alan_adi })));
         }
       } catch (error) {
-        console.error('API hatası:', error);
+        // API hatası - sessizce devam et
       }
       
-      // 2. Veritabanından gelen alanları kontrol et
-      console.log('📊 Veritabanından gelen alan sayısı:', alanData.length);
-      if (alanData.length === 0) {
-        console.log('⚠️ Veritabanından hiç alan gelmedi. Kullanıcı bilgileri:', currentUser);
-      }
-      
-      console.log('📊 Final alanData:', alanData);
       setAlanlar(alanData);
     } catch (error) {
-      console.error('Alanlar yükleme hatası:', error);
+      // Alanlar yükleme hatası - sessizce devam et
     } finally {
       setLoading(false);
     }
@@ -514,7 +492,6 @@ const TanimliAlanlar: React.FC = () => {
 
     try {
       setLoading(true);
-      console.log('🗑️ Alan siliniyor, ID:', alanId);
       
       // Netlify proxy üzerinden silme işlemi - Doğru endpoint
       const response = await fetch('/.netlify/functions/api-proxy', {
@@ -523,21 +500,18 @@ const TanimliAlanlar: React.FC = () => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          path: `/api/v1/data/table/25/rows/${alanId}/delete`,
-          method: 'POST',
+          path: `/api/v1/data/table/18/rows/${alanId}`,
+          method: 'DELETE',
           apiKey: 'hzm_1ce98c92189d4a109cd604b22bfd86b7'
         })
       });
       
       const result = await response.json();
-      console.log('🗑️ Silme response:', result);
       
       if (response.ok && result.success) {
-        console.log('✅ Alan başarıyla silindi:', result.data);
         alert('Alan başarıyla silindi!');
         loadAlanlar(); // Listeyi yenile
       } else {
-        console.error('❌ Alan silme hatası:', result);
         let errorMessage = 'Alan silinirken hata oluştu';
         
         if (result.message) {
@@ -548,16 +522,9 @@ const TanimliAlanlar: React.FC = () => {
           errorMessage = result.data.message;
         }
         
-        console.log('🔍 Detaylı hata bilgisi:', {
-          status: response.status,
-          statusText: response.statusText,
-          result: result
-        });
-        
         alert('Alan silinirken hata oluştu: ' + errorMessage);
       }
     } catch (error: any) {
-      console.error('❌ Alan silme exception:', error);
       
       // Hata türüne göre mesaj
       let errorMessage = 'Alan silinirken hata oluştu';
@@ -590,8 +557,11 @@ const TanimliAlanlar: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="text-lg">Yükleniyor, lütfen bekleyin...</div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Alan verileri yükleniyor...</p>
+        </div>
       </div>
     );
   }
@@ -646,8 +616,19 @@ const TanimliAlanlar: React.FC = () => {
       {/* Alanlar Listesi */}
       <div className="space-y-4">
         {alanlar.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            <p>Henüz tanımlı alan bulunmamaktadır.</p>
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <MapPin className="w-8 h-8 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Henüz Alan Tanımlanmamış</h3>
+            <p className="text-gray-600 mb-6">Vardiya sistemi için önce alanları tanımlamanız gerekiyor.</p>
+            <button
+              onClick={() => navigate('/tanimlamalar')}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Settings className="w-5 h-5" />
+              <span>Alan Tanımlamaya Git</span>
+            </button>
           </div>
         ) : (
           alanlar.map((alan) => (

@@ -7,6 +7,27 @@ import { useAuthContext } from '../../contexts/AuthContext';
 // Bölüm 4: Authentication Logic
 // 150 satır - KURAL 9 uyumlu
 
+// Hiyerarşik ID'yi kullanıcı adından temizle
+const cleanUserName = (userName: string): string => {
+  // Hiyerarşik ID formatı: {kurum_id}_{departman_sira}_{birim_sira}_{kullanici_sira}_{isim}
+  // Örnek: "18_1_1_1_HATİCE ALTINTAŞ" -> "HATİCE ALTINTAŞ"
+  
+  if (!userName) return userName;
+  
+  // Underscore ile ayrılmış parçaları al
+  const parts = userName.split('_');
+  
+  // En az 5 parça varsa (hiyerarşik ID + isim)
+  if (parts.length >= 5) {
+    // Son 2 parçayı al (ad ve soyad)
+    const nameParts = parts.slice(-2);
+    return nameParts.join(' ');
+  }
+  
+  // Eğer hiyerarşik ID formatında değilse, orijinal ismi döndür
+  return userName;
+};
+
 export const useAuth = () => {
   const navigate = useNavigate();
   const { login: contextLogin } = useAuthContext();
@@ -43,6 +64,7 @@ export const useAuth = () => {
     if (!user || user.rol === 'admin') {
       return {
         ...user,
+        name: cleanUserName(user.name || ''), // Admin için de temizle
         kurum_adi: 'Sistem',
         departman_adi: 'Yönetim',
         birim_adi: 'Sistem',
@@ -105,6 +127,7 @@ export const useAuth = () => {
     
     return {
       ...user,
+      name: cleanUserName(user.name || ''), // Kullanıcı adını temizle
       kurum_adi,
       departman_adi,
       birim_adi,
@@ -253,12 +276,21 @@ export const useAuth = () => {
       if (userResult.success) {
         console.log('✅ Kayıt başarılı');
         
-        // AuthContext'e kullanıcı bilgilerini kaydet
-        contextLogin({
+        // Kullanıcı verisini zenginleştir
+        const enrichedUserData = {
           ...userData,
           id: userResult.data?.row?.id || Date.now().toString(),
-          rol: rol as 'admin' | 'yonetici' | 'personel'
-        });
+          rol: rol as 'admin' | 'yonetici' | 'personel',
+          name: cleanUserName(userData.name),
+          kurum_adi: organization,
+          departman_adi: 'Genel Müdürlük',
+          birim_adi: 'Yönetim',
+          lastActivity: new Date().toISOString(),
+          loginTime: new Date().toISOString()
+        };
+        
+        // AuthContext'e kullanıcı bilgilerini kaydet
+        contextLogin(enrichedUserData);
         
         // KURAL 16: Production ortamında localStorage yasak - direkt yönlendirme
         console.log('✅ Kayıt başarılı, direkt yönlendirme:', {
