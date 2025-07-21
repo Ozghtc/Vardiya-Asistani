@@ -307,6 +307,9 @@ const PersonelListesi: React.FC = () => {
                   Oluşturma Tarihi
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Kurum/Departman/Birim ID
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Durum
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -343,6 +346,29 @@ const PersonelListesi: React.FC = () => {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">
                       {person.olusturma_tarihi ? new Date(person.olusturma_tarihi).toLocaleDateString('tr-TR') : '-'}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="space-y-1 text-xs">
+                      <div>
+                        <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded font-mono">
+                          {person.kurum_id}
+                        </span>
+                      </div>
+                      {person.departman_id && (
+                        <div>
+                          <span className="px-2 py-1 bg-green-100 text-green-800 rounded font-mono">
+                            {person.departman_id}
+                          </span>
+                        </div>
+                      )}
+                      {person.birim_id && (
+                        <div>
+                          <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded font-mono">
+                            {person.birim_id}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">

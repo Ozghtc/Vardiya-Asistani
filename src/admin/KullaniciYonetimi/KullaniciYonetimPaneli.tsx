@@ -708,7 +708,34 @@ const KullaniciYonetimPaneli: React.FC = () => {
                         <div className="text-sm">
                           🏥 {kurumlar.find(k => String(k.id) === String(user.kurum_id))?.kurum_adi || 'Bilinmeyen'}
                         </div>
-                        <div className="text-xs text-gray-500">
+                        
+                        {/* ID'leri göster */}
+                        <div className="mt-2 space-y-1 text-xs">
+                          <div>
+                            <span className="text-gray-500">Kurum ID:</span>
+                            <span className="ml-1 px-2 py-1 bg-blue-100 text-blue-800 rounded font-mono">
+                              {user.kurum_id}
+                            </span>
+                          </div>
+                          {user.departman_id && (
+                            <div>
+                              <span className="text-gray-500">Departman ID:</span>
+                              <span className="ml-1 px-2 py-1 bg-green-100 text-green-800 rounded font-mono">
+                                {user.departman_id}
+                              </span>
+                            </div>
+                          )}
+                          {user.birim_id && (
+                            <div>
+                              <span className="text-gray-500">Birim ID:</span>
+                              <span className="ml-1 px-2 py-1 bg-purple-100 text-purple-800 rounded font-mono">
+                                {user.birim_id}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div className="text-xs text-gray-500 mt-1">
                           {departmanlar.find(d => d.id === user.departman_id)?.departman_adi || 'Bilinmeyen'} › {birimler.find(b => b.id === user.birim_id)?.birim_adi || 'Bilinmeyen'}
                         </div>
                       </div>
