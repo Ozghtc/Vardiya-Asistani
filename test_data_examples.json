@@ -1,0 +1,267 @@
+{
+  "kurumlar": [
+    {
+      "kurum_id": "KURUM_001",
+      "kurum_adi": "Şerik Devlet Hastanesi",
+      "kurum_turu": "DEVLET HASTANESİ",
+      "adres": "Serik Merkez",
+      "il": "Antalya",
+      "ilce": "Serik",
+      "aktif_mi": true,
+      "departmanlar": "Acil Servis,Dahiliye,Cerrahi,Nöroloji",
+      "birimler": "Hemşire,Doktor,Tekniker,Sekreter,Anestezi Teknisyeni"
+    },
+    {
+      "kurum_id": "KURUM_002", 
+      "kurum_adi": "Akdeniz Üniversitesi Hastanesi",
+      "kurum_turu": "ÜNİVERSİTE HASTANESİ",
+      "adres": "Dumlupınar Bulvarı",
+      "il": "Antalya",
+      "ilce": "Konyaaltı",
+      "aktif_mi": true,
+      "departmanlar": "Acil Tıp,Göğüs Hastalıkları,Laboratuvar",
+      "birimler": "Hemşire,Doktor,Tekniker,Paramedik,Koordinatör,Uzman"
+    },
+    {
+      "kurum_id": "KURUM_003",
+      "kurum_adi": "Antalya Eğitim ve Araştırma Hastanesi", 
+      "kurum_turu": "EĞİTİM ARAŞTIRMA HASTANESİ",
+      "adres": "Varlık Mahallesi",
+      "il": "Antalya",
+      "ilce": "Muratpaşa",
+      "aktif_mi": true,
+      "departmanlar": "Pediatri,Kadın Doğum,Psikiyatri",
+      "birimler": "Hemşire,Doktor,Ebe,Psikolog,Oyun Terapisti"
+    }
+  ],
+  
+  "kullanicilar": [
+    {
+      "name": "Ayşe Yılmaz",
+      "email": "ayse.yilmaz@gmail.com",
+      "password": "123456",
+      "phone": "5551234567",
+      "rol": "personel",
+      "kurum_id": "KURUM_001",
+      "departman_id": "KURUM_001_ACIL_SERVIS",
+      "birim_id": "KURUM_001_ACIL_HEMSIRE",
+      "aktif_mi": true
+    },
+    {
+      "name": "Dr. Mehmet Kaya",
+      "email": "mehmet.kaya@gmail.com",
+      "password": "123456", 
+      "phone": "5559876543",
+      "rol": "yonetici",
+      "kurum_id": "KURUM_001",
+      "departman_id": "KURUM_001_DAHILIYE",
+      "birim_id": "KURUM_001_DAHILIYE_DOKTOR",
+      "aktif_mi": true
+    },
+    {
+      "name": "Fatma Demir",
+      "email": "fatma.demir@gmail.com",
+      "password": "123456",
+      "phone": "5555555555", 
+      "rol": "personel",
+      "kurum_id": "KURUM_002",
+      "departman_id": "KURUM_002_LABORATUVAR",
+      "birim_id": "KURUM_002_LAB_TEKNIKER",
+      "aktif_mi": true
+    },
+    {
+      "name": "Dr. Elif Özkan",
+      "email": "elif.ozkan@gmail.com",
+      "password": "123456",
+      "phone": "5554443322",
+      "rol": "yonetici", 
+      "kurum_id": "KURUM_003",
+      "departman_id": "KURUM_003_PEDIATRI",
+      "birim_id": "KURUM_003_PEDIATRI_DOKTOR",
+      "aktif_mi": true
+    }
+  ],
+  
+  "personel": [
+    {
+      "ad": "Zeynep",
+      "soyad": "Özkan",
+      "tcno": "12345678901",
+      "unvan": "Hemşire",
+      "email": "zeynep.ozkan@hastane.com",
+      "telefon": "5551111111",
+      "kurum_id": "KURUM_001", 
+      "departman_id": "KURUM_001_ACIL_SERVIS",
+      "birim_id": "KURUM_001_ACIL_HEMSIRE",
+      "aktif_mi": true
+    },
+    {
+      "ad": "Ali",
+      "soyad": "Çelik", 
+      "tcno": "98765432101",
+      "unvan": "Doktor",
+      "email": "ali.celik@hastane.com",
+      "telefon": "5552222222",
+      "kurum_id": "KURUM_002",
+      "departman_id": "KURUM_002_GOGUS_HASTALIKLARI", 
+      "birim_id": "KURUM_002_GOGUS_DOKTOR",
+      "aktif_mi": true
+    },
+    {
+      "ad": "Murat",
+      "soyad": "Yıldız",
+      "tcno": "11122233344", 
+      "unvan": "Tekniker",
+      "email": "murat.yildiz@hastane.com",
+      "telefon": "5553333333",
+      "kurum_id": "KURUM_001",
+      "departman_id": "KURUM_001_CERRAHI",
+      "birim_id": "KURUM_001_CERRAHI_TEKNIKER", 
+      "aktif_mi": true
+    },
+    {
+      "ad": "Selin",
+      "soyad": "Kara",
+      "tcno": "55566677788",
+      "unvan": "Ebe",
+      "email": "selin.kara@hastane.com", 
+      "telefon": "5554444444",
+      "kurum_id": "KURUM_003",
+      "departman_id": "KURUM_003_KADIN_DOGUM",
+      "birim_id": "KURUM_003_DOGUM_EBE",
+      "aktif_mi": true
+    }
+  ],
+  
+  "unvanlar": [
+    {
+      "unvan_adi": "Hemşire",
+      "aciklama": "Hasta bakım hemşiresi",
+      "kurum_id": "KURUM_001",
+      "departman_id": "KURUM_001_ACIL_SERVIS",
+      "birim_id": "KURUM_001_ACIL_HEMSIRE"
+    },
+    {
+      "unvan_adi": "Doktor", 
+      "aciklama": "Uzman doktor",
+      "kurum_id": "KURUM_001",
+      "departman_id": "KURUM_001_DAHILIYE",
+      "birim_id": "KURUM_001_DAHILIYE_DOKTOR"
+    },
+    {
+      "unvan_adi": "Tekniker",
+      "aciklama": "Tıbbi tekniker", 
+      "kurum_id": "KURUM_002",
+      "departman_id": "KURUM_002_LABORATUVAR",
+      "birim_id": "KURUM_002_LAB_TEKNIKER"
+    },
+    {
+      "unvan_adi": "Ebe",
+      "aciklama": "Doğum ebe",
+      "kurum_id": "KURUM_003", 
+      "departman_id": "KURUM_003_KADIN_DOGUM",
+      "birim_id": "KURUM_003_DOGUM_EBE"
+    }
+  ],
+  
+  "vardiyalar": [
+    {
+      "vardiya_adi": "GÜNDÜZ",
+      "baslangic_saati": "08:00",
+      "bitis_saati": "16:00", 
+      "calisma_saati": 8,
+      "kurum_id": "KURUM_001",
+      "departman_id": "KURUM_001_ACIL_SERVIS",
+      "birim_id": "KURUM_001_ACIL_HEMSIRE",
+      "aktif_mi": true
+    },
+    {
+      "vardiya_adi": "AKŞAM",
+      "baslangic_saati": "16:00",
+      "bitis_saati": "24:00",
+      "calisma_saati": 8, 
+      "kurum_id": "KURUM_001",
+      "departman_id": "KURUM_001_ACIL_SERVIS",
+      "birim_id": "KURUM_001_ACIL_HEMSIRE",
+      "aktif_mi": true
+    },
+    {
+      "vardiya_adi": "GECE",
+      "baslangic_saati": "00:00", 
+      "bitis_saati": "08:00",
+      "calisma_saati": 8,
+      "kurum_id": "KURUM_001",
+      "departman_id": "KURUM_001_ACIL_SERVIS", 
+      "birim_id": "KURUM_001_ACIL_HEMSIRE",
+      "aktif_mi": true
+    },
+    {
+      "vardiya_adi": "24 SAAT",
+      "baslangic_saati": "08:00",
+      "bitis_saati": "08:00",
+      "calisma_saati": 24,
+      "kurum_id": "KURUM_002",
+      "departman_id": "KURUM_002_ACIL_TIP",
+      "birim_id": "KURUM_002_ACIL_DOKTOR",
+      "aktif_mi": true
+    }
+  ],
+  
+  "izin_turleri": [
+    {
+      "izin_turu": "Yıllık İzin",
+      "kisaltma": "YI",
+      "renk": "#22c55e",
+      "mesai_dusumu": true,
+      "kurum_id": "KURUM_001",
+      "departman_id": "KURUM_001_ACIL_SERVIS",
+      "birim_id": "KURUM_001_ACIL_HEMSIRE",
+      "aktif_mi": true
+    },
+    {
+      "izin_turu": "Hastalık İzni",
+      "kisaltma": "HI", 
+      "renk": "#ef4444",
+      "mesai_dusumu": true,
+      "kurum_id": "KURUM_001",
+      "departman_id": "KURUM_001_ACIL_SERVIS",
+      "birim_id": "KURUM_001_ACIL_HEMSIRE",
+      "aktif_mi": true
+    },
+    {
+      "izin_turu": "Doğum İzni",
+      "kisaltma": "DI",
+      "renk": "#f59e0b",
+      "mesai_dusumu": true, 
+      "kurum_id": "KURUM_003",
+      "departman_id": "KURUM_003_KADIN_DOGUM",
+      "birim_id": "KURUM_003_DOGUM_EBE",
+      "aktif_mi": true
+    }
+  ],
+  
+  "alanlar": [
+    {
+      "alan_adi": "Acil Servis Ana Alan",
+      "renk": "#dc2626",
+      "aciklama": "Acil servis ana çalışma alanı",
+      "gunluk_saatler": "{\"Pazartesi\": 24, \"Salı\": 24, \"Çarşamba\": 24, \"Perşembe\": 24, \"Cuma\": 24, \"Cumartesi\": 24, \"Pazar\": 24}",
+      "aktif_gunler": "[\"Pazartesi\", \"Salı\", \"Çarşamba\", \"Perşembe\", \"Cuma\", \"Cumartesi\", \"Pazar\"]", 
+      "vardiyalar": "[{\"id\": \"1\", \"name\": \"GÜNDÜZ\", \"hours\": \"08:00 - 16:00\", \"duration\": 8, \"days\": [\"Pazartesi\", \"Salı\", \"Çarşamba\", \"Perşembe\", \"Cuma\"]}]",
+      "kurum_id": "KURUM_001",
+      "departman_id": "KURUM_001_ACIL_SERVIS", 
+      "birim_id": "KURUM_001_ACIL_HEMSIRE"
+    },
+    {
+      "alan_adi": "Laboratuvar Ana Alan",
+      "renk": "#059669",
+      "aciklama": "Laboratuvar çalışma alanı",
+      "gunluk_saatler": "{\"Pazartesi\": 8, \"Salı\": 8, \"Çarşamba\": 8, \"Perşembe\": 8, \"Cuma\": 8}",
+      "aktif_gunler": "[\"Pazartesi\", \"Salı\", \"Çarşamba\", \"Perşembe\", \"Cuma\"]",
+      "vardiyalar": "[{\"id\": \"2\", \"name\": \"GÜNDÜZ\", \"hours\": \"08:00 - 16:00\", \"duration\": 8, \"days\": [\"Pazartesi\", \"Salı\", \"Çarşamba\", \"Perşembe\", \"Cuma\"]}]",
+      "kurum_id": "KURUM_002",
+      "departman_id": "KURUM_002_LABORATUVAR",
+      "birim_id": "KURUM_002_LAB_TEKNIKER"
+    }
+  ]
+} 

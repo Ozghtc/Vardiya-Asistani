@@ -267,7 +267,7 @@ const Kurumlar = () => {
                       <div>
                         <span className="font-semibold">Kurum ID:</span> 
                         <span className="ml-2 px-2 py-1 rounded text-xs bg-blue-100 text-blue-800 font-mono">
-                          {kurum.kurum_id || `KURUM_${kurum.id?.toString().padStart(3, '0')}`}
+                          {kurum.kurum_id || 'KURUM_001'}
                         </span>
                       </div>
                       {kurum.kurum_turu && <div><span className="font-semibold">Tür:</span> {kurum.kurum_turu}</div>}
@@ -283,7 +283,7 @@ const Kurumlar = () => {
                             {kurum.departmanlar.split(',').map((dep: string, idx: number) => (
                               <div key={idx} className="text-xs">
                                 <span className="font-mono bg-green-100 text-green-800 px-2 py-1 rounded mr-2">
-                                  {kurum.kurum_id || `KURUM_${kurum.id?.toString().padStart(3, '0')}`}_{dep.trim().replace(/\s+/g, '_').toUpperCase()}
+                                  {kurum.kurum_id || 'KURUM_001'}_{dep.trim().replace(/\s+/g, '_').toUpperCase()}
                                 </span>
                                 <span>{dep.trim()}</span>
                               </div>
@@ -299,7 +299,7 @@ const Kurumlar = () => {
                             {kurum.birimler.split(',').map((birim: string, idx: number) => (
                               <div key={idx} className="text-xs">
                                 <span className="font-mono bg-purple-100 text-purple-800 px-2 py-1 rounded mr-2">
-                                  {kurum.kurum_id || `KURUM_${kurum.id?.toString().padStart(3, '0')}`}_{birim.trim().replace(/\s+/g, '_').toUpperCase()}
+                                  {kurum.kurum_id || 'KURUM_001'}_{birim.trim().replace(/\s+/g, '_').toUpperCase()}
                                 </span>
                                 <span>{birim.trim()}</span>
                               </div>

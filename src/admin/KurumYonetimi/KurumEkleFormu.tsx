@@ -36,6 +36,9 @@ const KurumEkleFormu = () => {
     setErrorMsg('');
     setSuccessMsg('');
 
+    // Kurum ID'sini otomatik generate et
+    const kurumId = `KURUM_${String(Date.now()).slice(-3).padStart(3, '0')}`;
+    
     const kurumData = {
       kurum_adi: kurumAdi,
       kurum_turu: kurumTuru,
@@ -43,6 +46,9 @@ const KurumEkleFormu = () => {
       il: il?.value || '',
       ilce: ilce?.value || '',
       aktif_mi: aktifMi,
+      kurum_id: kurumId,
+      departman_id_list: '', // Boş olarak başlat, sonra departmanlar eklenince doldurulacak
+      birim_id_list: '' // Boş olarak başlat, sonra birimler eklenince doldurulacak
     };
 
     try {
@@ -60,7 +66,7 @@ const KurumEkleFormu = () => {
         setIlce(null);
         setAktifMi(true);
       } else {
-        throw new Error(response.error || 'Kurum kaydedilemedi');
+        throw new Error(response.message || 'Kurum kaydedilemedi');
       }
     } catch (error: any) {
       setErrorMsg(`Hata: ${error.message}`);
