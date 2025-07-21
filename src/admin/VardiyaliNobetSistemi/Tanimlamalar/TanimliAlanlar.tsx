@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, ChevronDown, ChevronUp, Trash2, FileText, BarChart, X, MapPin, Settings } from 'lucide-react';
 import DeleteConfirmDialog from '../../../components/ui/DeleteConfirmDialog';
-import { apiRequest } from '../../../lib/api';
+import { apiRequest, clearAllCache, clearTableCache } from '../../../lib/api';
 import { useAuthContext } from '../../../contexts/AuthContext';
 
 interface NobetGrubu {
@@ -509,8 +509,11 @@ const TanimliAlanlar: React.FC = () => {
       const result = await response.json();
       
       if (response.ok && result.success) {
+        // Cache temizle ve veri yenile
+        clearTableCache('18');
+        clearAllCache();
         alert('Alan başarıyla silindi!');
-        loadAlanlar(); // Listeyi yenile
+        await loadAlanlar(); // Listeyi yenile
       } else {
         let errorMessage = 'Alan silinirken hata oluştu';
         

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, ArrowLeft, Save, User, UserPlus } from 'lucide-react';
 import { safeStringOperation } from '../../../hooks/useCapitalization';
-import { apiRequest, getTableData } from '../../../lib/api';
+import { apiRequest, getTableData, clearAllCache, clearTableCache } from '../../../lib/api';
 import { useAuthContext } from '../../../contexts/AuthContext';
 
 interface Unvan {
@@ -205,6 +205,9 @@ const PersonelEkle: React.FC = () => {
       console.log('API yanıtı:', response);
 
       if (response.success) {
+        // Cache temizle ve veri yenile
+        clearTableCache('21');
+        clearAllCache();
         setSuccess(true);
         setTimeout(() => {
           navigate('/personel-listesi');

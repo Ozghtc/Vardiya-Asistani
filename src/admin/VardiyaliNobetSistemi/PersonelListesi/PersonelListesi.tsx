@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Plus, User2, ArrowLeft, Trash2, Edit } from 'lucide-react';
 import { useAuthContext } from '../../../contexts/AuthContext';
 import DeleteConfirmDialog from '../../../components/ui/DeleteConfirmDialog';
+import { clearAllCache, clearTableCache } from '../../../lib/api';
 
 interface Personnel {
   id: number;
@@ -221,9 +222,14 @@ const PersonelListesi: React.FC = () => {
       });
 
       if (response.ok) {
+        // Cache temizle ve veri yenile
+        clearTableCache('21');
+        clearAllCache();
         // Personeli listeden kaldır
         setPersonnel(prev => prev.filter(p => p.id !== deleteDialog.personId));
         setDeleteDialog({ isOpen: false, personId: null, personName: '' });
+        // Veriyi yeniden yükle
+        await loadPersonnel();
       } else {
         setError('Personel silinirken bir hata oluştu');
       }

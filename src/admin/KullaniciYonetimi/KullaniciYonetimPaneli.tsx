@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTemporaryState } from '../../hooks/useApiState';
-import { getKurumlar, createUsersTable, getUsers, addUser, updateUser, deleteUser } from '../../lib/api';
+import { getKurumlar, createUsersTable, getUsers, addUser, updateUser, deleteUser, clearAllCache, clearTableCache } from '../../lib/api';
 
 // Types
 interface BaseUser {
@@ -201,9 +201,12 @@ const KullaniciYonetimPaneli: React.FC = () => {
     try {
       const result = await addUser(usersTableId, formData);
       if (result.success) {
+        // Cache temizle ve veri yenile
+        clearTableCache(usersTableId.toString());
+        clearAllCache();
         alert('✅ Kullanıcı başarıyla eklendi!');
         // Kullanıcı listesini yenile
-        loadUsers();
+        await loadUsers();
         setFormData({
           rol: 'admin',
           name: '',
@@ -232,8 +235,11 @@ const KullaniciYonetimPaneli: React.FC = () => {
       try {
         const result = await deleteUser(usersTableId, showDeleteModal.user.id);
         if (result.success) {
+          // Cache temizle ve veri yenile
+          clearTableCache(usersTableId.toString());
+          clearAllCache();
           alert('✅ Kullanıcı başarıyla silindi!');
-          loadUsers();
+          await loadUsers();
           setPermissions(prev => prev.filter(p => p.kullanici_id !== showDeleteModal.user.id));
     setShowDeleteModal(null);
           setSelectedUser(null);
@@ -253,7 +259,10 @@ const KullaniciYonetimPaneli: React.FC = () => {
     try {
       const result = await updateUser(usersTableId, user.id, { aktif_mi: !user.aktif_mi });
       if (result.success) {
-        loadUsers();
+        // Cache temizle ve veri yenile
+        clearTableCache(usersTableId.toString());
+        clearAllCache();
+        await loadUsers();
       } else {
         alert('❌ Kullanıcı durumu güncellenemedi');
       }
@@ -285,8 +294,11 @@ const KullaniciYonetimPaneli: React.FC = () => {
     try {
       const result = await updateUser(usersTableId, editingUser.id, formData);
       if (result.success) {
+        // Cache temizle ve veri yenile
+        clearTableCache(usersTableId.toString());
+        clearAllCache();
         alert('✅ Kullanıcı başarıyla güncellendi!');
-        loadUsers();
+        await loadUsers();
         setEditingUser(null);
         setFormData({
           rol: 'admin',

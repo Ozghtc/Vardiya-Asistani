@@ -3,6 +3,7 @@ import { Check, X, Clock, Save } from 'lucide-react';
 import { useCapitalization } from '../../../hooks/useCapitalization';
 import { useAuthContext } from '../../../contexts/AuthContext';
 import { useToast } from '../../../components/ui/ToastContainer';
+import { clearAllCache, clearTableCache } from '../../../lib/api';
 
 const colorMap = {
   '#DC2626': 'Kırmızı',
@@ -252,7 +253,7 @@ const handleSaveToDatabase = async () => {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        path: '/api/v1/data/table/25/rows',
+        path: '/api/v1/data/table/18/rows',
         method: 'POST',
         body: data,
         apiKey: 'hzm_1ce98c92189d4a109cd604b22bfd86b7'
@@ -262,6 +263,10 @@ const handleSaveToDatabase = async () => {
     if (response.ok) {
       const result = await response.json();
       console.log('✅ Kaydetme başarılı:', result);
+      
+      // Cache temizle ve veri yenile
+      clearTableCache('18');
+      clearAllCache();
       
       // Toast notification göster
       showToast({
