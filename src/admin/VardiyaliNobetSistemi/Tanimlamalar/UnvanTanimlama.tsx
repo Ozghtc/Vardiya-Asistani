@@ -311,11 +311,11 @@ const UnvanTanimlama: React.FC = () => {
         ))}
       </div>
 
-      {/* Haftalık Mesai Tanımlama */}
+      {/* Haftalık Minimum Mesai Tanımlama */}
       <div className="bg-white rounded-lg shadow p-6">
         <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
           <Clock className="w-5 h-5" />
-          Haftalık Mesai Tanımlama
+          Haftalık Minimum Mesai Tanımlama
         </h2>
 
         {/* Mesai Ekleme Formu */}
