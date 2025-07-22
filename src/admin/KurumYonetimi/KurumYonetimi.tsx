@@ -112,11 +112,14 @@ const KurumYonetimi = () => {
     loadKurumlar();
   }, []);
 
-  const loadKurumlar = async () => {
+  const loadKurumlar = async (forceRefresh: boolean = false) => {
     setLoading(true);
     try {
-      const apiKurumlar = await getKurumlar();
+      // 🔄 CACHE'İ ZORLA YENİLE
+      const apiKurumlar = await getKurumlar(forceRefresh);
       setKurumlar(apiKurumlar);
+      
+      console.log(`📊 Kurum listesi yüklendi: ${apiKurumlar.length} kayıt`, apiKurumlar);
     } catch (error: any) {
       setErrorMsg('Kurumlar yüklenirken hata oluştu: ' + error.message);
     } finally {
@@ -251,8 +254,8 @@ const KurumYonetimi = () => {
           clearTableCache('34'); // departmanlar
           clearTableCache('35'); // birimler
           
-          // Kurum listesini yeniden yükle
-          await loadKurumlar(); 
+          // Kurum listesini ZORLA yeniden yükle
+          await loadKurumlar(true); // 🚀 FORCE REFRESH! 
           
           setSuccessMsg('Kurum ve bağlı departman/birimler başarıyla kaydedildi!');
           
@@ -835,7 +838,7 @@ const KurumYonetimi = () => {
               </select>
 
               <button
-                onClick={loadKurumlar}
+                onClick={() => loadKurumlar(true)}
                 className="px-4 py-2 bg-green-100 text-green-600 rounded-lg hover:bg-green-200 transition-colors"
               >
                 🔄 Yenile
