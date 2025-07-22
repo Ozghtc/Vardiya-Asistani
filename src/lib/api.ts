@@ -134,6 +134,13 @@ const logError = (message: string, error?: any) => {
 let jwtToken: string | null = null;
 let tokenExpiry: number | null = null;
 
+// Token'i zorla temizle
+export const clearJWTToken = () => {
+  jwtToken = null;
+  tokenExpiry = null;
+  console.log('🧹 JWT TOKEN CACHE TEMİZLENDİ');
+};
+
 const getJWTToken = async (): Promise<string> => {
   if (jwtToken && tokenExpiry && Date.now() < tokenExpiry) {
     console.log('🎫 CACHED JWT TOKEN KULLANILIYOR');
@@ -234,6 +241,7 @@ export const getKurumlar = async (forceRefresh: boolean = false) => {
       clearCachedData(cacheKey);
       clearTableCache('30');
       clearAllCache();
+      clearJWTToken(); // JWT token'i de temizle
       console.log('🧹 CACHE TEMİZLENDİ - FRESH DATA ÇEKILIYOR');
     }
     
