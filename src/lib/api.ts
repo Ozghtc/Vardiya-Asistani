@@ -889,19 +889,24 @@ export const expandUserTable = async () => {
   }
 };
 
-// Kullanıcıları getir - JWT TOKEN İLE
+// Kullanıcıları getir - NETLIFY PROXY İLE
 export const getUsers = async (usersTableId: number) => {
   try {
     // JWT Token al
     const token = await getJWTToken();
     
-    // JWT token ile direkt API çağrısı
-    const response = await fetch(`${API_CONFIG.baseURL}/api/v1/data/table/${usersTableId}?page=1&limit=100&sort=id&order=DESC`, {
-      method: 'GET',
+    // Netlify proxy ile API çağrısı (CORS sorunu çözümü)
+    const response = await fetch('/.netlify/functions/api-proxy', {
+      method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      }
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        path: `/api/v1/data/table/${usersTableId}?page=1&limit=100&sort=id&order=DESC`,
+        method: 'GET',
+        jwtToken: token,
+        apiKey: API_CONFIG.apiKey
+      })
     });
     
     if (!response.ok) {
@@ -1078,16 +1083,21 @@ export const addUser = async (usersTableId: number, userData: {
       last_login: userData.last_login || undefined
     };
     
-    // JWT Token al ve direkt API çağrısı yap
+    // JWT Token al ve Netlify proxy ile API çağrısı yap
     const token = await getJWTToken();
     
-    const response = await fetch(`${API_CONFIG.baseURL}/api/v1/data/table/${usersTableId}/rows`, {
+    const response = await fetch('/.netlify/functions/api-proxy', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
+        'Content-Type': 'application/json'
       },
-      body: JSON.stringify(requestBody)
+      body: JSON.stringify({
+        path: `/api/v1/data/table/${usersTableId}/rows`,
+        method: 'POST',
+        body: requestBody,
+        jwtToken: token,
+        apiKey: API_CONFIG.apiKey
+      })
     });
     
     if (!response.ok) {
@@ -1131,16 +1141,21 @@ export const updateUser = async (usersTableId: number, userId: string, userData:
   aktif_mi?: boolean;
 }) => {
   try {
-    // JWT Token al ve direkt API çağrısı yap
+    // JWT Token al ve Netlify proxy ile API çağrısı yap
     const token = await getJWTToken();
     
-    const response = await fetch(`${API_CONFIG.baseURL}/api/v1/data/table/${usersTableId}/rows/${userId}`, {
-      method: 'PUT',
+    const response = await fetch('/.netlify/functions/api-proxy', {
+      method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
+        'Content-Type': 'application/json'
       },
-      body: JSON.stringify(userData)
+      body: JSON.stringify({
+        path: `/api/v1/data/table/${usersTableId}/rows/${userId}`,
+        method: 'PUT',
+        body: userData,
+        jwtToken: token,
+        apiKey: API_CONFIG.apiKey
+      })
     });
     
     if (!response.ok) {
@@ -1161,15 +1176,20 @@ export const updateUser = async (usersTableId: number, userId: string, userData:
 // Kullanıcı sil - JWT TOKEN İLE
 export const deleteUser = async (usersTableId: number, userId: string) => {
   try {
-    // JWT Token al ve direkt API çağrısı yap
+    // JWT Token al ve Netlify proxy ile API çağrısı yap
     const token = await getJWTToken();
     
-    const response = await fetch(`${API_CONFIG.baseURL}/api/v1/data/table/${usersTableId}/rows/${userId}`, {
-      method: 'DELETE',
+    const response = await fetch('/.netlify/functions/api-proxy', {
+      method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      }
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        path: `/api/v1/data/table/${usersTableId}/rows/${userId}`,
+        method: 'DELETE',
+        jwtToken: token,
+        apiKey: API_CONFIG.apiKey
+      })
     });
     
     if (!response.ok) {
