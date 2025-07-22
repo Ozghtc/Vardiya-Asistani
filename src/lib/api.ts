@@ -861,12 +861,27 @@ export const expandUserTable = async () => {
   }
 };
 
-// Kullanıcıları getir - YENİ FONKSIYON
+// Kullanıcıları getir - JWT TOKEN İLE
 export const getUsers = async (usersTableId: number) => {
-  // logInfo('getUsers() çağrıldı'); // Removed logInfo
   try {
-    const response = await apiRequest(`/api/v1/data/table/${usersTableId}?page=1&limit=100&sort=id&order=DESC`);
-    let users = response.data?.rows || [];
+    // JWT Token al
+    const token = await getJWTToken();
+    
+    // JWT token ile direkt API çağrısı
+    const response = await fetch(`${API_CONFIG.baseURL}/api/v1/data/table/${usersTableId}?page=1&limit=100&sort=id&order=DESC`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    let users = data.data?.rows || [];
     
     // Kurum adlarını ekle
     try {
@@ -1035,20 +1050,33 @@ export const addUser = async (usersTableId: number, userData: {
       last_login: userData.last_login || undefined
     };
     
-    const response = await apiRequest(`/api/v1/data/table/${usersTableId}/rows`, {
+    // JWT Token al ve direkt API çağrısı yap
+    const token = await getJWTToken();
+    
+    const response = await fetch(`${API_CONFIG.baseURL}/api/v1/data/table/${usersTableId}/rows`, {
       method: 'POST',
-      body: JSON.stringify(requestBody),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(requestBody)
     });
     
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
     // API'den gelen response'u kontrol et
-    if (response.success === false) {
-      throw new Error(response.message || 'API hatası');
+    if (data.success === false) {
+      throw new Error(data.message || 'API hatası');
     }
     
     return {
       success: true,
-      data: response.data || response,
-      message: response.message || 'Kullanıcı başarıyla eklendi',
+      data: data.data || data,
+      message: data.message || 'Kullanıcı başarıyla eklendi',
       hierarchicalId: hierarchicalId,
       kurumAdi: kurumAdi
     };
@@ -1062,7 +1090,7 @@ export const addUser = async (usersTableId: number, userData: {
   }
 };
 
-// Kullanıcı güncelle - YENİ FONKSIYON
+// Kullanıcı güncelle - JWT TOKEN İLE
 export const updateUser = async (usersTableId: number, userId: string, userData: {
   name?: string;
   email?: string;
@@ -1074,37 +1102,59 @@ export const updateUser = async (usersTableId: number, userId: string, userData:
   birim_id?: string;
   aktif_mi?: boolean;
 }) => {
-  // logInfo('updateUser() çağrıldı', { userId, userData }); // Removed logInfo
   try {
-    const response = await apiRequest(`/api/v1/data/table/${usersTableId}/rows/${userId}`, {
+    // JWT Token al ve direkt API çağrısı yap
+    const token = await getJWTToken();
+    
+    const response = await fetch(`${API_CONFIG.baseURL}/api/v1/data/table/${usersTableId}/rows/${userId}`, {
       method: 'PUT',
-      body: JSON.stringify(userData),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(userData)
     });
-    return { success: true, data: response };
+    
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return { success: true, data: data };
   } catch (error) {
     logError('updateUser hatası', error);
     return {
-      success: true,
-      message: 'Kullanıcı güncellendi (Güvenli mod)',
-      fallback: true
+      success: false,
+      message: 'Kullanıcı güncellenemedi: ' + (error as any).message
     };
   }
 };
 
-// Kullanıcı sil - YENİ FONKSIYON
+// Kullanıcı sil - JWT TOKEN İLE
 export const deleteUser = async (usersTableId: number, userId: string) => {
-  // logInfo('deleteUser() çağrıldı', userId); // Removed logInfo
   try {
-    const response = await apiRequest(`/api/v1/data/table/${usersTableId}/rows/${userId}`, {
+    // JWT Token al ve direkt API çağrısı yap
+    const token = await getJWTToken();
+    
+    const response = await fetch(`${API_CONFIG.baseURL}/api/v1/data/table/${usersTableId}/rows/${userId}`, {
       method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
     });
-    return { success: true, data: response };
+    
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return { success: true, data: data };
   } catch (error) {
     logError('deleteUser hatası', error);
     return {
-      success: true,
-      message: 'Kullanıcı silindi (Güvenli mod)',
-      fallback: true
+      success: false,
+      message: 'Kullanıcı silinemedi: ' + (error as any).message
     };
   }
 };
