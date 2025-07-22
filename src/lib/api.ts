@@ -249,7 +249,7 @@ export const getKurumlar = async (forceRefresh: boolean = false) => {
   }
 };
 
-// Kurum ekle - HİYERARŞİK TABLO (ID: 30)
+// Kurum ekle - 3 TABLOYA KAYIT YAP (HİYERARŞİK + DEPARTMANLAR + BİRİMLER)
 export const addKurum = async (kurumData: {
   kurum_adi: string;
   kurum_turu?: string;
@@ -278,8 +278,6 @@ export const addKurum = async (kurumData: {
     const departmanlar = kurumData.departmanlar || '';
     const birimler = kurumData.birimler || '';
     
-
-    
     const departmanIdList = departmanlar.split(',')
       .filter(d => d.trim())
       .map((_, index) => `${newKurumId}_D${index + 1}`)
@@ -287,9 +285,10 @@ export const addKurum = async (kurumData: {
     
     const birimIdList = birimler.split(',')
       .filter(b => b.trim())
-      .map((_, index) => `${newKurumId}_D1_B${index + 1}`)
+      .map((_, index) => `${newKurumId}_B${index + 1}`)
       .join(',');
     
+    // 1️⃣ ANA KURUM TABLOSUNA KAYDET (ID: 30)
     const requestBody = {
       kurum_id: newKurumId,
       kurum_adi: kurumData.kurum_adi,
@@ -299,7 +298,7 @@ export const addKurum = async (kurumData: {
       DEPARTMAN_ID: departmanIdList,
       DEPARTMAN_ADI: departmanlar,
       BIRIM_ID: birimIdList,
-      BIRIM_ADI: birimler
+      BIRIM: birimler
     };
     
     const response = await apiRequest(`/api/v1/data/table/30/rows`, {
@@ -307,12 +306,63 @@ export const addKurum = async (kurumData: {
       body: JSON.stringify(requestBody),
     });
     
+    // 2️⃣ DEPARTMANLARI AYRI TABLOYA KAYDET (ID: 34)
+    if (departmanlar.trim()) {
+      const departmanList = departmanlar.split(',').filter(d => d.trim());
+      
+      for (let i = 0; i < departmanList.length; i++) {
+        const departmanAdi = departmanList[i].trim();
+        const departmanId = `${newKurumId}_D${i + 1}`;
+        
+        try {
+          await apiRequest(`/api/v1/data/table/34/rows`, {
+            method: 'POST',
+            body: JSON.stringify({
+              departman_id: departmanId,
+              departman_adi: departmanAdi,
+              kurum_id: newKurumId,
+              aktif_mi: true
+            }),
+          });
+        } catch (error) {
+          console.warn(`Departman kaydedilemedi: ${departmanAdi}`, error);
+        }
+      }
+    }
+    
+    // 3️⃣ BİRİMLERİ AYRI TABLOYA KAYDET (ID: 35) - DOĞRUDAN KURUMA BAĞLI
+    if (birimler.trim()) {
+      const birimList = birimler.split(',').filter(b => b.trim());
+      
+      for (let i = 0; i < birimList.length; i++) {
+        const birimAdi = birimList[i].trim();
+        const birimId = `${newKurumId}_B${i + 1}`;
+        
+        try {
+          await apiRequest(`/api/v1/data/table/35/rows`, {
+            method: 'POST',
+            body: JSON.stringify({
+              birim_id: birimId,
+              birim_adi: birimAdi,
+              kurum_id: newKurumId, // Birimler doğrudan kuruma bağlı
+              aktif_mi: true
+            }),
+          });
+        } catch (error) {
+          console.warn(`Birim kaydedilemedi: ${birimAdi}`, error);
+        }
+      }
+    }
+    
+    // Cache'leri temizle
     clearCachedData('kurumlar_hiyerarsik');
+    clearTableCache('34'); // departmanlar
+    clearTableCache('35'); // birimler
     
     return {
       success: true,
       data: response.data || response,
-      message: response.message || 'Kurum başarıyla eklendi',
+      message: 'Kurum ve bağlı departman/birimler başarıyla eklendi',
       newKurumId: newKurumId
     };
   } catch (error) {
