@@ -1,18 +1,14 @@
 import React, { useState } from 'react';
 import { useCapitalization } from '../../hooks/useCapitalization';
 import { ChevronLeft } from 'lucide-react';
-import Select from 'react-select';
-import turkiyeIller from './il-ilceler/turkiye-il-ilce.json';
 import { useNavigate } from 'react-router-dom';
 import { addKurum, testAPI } from '../../lib/api';
 
 const KurumEkleFormu = () => {
   const [kurumAdi, handleKurumAdiChange] = useCapitalization('');
-  const [kurumTuru, handleKurumTuruChange] = useCapitalization('');
   const [adres, handleAdresChange] = useCapitalization('');
-  const [il, setIl] = useState<{ value: string; label: string } | null>(null);
-  const [ilce, setIlce] = useState<{ value: string; label: string } | null>(null);
-  const [aktifMi, setAktifMi] = useState(true);
+  const [telefon, setTelefon] = useState('');
+  const [email, setEmail] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [loading, setLoading] = useState(false);
@@ -36,19 +32,11 @@ const KurumEkleFormu = () => {
     setErrorMsg('');
     setSuccessMsg('');
 
-    // Kurum ID'sini otomatik generate et
-    const kurumId = `KURUM_${String(Date.now()).slice(-3).padStart(3, '0')}`;
-    
     const kurumData = {
       kurum_adi: kurumAdi,
-      kurum_turu: kurumTuru,
       adres: adres,
-      il: il?.value || '',
-      ilce: ilce?.value || '',
-      aktif_mi: aktifMi,
-      kurum_id: kurumId,
-      departman_id_list: '', // Boş olarak başlat, sonra departmanlar eklenince doldurulacak
-      birim_id_list: '' // Boş olarak başlat, sonra birimler eklenince doldurulacak
+      telefon: telefon,
+      email: email,
     };
 
     try {
@@ -60,11 +48,9 @@ const KurumEkleFormu = () => {
         
         // Formu sıfırla
         handleKurumAdiChange({ target: { value: '' } } as any);
-        handleKurumTuruChange({ target: { value: '' } } as any);
         handleAdresChange({ target: { value: '' } } as any);
-        setIl(null);
-        setIlce(null);
-        setAktifMi(true);
+        setTelefon('');
+        setEmail('');
       } else {
         throw new Error(response.message || 'Kurum kaydedilemedi');
       }
@@ -76,8 +62,7 @@ const KurumEkleFormu = () => {
     }
   };
 
-  const filterOption = (option: any, inputValue: string) =>
-    option.label.toLowerCase().includes(inputValue.toLowerCase());
+
 
   return (
     <div className="p-4">
@@ -119,58 +104,26 @@ const KurumEkleFormu = () => {
           required 
         />
         <input 
-          value={kurumTuru} 
-          onChange={handleKurumTuruChange} 
-          placeholder="Kurum Türü" 
-          className="border p-2 w-full rounded-lg" 
-        />
-        <input 
           value={adres} 
           onChange={handleAdresChange} 
           placeholder="Adres" 
           className="border p-2 w-full rounded-lg" 
           autoComplete="off" 
         />
-        
-        <div className="flex gap-2">
-          <div className="flex-1">
-            <Select
-              options={turkiyeIller.map(i => ({ value: i.ad, label: i.ad }))}
-              value={il}
-              onChange={v => { setIl(v); setIlce(null); }}
-              placeholder="İl"
-              isClearable
-              classNamePrefix="react-select"
-              filterOption={filterOption}
-            />
-          </div>
-          <div className="flex-1">
-            <Select
-              options={
-                il
-                  ? (turkiyeIller.find(i => i.ad === il.value)?.ilceler || []).map(ilceAd => ({ value: ilceAd, label: ilceAd }))
-                  : []
-              }
-              value={ilce}
-              onChange={v => setIlce(v)}
-              placeholder="İlçe"
-              isClearable
-              isDisabled={!il}
-              classNamePrefix="react-select"
-              filterOption={filterOption}
-            />
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            id="aktif"
-            checked={aktifMi}
-            onChange={(e) => setAktifMi(e.target.checked)}
-          />
-          <label htmlFor="aktif" className="text-sm">Aktif mi?</label>
-        </div>
+        <input 
+          value={telefon} 
+          onChange={(e) => setTelefon(e.target.value)} 
+          placeholder="Telefon" 
+          className="border p-2 w-full rounded-lg" 
+          type="tel" 
+        />
+        <input 
+          value={email} 
+          onChange={(e) => setEmail(e.target.value)} 
+          placeholder="E-posta" 
+          className="border p-2 w-full rounded-lg" 
+          type="email" 
+        />
 
         <button 
           type="submit" 

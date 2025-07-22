@@ -294,35 +294,32 @@ const getJWTToken = async (): Promise<string> => {
   }
 
   try {
-    const response = await fetch('/.netlify/functions/api-proxy', {
+    // Direkt API çağrısı yap - proxy kullanma
+    const response = await fetch(`${API_CONFIG.baseURL}/api/v1/auth/login`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'X-API-Key': API_CONFIG.apiKey
+      },
       body: JSON.stringify({
-        path: '/api/v1/auth/login',
-        method: 'POST',
-        body: {
-          email: 'ozgurhzm@gmail.com',
-          password: '135427'
-        },
-        apiKey: API_CONFIG.apiKey
+        email: 'ozgurhzm@gmail.com',
+        password: '135427'
       })
     });
     
     if (response.ok) {
       const data = await response.json();
-      if (data.success && data.token) {
-        jwtToken = data.token;
-        tokenExpiry = Date.now() + (24 * 60 * 60 * 1000);
-        return data.token;
-      } else if (data.data && data.data.token) {
+      if (data.success && data.data && data.data.token) {
         jwtToken = data.data.token;
-        tokenExpiry = Date.now() + (24 * 60 * 60 * 1000);
+        tokenExpiry = Date.now() + (24 * 60 * 60 * 1000); // 24 saat
         return data.data.token;
       }
     }
     
+    // Fallback - son çare API Key döndür
     return API_CONFIG.apiKey;
   } catch (error) {
+    logError('JWT Token alma hatası', error);
     return API_CONFIG.apiKey;
   }
 };
@@ -556,10 +553,10 @@ const getMockResponse = (endpoint: string, method: string) => {
   };
 };
 
-// Kurumları getir - DOKÜMANTASYON VERSİYONU
+// Kurumları getir - HİYERARŞİK TABLO (ID: 30)
 export const getKurumlar = async (forceRefresh: boolean = false) => {
   try {
-    const cacheKey = 'kurumlar';
+    const cacheKey = 'kurumlar_hiyerarsik';
     
     // Zorla yenileme değilse önce cache'den kontrol et
     if (!forceRefresh) {
@@ -569,7 +566,8 @@ export const getKurumlar = async (forceRefresh: boolean = false) => {
       }
     }
     
-    const response = await apiRequest(`/api/v1/data/table/${API_CONFIG.tableId}?page=1&limit=100&sort=id&order=DESC`);
+    // Hiyerarşik kurumlar tablosundan veri çek (ID: 30)
+    const response = await apiRequest(`/api/v1/data/table/30?page=1&limit=100&sort=id&order=DESC`);
     const data = response.data?.rows || [];
     
     // Başarılı yanıtı cache'le
@@ -582,7 +580,7 @@ export const getKurumlar = async (forceRefresh: boolean = false) => {
   }
 };
 
-// Kurum ekle - DOKÜMANTASYON VERSİYONU
+// Kurum ekle - HİYERARŞİK TABLO (ID: 30)
 export const addKurum = async (kurumData: {
   kurum_adi: string;
   kurum_turu?: string;
@@ -590,132 +588,103 @@ export const addKurum = async (kurumData: {
   il?: string;
   ilce?: string;
   aktif_mi?: boolean;
-  departmanlar?: string;
-  birimler?: string;
+  telefon?: string;
+  email?: string;
 }) => {
   try {
-    // Önce mevcut kurumları al ve en yüksek ID'yi bul
+    // Önce mevcut kurumları al ve en yüksek kurum_id'yi bul
     const existingKurumlar = await getKurumlar(true); // forceRefresh = true
-    let maxId = 0;
+    let maxKurumId = 0;
     
     existingKurumlar.forEach((kurum: any) => {
-      const kurumId = parseInt(kurum.id);
-      if (kurumId > maxId) {
-        maxId = kurumId;
+      const kurumId = parseInt(kurum.kurum_id || '0');
+      if (kurumId > maxKurumId) {
+        maxKurumId = kurumId;
       }
     });
     
-    // Yeni ID'yi hesapla
-    const newId = maxId + 1;
-    
-    // Kurum adının başına ID ekle
-    const formattedKurumAdi = `${newId}_${kurumData.kurum_adi}`;
-    
-    // Departmanları formatla: "ACİL SERVİS, YOGUN BAKİM" -> "19_D1_ACİL SERVİS, 19_D2_YOGUN BAKİM"
-    let formattedDepartmanlar = '';
-    if (kurumData.departmanlar) {
-      const departmanList = kurumData.departmanlar.split(',').map(d => d.trim());
-      formattedDepartmanlar = departmanList.map((departman, index) => 
-        `${newId}_D${index + 1}_${departman}`
-      ).join(', ');
-    }
-    
-    // Birimleri formatla: "HEMSİRE, DR" -> "19_B1_HEMSİRE, 19_B2_DR"
-    let formattedBirimler = '';
-    if (kurumData.birimler) {
-      const birimList = kurumData.birimler.split(',').map(b => b.trim());
-      formattedBirimler = birimList.map((birim, index) => 
-        `${newId}_B${index + 1}_${birim}`
-      ).join(', ');
-    }
+    // Yeni kurum_id'yi hesapla (01, 02, 03... formatında)
+    const newKurumId = String(maxKurumId + 1).padStart(2, '0');
     
     const requestBody = {
-      kurum_adi: formattedKurumAdi,
-      kurum_turu: kurumData.kurum_turu || '',
+      kurum_id: newKurumId,
+      kurum_adi: kurumData.kurum_adi,
       adres: kurumData.adres || '',
-      il: kurumData.il || '',
-      ilce: kurumData.ilce || '',
-      aktif_mi: kurumData.aktif_mi !== false,
-      departmanlar: formattedDepartmanlar,
-      birimler: formattedBirimler
+      telefon: kurumData.telefon || '',
+      email: kurumData.email || ''
     };
     
-    const response = await apiRequest(`/api/v1/data/table/${API_CONFIG.tableId}/rows`, {
+    // Hiyerarşik kurumlar tablosuna ekle (ID: 30)
+    const response = await apiRequest(`/api/v1/data/table/30/rows`, {
       method: 'POST',
       body: JSON.stringify(requestBody),
     });
     
     // Cache'i temizle çünkü yeni kurum eklendi
-    clearCachedData('kurumlar');
+    clearCachedData('kurumlar_hiyerarsik');
     
     return {
       success: true,
       data: response.data || response,
       message: response.message || 'Kurum başarıyla eklendi',
-      newId: newId,
-      formattedDepartmanlar,
-      formattedBirimler
+      newKurumId: newKurumId
     };
   } catch (error) {
     logError('addKurum hatası', error);
     return {
-      success: true,
-      message: 'Kurum eklendi (Güvenli mod)',
-      fallback: true
+      success: false,
+      message: 'Kurum eklenirken hata oluştu: ' + (error as any).message,
+      error: true
     };
   }
 };
 
-// Kurum güncelle - DOKÜMANTASYON VERSİYONU
+// Kurum güncelle - HİYERARŞİK TABLO (ID: 30)
 export const updateKurum = async (kurumId: string, kurumData: {
   kurum_adi?: string;
-  kurum_turu?: string;
   adres?: string;
-  il?: string;
-  ilce?: string;
-  aktif_mi?: boolean;
-  departmanlar?: string;
-  birimler?: string;
+  telefon?: string;
+  email?: string;
 }) => {
-  // logInfo('updateKurum() çağrıldı', { kurumId, kurumData }); // Removed logInfo
   try {
-    const response = await apiRequest(`/api/v1/data/table/${API_CONFIG.tableId}/rows/${kurumId}`, {
+    // Hiyerarşik kurumlar tablosunda güncelle (ID: 30)
+    const response = await apiRequest(`/api/v1/data/table/30/rows/${kurumId}`, {
       method: 'PUT',
       body: JSON.stringify(kurumData),
     });
     
     // Cache'i temizle çünkü kurum güncellendi
-    clearCachedData('kurumlar');
+    clearCachedData('kurumlar_hiyerarsik');
     
     return { success: true, data: response };
   } catch (error) {
     logError('updateKurum hatası', error);
     return {
-      success: true,
-      message: 'Kurum güncellendi (Güvenli mod)',
-      fallback: true
+      success: false,
+      message: 'Kurum güncellenirken hata oluştu: ' + (error as any).message,
+      error: true
     };
   }
 };
 
-// Kurum sil - DOKÜMANTASYON VERSİYONU
+// Kurum sil - HİYERARŞİK TABLO (ID: 30)
 export const deleteKurum = async (kurumId: string) => {
-  // logInfo('deleteKurum() çağrıldı', kurumId); // Removed logInfo
   try {
-    const response = await apiRequest(`/api/v1/data/table/${API_CONFIG.tableId}/rows/${kurumId}`, {
+    // Hiyerarşik kurumlar tablosundan sil (ID: 30)
+    const response = await apiRequest(`/api/v1/data/table/30/rows/${kurumId}`, {
       method: 'DELETE',
     });
     
     // Cache'i temizle çünkü kurum silindi
-    clearCachedData('kurumlar');
+    clearCachedData('kurumlar_hiyerarsik');
     
     return { success: true, data: response };
   } catch (error) {
     logError('deleteKurum hatası', error);
     return {
-      success: true,
-      message: 'Kurum silindi (Güvenli mod)',
-      fallback: true
+      success: false,
+      message: 'Kurum silinirken hata oluştu: ' + (error as any).message,
+      error: true
     };
   }
 };
