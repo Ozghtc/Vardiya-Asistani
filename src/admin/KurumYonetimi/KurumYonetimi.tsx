@@ -114,13 +114,19 @@ const KurumYonetimi = () => {
 
   const loadKurumlar = async (forceRefresh: boolean = false) => {
     setLoading(true);
+    console.log(`🚀 loadKurumlar başlatıldı - forceRefresh: ${forceRefresh}`);
+    
     try {
       // 🔄 CACHE'İ ZORLA YENİLE
       const apiKurumlar = await getKurumlar(forceRefresh);
+      
+      console.log(`📊 API'den dönen kurum sayısı: ${apiKurumlar.length}`, apiKurumlar);
+      
       setKurumlar(apiKurumlar);
       
-      console.log(`📊 Kurum listesi yüklendi: ${apiKurumlar.length} kayıt`, apiKurumlar);
+      console.log(`✅ State'e ${apiKurumlar.length} kurum kaydedildi`);
     } catch (error: any) {
+      console.error('❌ loadKurumlar hatası:', error);
       setErrorMsg('Kurumlar yüklenirken hata oluştu: ' + error.message);
     } finally {
       setLoading(false);

@@ -222,9 +222,18 @@ export const getKurumlar = async (forceRefresh: boolean = false) => {
   try {
     const cacheKey = 'kurumlar_hiyerarsik';
     
+    // 🚨 ZORLA CACHE TEMİZLE
+    if (forceRefresh) {
+      clearCachedData(cacheKey);
+      clearTableCache('30');
+      clearAllCache();
+      console.log('🧹 CACHE TEMİZLENDİ - FRESH DATA ÇEKILIYOR');
+    }
+    
     if (!forceRefresh) {
       const cachedData = getCachedData(cacheKey);
       if (cachedData) {
+        console.log('📦 CACHE\'DEN VERİ GELDİ:', cachedData);
         return cachedData;
       }
     }
@@ -241,10 +250,14 @@ export const getKurumlar = async (forceRefresh: boolean = false) => {
       birimler: kurum.BIRIM || '' // BIRIM_ADI değil, BIRIM kullanılmalı
     }));
     
+    console.log('🔍 getKurumlar - Raw data count:', response.data?.rows?.length);
     console.log('🔍 getKurumlar - Raw data:', response.data?.rows);
+    console.log('🔍 getKurumlar - Processed data count:', data.length);
     console.log('🔍 getKurumlar - Processed data:', data);
     
     setCachedData(cacheKey, data);
+    console.log('💾 VERİ CACHE\'E KAYDEDİLDİ');
+    
     return data;
   } catch (error) {
     logError('getKurumlar hatası', error);
