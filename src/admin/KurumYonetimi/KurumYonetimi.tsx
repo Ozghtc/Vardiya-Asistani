@@ -947,7 +947,7 @@ const KurumYonetimi = () => {
                       )}
                       <div className="flex items-center gap-2">
                         <span>🏢</span>
-                        <span>{kurumDepartmanlar.length} Departman</span>
+                        <span>{kurum.departmanlar ? kurum.departmanlar.split(',').filter(d => d.trim()).length : 0} Departman</span>
                       </div>
                     </div>
 

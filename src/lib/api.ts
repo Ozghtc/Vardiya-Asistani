@@ -238,8 +238,11 @@ export const getKurumlar = async (forceRefresh: boolean = false) => {
       departman_id: kurum.DEPARTMAN_ID || '',
       departmanlar: kurum.DEPARTMAN_ADI || '',
       birim_id: kurum.BIRIM_ID || '',
-      birimler: kurum.BIRIM_ADI || ''
+      birimler: kurum.BIRIM || '' // BIRIM_ADI değil, BIRIM kullanılmalı
     }));
+    
+    console.log('🔍 getKurumlar - Raw data:', response.data?.rows);
+    console.log('🔍 getKurumlar - Processed data:', data);
     
     setCachedData(cacheKey, data);
     return data;
