@@ -136,21 +136,20 @@ let tokenExpiry: number | null = null;
 
 const getJWTToken = async (): Promise<string> => {
   if (jwtToken && tokenExpiry && Date.now() < tokenExpiry) {
+    console.log('🎫 CACHED JWT TOKEN KULLANILIYOR');
     return jwtToken;
   }
   
   try {
-    const response = await fetch('/.netlify/functions/api-proxy', {
+    console.log('🔄 YENİ JWT TOKEN ALIYOR...');
+    
+    // 🚀 DİREKT API LOGIN
+    const response = await fetch(`${API_CONFIG.baseURL}/api/v1/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        path: '/api/v1/auth/login',
-        method: 'POST',
-        body: {
-          email: 'ozgurhzm@gmail.com',
-          password: '135427'
-        },
-        apiKey: API_CONFIG.apiKey
+        email: 'ozgurhzm@gmail.com',
+        password: '135427'
       })
     });
     
@@ -158,19 +157,22 @@ const getJWTToken = async (): Promise<string> => {
       const data = await response.json();
       if (data.success && data.data && data.data.token) {
         jwtToken = data.data.token;
-        tokenExpiry = Date.now() + (24 * 60 * 60 * 1000); // 24 saat
+        tokenExpiry = Date.now() + (6 * 60 * 60 * 1000); // 6 saat
+        console.log('✅ YENİ JWT TOKEN ALINDI');
         return data.data.token;
       }
     }
     
+    console.log('❌ JWT TOKEN ALINAMADI - API KEY KULLANILIYOR');
     return API_CONFIG.apiKey;
   } catch (error) {
     logError('JWT Token alma hatası', error);
+    console.log('❌ JWT TOKEN HATASI - API KEY KULLANILIYOR');
     return API_CONFIG.apiKey;
   }
 };
 
-// API Request with timeout
+// API Request with timeout - DİREKT API BAĞLANTISI
 const apiRequest = async (path: string, options: RequestInit = {}) => {
   try {
     const token = await getJWTToken();
@@ -179,16 +181,14 @@ const apiRequest = async (path: string, options: RequestInit = {}) => {
     const timeoutId = setTimeout(() => controller.abort(), 10000);
     
     try {
-      const response = await fetch('/.netlify/functions/api-proxy', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          path,
-          method: options.method || 'GET',
-          body: options.body ? JSON.parse(options.body as string) : undefined,
-          jwtToken: token,
-          apiKey: API_CONFIG.apiKey,
-        }),
+      // 🚀 DİREKT API BAĞLANTISI - PROXY YOK
+      const response = await fetch(`${API_CONFIG.baseURL}${path}`, {
+        method: options.method || 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: options.body,
         signal: controller.signal
       });
       
@@ -199,12 +199,14 @@ const apiRequest = async (path: string, options: RequestInit = {}) => {
         throw new Error(data.message || 'API Error');
       }
       
+      console.log(`✅ API SUCCESS: ${options.method || 'GET'} ${path}`, data);
       return data;
     } catch (fetchError: any) {
       clearTimeout(timeoutId);
       if (fetchError.name === 'AbortError') {
         throw new Error('Request timeout - API yanıt vermiyor');
       }
+      console.error(`❌ API ERROR: ${options.method || 'GET'} ${path}`, fetchError);
       throw fetchError;
     }
   } catch (error) {
