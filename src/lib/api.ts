@@ -44,6 +44,11 @@ export const clearCachedData = (key: string) => {
   inMemoryCache.delete(`cache_${key}`);
 };
 
+// Tüm cache'i temizle
+export const clearAllCache = () => {
+  inMemoryCache.clear();
+};
+
 // Production logging - sadece kritik hatalar
 const logError = (message: string, error?: any) => {
   console.error(`❌ ${message}`, error || '');
