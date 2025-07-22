@@ -49,6 +49,65 @@ export const clearAllCache = () => {
   inMemoryCache.clear();
 };
 
+// Belirli tablo cache'ini temizle
+export const clearTableCache = (tableId: string) => {
+  inMemoryCache.delete(`cache_table_${tableId}`);
+};
+
+// Genel tablo işlemleri - eski sistem uyumluluğu için
+export const getTableData = async (tableId: string, params?: any, forceRefresh = false) => {
+  try {
+    const response = await apiRequest(`/api/v1/data/table/${tableId}`, {
+      method: 'GET'
+    });
+    return response;
+  } catch (error) {
+    logError('getTableData hatası', error);
+    return { rows: [] };
+  }
+};
+
+export const addTableData = async (tableId: string, data: any) => {
+  try {
+    const response = await apiRequest(`/api/v1/data/table/${tableId}/rows`, {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    clearTableCache(tableId);
+    return response;
+  } catch (error) {
+    logError('addTableData hatası', error);
+    return { success: false, message: 'Veri eklenemedi' };
+  }
+};
+
+export const updateTableData = async (tableId: string, rowId: string, data: any) => {
+  try {
+    const response = await apiRequest(`/api/v1/data/table/${tableId}/rows/${rowId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    });
+    clearTableCache(tableId);
+    return response;
+  } catch (error) {
+    logError('updateTableData hatası', error);
+    return { success: false, message: 'Veri güncellenemedi' };
+  }
+};
+
+export const deleteTableData = async (tableId: string, rowId: string) => {
+  try {
+    const response = await apiRequest(`/api/v1/data/table/${tableId}/rows/${rowId}`, {
+      method: 'DELETE'
+    });
+    clearTableCache(tableId);
+    return response;
+  } catch (error) {
+    logError('deleteTableData hatası', error);
+    return { success: false, message: 'Veri silinemedi' };
+  }
+};
+
 // Production logging - sadece kritik hatalar
 const logError = (message: string, error?: any) => {
   console.error(`❌ ${message}`, error || '');
