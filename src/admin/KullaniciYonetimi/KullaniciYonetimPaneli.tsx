@@ -64,7 +64,7 @@ const KullaniciYonetimPaneli: React.FC = () => {
   const [loading, setLoading] = useState(true); // Başlangıçta loading true
   const [error, setError] = useState<string | null>(null);
   const [tableCreating, setTableCreating] = useState(false);
-  const [usersTableId, setUsersTableId] = useState<number | null>(13); // Mevcut tablo ID'si direkt 13
+  const [usersTableId, setUsersTableId] = useState<number | null>(33); // Yeni kullanıcı tablosu ID'si (kullanici_id ilk sırada)
   
   // Form states
   const [formData, setFormData] = useState({

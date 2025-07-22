@@ -17,7 +17,7 @@ Bu endpoint'ler Authorization: Bearer <JWT_TOKEN> header'ı ile çalışır:
 - **DELETE** `/api/v1/tables/{tableId}` - Tablo sil ✅ JWT İLE
 
 #### ⚡ Field Yönetimi:
-- **POST** `/api/v1/tables/project/5/{tableId}/fields` - Field ekle ✅ JWT İLE
+- **POST** `/api/v1/tables/5/{tableId}/fields` - Field ekle ❌ ÇALIŞMIYOR (404 NOT_FOUND)
 - **PUT** `/api/v1/tables/{tableId}/fields/{fieldId}` - Field güncelle ✅ JWT İLE
 - **DELETE** `/api/v1/tables/{tableId}/fields/{fieldId}` - Field sil ✅ JWT İLE
 
@@ -36,13 +36,13 @@ Bu endpoint'ler Authorization: Bearer <JWT_TOKEN> header'ı ile çalışır:
 
 ### 🔑 JWT TOKEN NASIL ALINIR:
 ```bash
-# 1. Örnek kullanıcı ile giriş yapın
+# ÇALIŞAN KULLANICI ✅
 curl -X POST \
   "https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/auth/login" \
   -H "Content-Type: application/json" \
   -d '{
-    "email": "test@example.com",
-    "password": "test123456"
+    "email": "ozgurhzm@gmail.com",
+    "password": "135427"
   }'
 
 # Response'dan token'ı alın:
@@ -52,18 +52,18 @@ curl -X POST \
     "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
     "user": {
       "id": 1,
-      "email": "test@example.com", 
-      "name": "Test User",
-      "isAdmin": false
+      "email": "ozgurhzm@gmail.com", 
+      "name": "ÖZGÜR ALTINTAŞ",
+      "isAdmin": true
     }
   }
 }
 ```
 
-### 🧪 ÖRNEK TEST KULLANICISI:
-- **Email:** `test@example.com`
-- **Password:** `test123456`
-- **Not:** Bu örnek kullanıcı, kendi backend'inizde oluşturmanız gereken test kullanıcısıdır
+### 🧪 ÇALIŞAN TEST KULLANICISI:
+- **Email:** `ozgurhzm@gmail.com`
+- **Password:** `135427`
+- **Status:** ✅ AKTİF VE ÇALIŞIYOR
 
 ## 📋 HTTP Headers
 
@@ -269,14 +269,15 @@ Authorization: Bearer <JWT_TOKEN>
 ## 📋 Mevcut Proje Tabloları (Proje ID: 5)
 
 ### Tablo ID'leri:
-- **ID: 10** - `kurumlar` - Kurum bilgileri
-- **ID: 13** - `kullanicilar` - Kullanıcı bilgileri
+- **ID: 13** - `kullanicilar` - Kullanıcı bilgileri ✅ AKTİF
 - **ID: 15** - `personel_unvan_tanimlama` - Ünvan tanımları
 - **ID: 16** - `izin_istek_tanimlama` - İzin türleri
 - **ID: 17** - `vardiya_tanimlama` - Vardiya tanımları
 - **ID: 18** - `tanimli_alanlar` - Alan tanımları
 - **ID: 21** - `personel_bilgileri` - Personel bilgileri
 - **ID: 22** - `nobet_tanimlama` - Nöbet tanımları
+- **ID: 30** - `kurumlar_hiyerarsik` - Hiyerarşik kurum tablosu
+- **ID: 32** - `kullanicilar_yeni` - Yeni kullanıcı tablosu (boş)
 
 ## 🎯 Test Kullanıcısı Oluşturma
 Bu dokümantasyonu kullanmak için önce test kullanıcısı oluşturun:
@@ -310,22 +311,24 @@ curl -X POST \
 - Tam yetki sahibi olun!
 - API Key ile sadece bilgi alabilirsiniz (1 endpoint)
 
-## 🔍 TEST SONUÇLARI (21.07.2025 15:53:51):
+## 🔍 TEST SONUÇLARI (22.07.2025 01:27:00):
 
 ### ✅ ÇALIŞAN:
+- JWT Token alma: `/api/v1/auth/login` ✅
+- Tablo oluşturma: `/api/v1/tables/project/5` ✅
+- Veri güncelleme: `/api/v1/data/table/{tableId}/rows/{rowId}` ✅
+- Veri okuma: `/api/v1/data/table/{tableId}` ✅
 - API Key bilgisi: `/api/v1/tables/api-key-info` ✅
 
 ### ❌ ÇALIŞMAYAN:
-- Tablo oluşturma: `NO_TOKEN` hatası ❌
-- Tablo listeleme: `NO_TOKEN` hatası ❌  
-- Field ekleme: `NO_TOKEN` hatası ❌
-- Veri okuma: `TABLE_NOT_FOUND` hatası ❌
-- JWT Auth: `INVALID_CREDENTIALS` hatası ❌
+- Field ekleme: `/api/v1/tables/5/{tableId}/fields` ❌ (404 NOT_FOUND)
+- Field ekleme: `/api/v1/tables/project/5/{tableId}/fields` ❌ (404 NOT_FOUND)
+- Field ekleme: `/api/v1/tables/{tableId}/fields` ❌ (404 NOT_FOUND)
 
-**SONUÇ:** Şu anda sadece API Key bilgisi alınabiliyor. Tüm diğer işlemler JWT token gerektiriyor ama JWT sistemi henüz aktif değil.
+**SONUÇ:** Field ekleme API'si hiçbir endpoint'de çalışmıyor. Mevcut sütunları kullanmak zorundayız.
 
 ---
 *Vardiyali Nobet Asistani - API Bilgileri*
-*Test Edilme: 21.07.2025 15:53:51*
-*Son güncelleme: 21.07.2025 15:53:58 - Test sonuçlarına göre güncellendi*
-*Durum: %100 DOĞRU ✅* 
+*Test Edilme: 22.07.2025 01:27:00*
+*Son güncelleme: 22.07.2025 01:27:30 - Field ekleme çalışmıyor*
+*Durum: Field ekleme hariç %100 DOĞRU ✅* 

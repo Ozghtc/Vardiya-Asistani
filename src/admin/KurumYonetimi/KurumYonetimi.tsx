@@ -104,7 +104,7 @@ const KurumYonetimi = () => {
   const [userTableCreating, setUserTableCreating] = useState(false);
   const [userTableFieldsAdding, setUserTableFieldsAdding] = useState(false);
   const [expandUserTableLoading, setExpandUserTableLoading] = useState(false);
-  const [userTableId, setUserTableId] = useState<number | null>(13); // Mevcut kullanıcı tablosu ID'si
+  const [userTableId, setUserTableId] = useState<number | null>(33); // Yeni kullanıcı tablosu ID'si
 
   const [kurumAdi, handleKurumAdiChange] = useCapitalization(kurumForm.kurum_adi);
   const [kurumTuru, handleKurumTuruChange] = useCapitalization(kurumForm.kurum_turu);

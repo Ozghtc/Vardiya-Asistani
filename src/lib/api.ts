@@ -771,7 +771,7 @@ export const createUsersTable = async () => {
 
 // Kullanıcı tablosuna field'ları manuel ekle - DOĞRUDAN ÇALIŞTIRILABİLİR VERSIYON
 export const setupUserTableFieldsManual = async () => {
-  const tableId = 13; // Mevcut kullanıcı tablosu ID
+  const tableId = 33; // Yeni kullanıcı tablosu ID
   // logInfo('setupUserTableFieldsManual() çağrıldı', { tableId }); // Removed logInfo
   
   const requiredFields = [

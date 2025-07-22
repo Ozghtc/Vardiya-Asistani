@@ -152,7 +152,7 @@ export const useAuth = () => {
       console.log('🔐 Güvenli login başlatılıyor...');
       
       // HZM API'den kullanıcıları getir
-      const users = await getUsers(13);
+      const users = await getUsers(33);
       
       if (!users || users.length === 0) {
         setLoginError('Sistem hatası: Kullanıcı veritabanına erişilemiyor');
@@ -271,7 +271,7 @@ export const useAuth = () => {
         updated_at: new Date().toISOString()
       };
 
-      const userResult = await addUser(13, userData);
+      const userResult = await addUser(33, userData);
 
       if (userResult.success) {
         console.log('✅ Kayıt başarılı');
