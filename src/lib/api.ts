@@ -184,7 +184,7 @@ const getJWTToken = async (): Promise<string> => {
   }
 };
 
-// API Request with timeout - DİREKT API BAĞLANTISI
+// API Request with timeout - TÜM İSTEKLER PROXY ÜZERİNDEN
 const apiRequest = async (path: string, options: RequestInit = {}) => {
   try {
     const token = await getJWTToken();
@@ -193,14 +193,17 @@ const apiRequest = async (path: string, options: RequestInit = {}) => {
     const timeoutId = setTimeout(() => controller.abort(), 10000);
     
     try {
-      // 🚀 DİREKT API BAĞLANTISI - PROXY YOK
-      const response = await fetch(`${API_CONFIG.baseURL}${path}`, {
-        method: options.method || 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: options.body,
+      // 🔧 TÜM API İSTEKLERİ NETLIFY PROXY ÜZERİNDEN (CORS sorunu çözümü)
+      const response = await fetch('/.netlify/functions/api-proxy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          path,
+          method: options.method || 'GET',
+          body: options.body ? JSON.parse(options.body as string) : undefined,
+          jwtToken: token,
+          apiKey: API_CONFIG.apiKey,
+        }),
         signal: controller.signal
       });
       
@@ -211,14 +214,14 @@ const apiRequest = async (path: string, options: RequestInit = {}) => {
         throw new Error(data.message || 'API Error');
       }
       
-      console.log(`✅ API SUCCESS: ${options.method || 'GET'} ${path}`, data);
+      console.log(`✅ API SUCCESS (PROXY): ${options.method || 'GET'} ${path}`, data);
       return data;
     } catch (fetchError: any) {
       clearTimeout(timeoutId);
       if (fetchError.name === 'AbortError') {
         throw new Error('Request timeout - API yanıt vermiyor');
       }
-      console.error(`❌ API ERROR: ${options.method || 'GET'} ${path}`, fetchError);
+      console.error(`❌ API ERROR (PROXY): ${options.method || 'GET'} ${path}`, fetchError);
       throw fetchError;
     }
   } catch (error) {
