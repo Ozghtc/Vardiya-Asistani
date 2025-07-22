@@ -20,14 +20,13 @@ import {
 // Types
 interface Kurum {
   id: string;
+  kurum_id?: string;
   kurum_adi: string;
-  kurum_turu: string;
-  adres: string;
-  il: string;
-  ilce: string;
-  aktif_mi: boolean;
-  departmanlar?: string; // Virgülle ayrılmış string
-  birimler?: string; // Virgülle ayrılmış string
+  adres?: string;
+  telefon?: string;
+  email?: string;
+  test_sutun?: string; // DEPARTMAN listesi (virgülle ayrılmış)
+  test_yeni_sutun?: string; // BIRIM listesi (virgülle ayrılmış)
   created_at: string;
 }
 
@@ -199,11 +198,8 @@ const KurumYonetimi = () => {
   // Filtered data
   const filteredKurumlar = kurumlar.filter(kurum => {
     const matchesSearch = kurum.kurum_adi.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         kurum.kurum_turu.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filterType === 'all' || 
-                         (filterType === 'aktif' && kurum.aktif_mi) ||
-                         (filterType === 'pasif' && !kurum.aktif_mi);
-    return matchesSearch && matchesFilter;
+                         (kurum.adres?.toLowerCase().includes(searchTerm.toLowerCase()) || false);
+    return matchesSearch; // Sadece arama filtresi, aktif/pasif kaldırıldı
   });
 
   // Handlers
@@ -237,13 +233,11 @@ const KurumYonetimi = () => {
 
     const kurumData = {
       kurum_adi: kurumAdi,
-      kurum_turu: kurumTuru,
       adres: adres,
-      il: kurumForm.il?.value || '',
-      ilce: kurumForm.ilce?.value || '',
-      aktif_mi: kurumForm.aktif_mi,
-      departmanlar: formDepartmanlar.join(', '),
-      birimler: formBirimler.join(', ')
+      telefon: '',
+      email: '',
+      departmanlar: formDepartmanlar.join(','), // DEPARTMAN listesi
+      birimler: formBirimler.join(',') // BIRIM listesi
     };
 
     try {
@@ -958,7 +952,7 @@ const KurumYonetimi = () => {
                             <div>
                               <div className="text-xs text-gray-500 mb-2 flex items-center gap-1">
                                 <span>📋</span>
-                                <span>Departmanlar (VT)</span>
+                                <span>DEPARTMAN</span>
                               </div>
                               <div className="flex flex-wrap gap-1">
                                 {kurum.departmanlar.split(', ').filter(d => d.trim()).map((dept, index) => (
@@ -973,7 +967,7 @@ const KurumYonetimi = () => {
                             <div>
                               <div className="text-xs text-gray-500 mb-2 flex items-center gap-1">
                                 <span>🏢</span>
-                                <span>Birimler (VT)</span>
+                                <span>BIRIM</span>
                               </div>
                               <div className="flex flex-wrap gap-1">
                                 {kurum.birimler.split(', ').filter(b => b.trim()).map((birim, index) => (

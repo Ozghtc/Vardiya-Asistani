@@ -253,6 +253,80 @@ const Kurumlar = () => {
                           <span>✉️ {kurum.email}</span>
                         )}
                       </div>
+                      
+                      {/* DEPARTMAN ve BIRIM Gösterimi */}
+                      {(kurum.departman_id || kurum.departmanlar || kurum.birim_id || kurum.birimler) && (
+                        <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {/* DEPARTMAN */}
+                            {(kurum.departman_id || kurum.departmanlar) && (
+                              <div>
+                                <div className="text-xs text-gray-500 mb-2 flex items-center gap-1">
+                                  <span>📋</span>
+                                  <span>DEPARTMAN</span>
+                                </div>
+                                {kurum.departman_id && (
+                                  <div className="mb-2">
+                                    <div className="text-xs text-gray-400 mb-1">DEPARTMAN ID:</div>
+                                    <div className="flex flex-wrap gap-1">
+                                      {kurum.departman_id.split(',').filter((d: string) => d.trim()).map((deptId: string, index: number) => (
+                                        <span key={index} className="px-2 py-1 bg-blue-50 text-blue-500 text-xs rounded border">
+                                          {deptId.trim()}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                                {kurum.departmanlar && (
+                                  <div>
+                                    <div className="text-xs text-gray-400 mb-1">DEPARTMAN:</div>
+                                    <div className="flex flex-wrap gap-1">
+                                      {kurum.departmanlar.split(',').filter((d: string) => d.trim()).map((dept: string, index: number) => (
+                                        <span key={index} className="px-2 py-1 bg-blue-100 text-blue-600 text-xs rounded">
+                                          {dept.trim()}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                            {/* BIRIM */}
+                            {(kurum.birim_id || kurum.birimler) && (
+                              <div>
+                                <div className="text-xs text-gray-500 mb-2 flex items-center gap-1">
+                                  <span>🏢</span>
+                                  <span>BIRIM</span>
+                                </div>
+                                {kurum.birim_id && (
+                                  <div className="mb-2">
+                                    <div className="text-xs text-gray-400 mb-1">BIRIM ID:</div>
+                                    <div className="flex flex-wrap gap-1">
+                                      {kurum.birim_id.split(',').filter((b: string) => b.trim()).map((birimId: string, index: number) => (
+                                        <span key={index} className="px-2 py-1 bg-green-50 text-green-500 text-xs rounded border">
+                                          {birimId.trim()}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                                {kurum.birimler && (
+                                  <div>
+                                    <div className="text-xs text-gray-400 mb-1">BIRIM:</div>
+                                    <div className="flex flex-wrap gap-1">
+                                      {kurum.birimler.split(',').filter((b: string) => b.trim()).map((birim: string, index: number) => (
+                                        <span key={index} className="px-2 py-1 bg-green-100 text-green-600 text-xs rounded">
+                                          {birim.trim()}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
