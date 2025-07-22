@@ -109,7 +109,7 @@ const KurumYonetimi = () => {
 
   // Load data
   useEffect(() => {
-    loadKurumlar();
+    loadKurumlar(true); // 🚀 İLK YÜKLEMEDE ZORLA FRESH DATA ÇEK
   }, []);
 
   const loadKurumlar = async (forceRefresh: boolean = false) => {
