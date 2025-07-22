@@ -8,7 +8,9 @@ import {
   getKurumlar, 
   addKurum, 
   updateKurum, 
-  deleteKurum
+  deleteKurum,
+  clearAllCache,
+  clearTableCache
 } from '../../lib/api';
 
 // Types
@@ -243,40 +245,25 @@ const KurumYonetimi = () => {
       } else {
         const response = await addKurum(kurumData);
         if (response.success) {
-          await loadKurumlar(); // Refresh list
+          // 🔄 CACHE TEMİZLE VE VERİLERİ YENİLE
+          clearAllCache(); // Tüm cache'i temizle
+          clearTableCache('30'); // kurumlar_hiyerarsik
+          clearTableCache('34'); // departmanlar
+          clearTableCache('35'); // birimler
           
-          // Add departmanlar and birimler to the new kurum
-          const newKurum = response.data || { id: Date.now().toString() };
+          // Kurum listesini yeniden yükle
+          await loadKurumlar(); 
           
-          // Create departman entries
-          formDepartmanlar.forEach(departmanAdi => {
-            const newDepartman: DepartmanBirim = {
-              id: Date.now().toString() + Math.random(),
-              kurum_id: newKurum.id,
-              departman_adi: departmanAdi,
-              birimler: formBirimler.join(', '),
-              personel_turleri: ''
-            };
-            setDepartmanBirimler(prev => [...prev, newDepartman]);
-          });
+          setSuccessMsg('Kurum ve bağlı departman/birimler başarıyla kaydedildi!');
           
-          // If no departman but has birimler, create a default departman
-          if (formDepartmanlar.length === 0 && formBirimler.length > 0) {
-            const defaultDepartman: DepartmanBirim = {
-              id: Date.now().toString() + Math.random(),
-              kurum_id: newKurum.id,
-              departman_adi: 'GENEL',
-              birimler: formBirimler.join(', '),
-              personel_turleri: ''
-            };
-            setDepartmanBirimler(prev => [...prev, defaultDepartman]);
-          }
-          
-          setSuccessMsg('Kurum başarıyla kaydedildi!');
+          // 2 saniye sonra success mesajını temizle
+          setTimeout(() => {
+            setSuccessMsg('');
+          }, 2000);
         }
       }
 
-      // Reset form
+      // 📝 FORMU TAMAMEN TEMİZLE
       handleKurumAdiChange({ target: { value: '' } } as any);
       handleKurumTuruChange({ target: { value: '' } } as any);
       handleAdresChange({ target: { value: '' } } as any);
@@ -292,6 +279,14 @@ const KurumYonetimi = () => {
       setFormBirimler([]);
       setNewDepartmanInput('');
       setNewBirimInput('');
+      
+      // Input alanlarını da temizle
+      const inputs = document.querySelectorAll('input[type="text"]');
+      inputs.forEach(input => {
+        if (input instanceof HTMLInputElement) {
+          input.value = '';
+        }
+      });
     } catch (error: any) {
       setErrorMsg(`Hata: ${error.message}`);
     } finally {
