@@ -293,37 +293,9 @@ const getJWTToken = async (): Promise<string> => {
     return jwtToken;
   }
 
-  try {
-    // Proxy üzerinden JWT Token al
-    const response = await fetch('/.netlify/functions/api-proxy', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        path: '/api/v1/auth/login',
-        method: 'POST',
-        body: {
-          email: 'ozgurhzm@gmail.com',
-          password: '135427'
-        },
-        apiKey: API_CONFIG.apiKey
-      })
-    });
-    
-    if (response.ok) {
-      const data = await response.json();
-      if (data.success && data.data && data.data.token) {
-        jwtToken = data.data.token;
-        tokenExpiry = Date.now() + (24 * 60 * 60 * 1000); // 24 saat
-        return data.data.token;
-      }
-    }
-    
-    // Fallback - son çare API Key döndür
-    return API_CONFIG.apiKey;
-  } catch (error) {
-    logError('JWT Token alma hatası', error);
-    return API_CONFIG.apiKey;
-  }
+  // JWT Token sistemi geçici olarak devre dışı
+  // API Key ile çalışmaya devam et
+  return API_CONFIG.apiKey;
 };
 
 // 🚀 Fast API Request with Cache
