@@ -5,16 +5,10 @@ import Select from 'react-select';
 import CreatableSelect from 'react-select/creatable';
 import turkiyeIller from './il-ilceler/turkiye-il-ilce.json';
 import { 
-  testAPI, 
   getKurumlar, 
   addKurum, 
   updateKurum, 
-  deleteKurum, 
-  addTableColumn, 
-  updateKurumlarTable, 
-  createUsersTable, 
-  setupUserTableFieldsManual,
-  expandUserTable
+  deleteKurum
 } from '../../lib/api';
 
 // Types

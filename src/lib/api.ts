@@ -202,9 +202,7 @@ export const addKurum = async (kurumData: {
     const departmanlar = kurumData.departmanlar || '';
     const birimler = kurumData.birimler || '';
     
-    console.log('DEBUG - Gelen kurumData:', kurumData);
-    console.log('DEBUG - departmanlar:', departmanlar);
-    console.log('DEBUG - birimler:', birimler);
+
     
     const departmanIdList = departmanlar.split(',')
       .filter(d => d.trim())
