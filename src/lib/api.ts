@@ -108,6 +108,23 @@ export const deleteTableData = async (tableId: string, rowId: string) => {
   }
 };
 
+// Kullanıcı tablosu oluşturma - eski sistem uyumluluğu
+export const createUsersTable = async () => {
+  try {
+    const response = await apiRequest(`/api/v1/tables/project/5`, {
+      method: 'POST',
+      body: JSON.stringify({
+        name: 'kullanicilar_new',
+        description: 'Yeni kullanıcı tablosu'
+      })
+    });
+    return response;
+  } catch (error) {
+    logError('createUsersTable hatası', error);
+    return { success: false, message: 'Tablo oluşturulamadı' };
+  }
+};
+
 // Production logging - sadece kritik hatalar
 const logError = (message: string, error?: any) => {
   console.error(`❌ ${message}`, error || '');
