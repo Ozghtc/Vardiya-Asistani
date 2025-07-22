@@ -263,7 +263,9 @@ const KurumYonetimi = () => {
         }
       }
 
-      // 📝 FORMU TAMAMEN TEMİZLE
+      // 📝 FORMU TAMAMEN TEMİZLE VE YENİLE
+      
+      // 1️⃣ State'leri sıfırla
       handleKurumAdiChange({ target: { value: '' } } as any);
       handleKurumTuruChange({ target: { value: '' } } as any);
       handleAdresChange({ target: { value: '' } } as any);
@@ -280,13 +282,26 @@ const KurumYonetimi = () => {
       setNewDepartmanInput('');
       setNewBirimInput('');
       
-      // Input alanlarını da temizle
-      const inputs = document.querySelectorAll('input[type="text"]');
-      inputs.forEach(input => {
-        if (input instanceof HTMLInputElement) {
-          input.value = '';
-        }
-      });
+      // 2️⃣ Tüm input alanlarını temizle
+      setTimeout(() => {
+        const allInputs = document.querySelectorAll('input, select, textarea');
+        allInputs.forEach(input => {
+          if (input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement) {
+            if (input.type !== 'checkbox') {
+              input.value = '';
+            }
+          }
+        });
+        
+        // 3️⃣ Select alanlarını da temizle
+        const selectElements = document.querySelectorAll('.react-select__control');
+        selectElements.forEach(select => {
+          const clearButton = select.querySelector('.react-select__clear-indicator');
+          if (clearButton instanceof HTMLElement) {
+            clearButton.click();
+          }
+        });
+      }, 100);
     } catch (error: any) {
       setErrorMsg(`Hata: ${error.message}`);
     } finally {

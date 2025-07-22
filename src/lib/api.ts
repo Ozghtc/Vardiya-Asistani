@@ -263,7 +263,16 @@ export const addKurum = async (kurumData: {
   birimler?: string;
 }) => {
   try {
-    const existingKurumlar = await getKurumlar(true);
+    // 🔄 CACHE TEMİZLE VE GÜNCEL VERİLERİ AL
+    clearCachedData('kurumlar_hiyerarsik');
+    clearTableCache('30');
+    
+    // Direkt API'den güncel verileri al
+    const kurumlarResponse = await apiRequest(`/api/v1/data/table/30`, {
+      method: 'GET'
+    });
+    
+    const existingKurumlar = kurumlarResponse.data?.rows || [];
     let maxKurumId = 0;
     
     existingKurumlar.forEach((kurum: any) => {
@@ -274,6 +283,9 @@ export const addKurum = async (kurumData: {
     });
     
     const newKurumId = String(maxKurumId + 1).padStart(2, '0');
+    
+    // Debug: Hangi ID üretildiğini logla
+    console.log(`🆔 Yeni Kurum ID: ${newKurumId} (Max ID: ${maxKurumId})`);
     
     const departmanlar = kurumData.departmanlar || '';
     const birimler = kurumData.birimler || '';
