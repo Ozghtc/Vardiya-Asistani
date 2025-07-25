@@ -171,7 +171,7 @@ const PersonelIzinIstekleri: React.FC = () => {
   // Optimized API çağrısı fonksiyonu
   const apiCall = async (path: string) => {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 saniye timeout
+          const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 saniye timeout - YAPILMAYACAKLAR.md uyumlu
     
     try {
       const response = await fetch('/.netlify/functions/api-proxy', {
