@@ -468,6 +468,59 @@ export const deleteKurum = async (kurumId: string) => {
 };
 
 // ================================
+// HİYERARŞİK ID GENERATOR FONKSİYONLARI
+// ================================
+
+// Hiyerarşik KULLANICI_ID üret - HIYERARSIK_ID_SISTEMI.md kurallarına uygun
+const generateKullaniciId = async (kurum_id: string, departman_id: string, birim_id: string, rol: string): Promise<string> => {
+  try {
+    // Rol tipini belirle: admin=A, yonetici=Y, personel=P
+    let rolKodu = 'P'; // Default: Personel
+    if (rol === 'admin') rolKodu = 'A';
+    else if (rol === 'yonetici') rolKodu = 'Y';
+
+    // Mevcut kullanıcıları al ve aynı birimde aynı rol tipindeki en yüksek numarayı bul
+    const existingUsers = await getUsers(13); // kullanicilar_final tablosu
+    
+    // Aynı birim ve rol tipindeki kullanıcıları filtrele
+    const sameTypeUsers = existingUsers.filter((user: any) => 
+      user.kurum_id === kurum_id && 
+      user.departman_id === departman_id && 
+      user.birim_id === birim_id &&
+      user.KULLANICI_ID && 
+      user.KULLANICI_ID.includes(`_${rolKodu}`)
+    );
+
+    // En yüksek numarayı bul
+    let maxNumber = 0;
+    sameTypeUsers.forEach((user: any) => {
+      if (user.KULLANICI_ID) {
+        const match = user.KULLANICI_ID.match(new RegExp(`_${rolKodu}(\\d+)$`));
+        if (match) {
+          const num = parseInt(match[1]);
+          if (num > maxNumber) maxNumber = num;
+        }
+      }
+    });
+
+    // Yeni numara
+    const newNumber = maxNumber + 1;
+    
+    // Hiyerarşik ID format: kurum_departman_birim_rolTipi+Numara
+    // Örnek: 01_D1_B1_Y1, 01_D1_B1_P1, 01_D1_B1_A1
+    const kullaniciId = `${kurum_id}_${departman_id.split('_')[1]}_${birim_id.split('_')[2]}_${rolKodu}${newNumber}`;
+    
+    console.log(`🆔 KULLANICI_ID oluşturuldu: ${kullaniciId}`);
+    return kullaniciId;
+    
+  } catch (error) {
+    console.error('KULLANICI_ID oluşturma hatası:', error);
+    // Fallback: Timestamp bazlı ID
+    return `${kurum_id}_${Date.now()}_${rol.toUpperCase()[0]}1`;
+  }
+};
+
+// ================================
 // KULLANICI YÖNETİMİ FONKSİYONLARI
 // ================================
 
@@ -550,7 +603,19 @@ export const addUser = async (usersTableId: number, userData: {
       throw new Error('Gerekli alanlar eksik');
     }
     
+    // 🆔 HİYERARŞİK KULLANICI_ID OLUŞTUR
+    let kullaniciId = '';
+    if (userData.kurum_id && userData.departman_id && userData.birim_id) {
+      kullaniciId = await generateKullaniciId(
+        userData.kurum_id, 
+        userData.departman_id, 
+        userData.birim_id, 
+        userData.rol
+      );
+    }
+    
     const requestBody = {
+      KULLANICI_ID: kullaniciId, // 🆔 YENİ: Hiyerarşik ID ekle
       name: userData.name,
       email: (userData.email || '').trim().toLowerCase(),
       password: (userData.password || '').trim(),
@@ -559,6 +624,9 @@ export const addUser = async (usersTableId: number, userData: {
       kurum_id: (userData.kurum_id || '').trim() || null,
       departman_id: (userData.departman_id || '').trim() || null,
       birim_id: (userData.birim_id || '').trim() || null,
+      KURUM_ID: (userData.kurum_id || '').trim() || null, // 🔧 Field ismi düzeltme
+      DEPARTMAN_ID: (userData.departman_id || '').trim() || null, // 🔧 Field ismi düzeltme  
+      BIRIM_ID: (userData.birim_id || '').trim() || null, // 🔧 Field ismi düzeltme
       aktif_mi: userData.aktif_mi !== false,
       firstName: (userData.firstName || '').trim(),
       lastName: (userData.lastName || '').trim(),
@@ -569,6 +637,8 @@ export const addUser = async (usersTableId: number, userData: {
       updated_at: userData.updated_at || new Date().toISOString(),
       last_login: userData.last_login || undefined
     };
+    
+    console.log('🆔 Kullanıcı ekleniyor - KULLANICI_ID:', kullaniciId);
     
     const token = await getJWTToken();
     
@@ -592,21 +662,20 @@ export const addUser = async (usersTableId: number, userData: {
     
     const data = await response.json();
     
-    if (data.success === false) {
-      throw new Error(data.message || 'API hatası');
-    }
+    // Cache temizle
+    clearAllCache();
+    clearTableCache(usersTableId.toString());
     
     return {
       success: true,
-      data: data.data || data,
-      message: data.message || 'Kullanıcı başarıyla eklendi'
+      data: data,
+      message: `Kullanıcı başarıyla eklendi - ID: ${kullaniciId}`
     };
   } catch (error) {
     logError('addUser hatası', error);
     return {
       success: false,
-      message: error instanceof Error ? error.message : 'Kullanıcı eklenemedi',
-      error: error
+      message: 'Kullanıcı eklenemedi: ' + (error as any).message
     };
   }
 };
