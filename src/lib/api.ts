@@ -6,53 +6,16 @@ const API_CONFIG = {
   proxyURL: '/.netlify/functions/api-proxy'
 };
 
-// In-memory cache system - 5 minutes
-const inMemoryCache = new Map<string, { data: any; timestamp: number }>();
-const CACHE_DURATION_MS = 5 * 60 * 1000;
+// 🚫 CACHE SİSTEMİ KALDIRILDI - KALICI ÇÖZÜM
+// Tüm API çağrıları direkt backend'e gidecek
+// Hiç cache mekanizması yok - fresh data garantisi
 
-export const getCachedData = (key: string) => {
-  const cached = inMemoryCache.get(`cache_${key}`);
-  if (cached) {
-    if (Date.now() - cached.timestamp < CACHE_DURATION_MS) {
-      return cached.data;
-    } else {
-      inMemoryCache.delete(`cache_${key}`);
-    }
-  }
-  return null;
-};
-
-export const setCachedData = (key: string, data: any) => {
-  inMemoryCache.set(`cache_${key}`, {
-    data,
-    timestamp: Date.now()
-  });
-  
-  // Memory temizliği - 100'den fazla entry varsa eski olanları temizle
-  if (inMemoryCache.size > 100) {
-    const entries = Array.from(inMemoryCache.entries());
-    entries.sort((a, b) => a[1].timestamp - b[1].timestamp);
-    
-    // En eski 20 entry'yi sil
-    for (let i = 0; i < 20 && i < entries.length; i++) {
-      inMemoryCache.delete(entries[i][0]);
-    }
-  }
-};
-
-export const clearCachedData = (key: string) => {
-  inMemoryCache.delete(`cache_${key}`);
-};
-
-// Tüm cache'i temizle
-export const clearAllCache = () => {
-  inMemoryCache.clear();
-};
-
-// Belirli tablo cache'ini temizle
-export const clearTableCache = (tableId: string) => {
-  inMemoryCache.delete(`cache_table_${tableId}`);
-};
+// Eski cache fonksiyonları - boş implementasyon (geriye uyumluluk için)
+export const getCachedData = (key: string) => null;
+export const setCachedData = (key: string, data: any) => {};
+export const clearCachedData = (key: string) => {};
+export const clearAllCache = () => {};
+export const clearTableCache = (tableId: string) => {};
 
 // Genel tablo işlemleri - eski sistem uyumluluğu için
 export const getTableData = async (tableId: string, params?: any, forceRefresh = false) => {
@@ -194,11 +157,17 @@ const apiRequest = async (path: string, options: RequestInit = {}) => {
     
     try {
       // 🔧 TÜM API İSTEKLERİ NETLIFY PROXY ÜZERİNDEN (CORS sorunu çözümü)
+      // 🚫 CACHE ENGELLEME - Sekme/Browser cache'i tamamen devre dışı
       const response = await fetch('/.netlify/functions/api-proxy', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        },
         body: JSON.stringify({
-          path,
+          path: `${path}${path.includes('?') ? '&' : '?'}_t=${Date.now()}`, // Timestamp cache buster
           method: options.method || 'GET',
           body: options.body ? JSON.parse(options.body as string) : undefined,
           jwtToken: token,

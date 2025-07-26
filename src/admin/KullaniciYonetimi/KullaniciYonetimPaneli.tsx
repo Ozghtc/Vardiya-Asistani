@@ -150,13 +150,17 @@ const KullaniciYonetimPaneli: React.FC = () => {
     loadKurumlar();
   }, []);
 
-  // Load users from API
+  // Load users from API - HER ZAMAN FRESH DATA
   const loadUsers = async () => {
     if (!usersTableId) return;
     
+    console.log('🔄 FRESH USER DATA ÇEKILIYOR - Cache yok!');
+    
     try {
+      // 🚫 CACHE YOK - Her zaman fresh API request
       const apiUsers = await getUsers(usersTableId);
       setUsers(apiUsers);
+      console.log('✅ FRESH USER DATA YÜKLENDI:', apiUsers.length, 'kullanıcı');
     } catch (error) {
       console.error('❌ Kullanıcılar yüklenirken hata:', error);
     }
@@ -217,17 +221,13 @@ const KullaniciYonetimPaneli: React.FC = () => {
     try {
       const result = await addUser(usersTableId, formData);
       if (result.success) {
-        // Cache temizle ve veri yenile
-        clearTableCache(usersTableId.toString());
-        clearAllCache();
-        
         showToast({
           type: 'success',
           title: 'Kullanıcı Eklendi',
           message: `${formData.name} başarıyla sisteme eklendi.`
         });
         
-        // Kullanıcı listesini yenile
+        // 🔄 FRESH API REQUEST - Cache yok, direkt backend'den çek
         await loadUsers();
         setFormData({
           rol: 'admin',
@@ -265,16 +265,13 @@ const KullaniciYonetimPaneli: React.FC = () => {
       try {
         const result = await deleteUser(usersTableId, showDeleteModal.user.id);
         if (result.success) {
-          // Cache temizle ve veri yenile
-          clearTableCache(usersTableId.toString());
-          clearAllCache();
-          
           showToast({
             type: 'success',
             title: 'Kullanıcı Silindi',
             message: `${showDeleteModal.user.name} başarıyla sistemden kaldırıldı.`
           });
           
+          // 🔄 FRESH API REQUEST - Cache yok, direkt backend'den çek
           await loadUsers();
           setPermissions(prev => prev.filter(p => p.kullanici_id !== showDeleteModal.user.id));
           setShowDeleteModal(null);
@@ -303,16 +300,28 @@ const KullaniciYonetimPaneli: React.FC = () => {
     try {
       const result = await updateUser(usersTableId, user.id, { aktif_mi: !user.aktif_mi });
       if (result.success) {
-        // Cache temizle ve veri yenile
-        clearTableCache(usersTableId.toString());
-        clearAllCache();
+        // 🔄 FRESH API REQUEST - Cache yok, direkt backend'den çek
         await loadUsers();
+        
+        showToast({
+          type: 'success',
+          title: 'Durum Güncellendi',
+          message: `${user.name} kullanıcısının durumu güncellendi.`
+        });
       } else {
-        alert('❌ Kullanıcı durumu güncellenemedi');
+        showToast({
+          type: 'error',
+          title: 'Güncelleme Başarısız',
+          message: 'Kullanıcı durumu güncellenirken bir hata oluştu.'
+        });
       }
     } catch (error) {
       console.error('❌ Kullanıcı güncelleme hatası:', error);
-      alert('❌ Kullanıcı durumu güncellenemedi!');
+      showToast({
+        type: 'error',
+        title: 'Sistem Hatası',
+        message: 'Kullanıcı durumu güncellenirken beklenmeyen bir hata oluştu.'
+      });
     }
   };
 
@@ -338,10 +347,13 @@ const KullaniciYonetimPaneli: React.FC = () => {
     try {
       const result = await updateUser(usersTableId, editingUser.id, formData);
       if (result.success) {
-        // Cache temizle ve veri yenile
-        clearTableCache(usersTableId.toString());
-        clearAllCache();
-        alert('✅ Kullanıcı başarıyla güncellendi!');
+        showToast({
+          type: 'success',
+          title: 'Kullanıcı Güncellendi',
+          message: `${editingUser.name} başarıyla güncellendi.`
+        });
+        
+        // 🔄 FRESH API REQUEST - Cache yok, direkt backend'den çek
         await loadUsers();
         setEditingUser(null);
         setFormData({
@@ -355,11 +367,19 @@ const KullaniciYonetimPaneli: React.FC = () => {
           birim_id: ''
         });
       } else {
-        alert('❌ Kullanıcı güncellenemedi');
+        showToast({
+          type: 'error',
+          title: 'Güncelleme Başarısız',
+          message: 'Kullanıcı güncellenirken bir hata oluştu.'
+        });
       }
     } catch (error) {
       console.error('❌ Kullanıcı güncelleme hatası:', error);
-      alert('❌ Kullanıcı güncellenemedi!');
+      showToast({
+        type: 'error',
+        title: 'Sistem Hatası',
+        message: 'Kullanıcı güncellenirken beklenmeyen bir hata oluştu.'
+      });
     }
   };
 
