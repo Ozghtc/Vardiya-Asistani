@@ -1,14 +1,39 @@
-# Vardiyali Nobet Asistani - API Bilgileri (%100 DOĞRU - TEST EDİLDİ)
+# HZM VERİTABANI - API DOKÜMANTASYONU (%100 ÇALIŞAN)
 
 ## 🔗 Temel Bilgiler
 - **Base URL:** `https://hzmbackandveritabani-production-c660.up.railway.app`
 - **Proje ID:** `5`
 - **API Key:** `hzm_1ce98c92189d4a109cd604b22bfd86b7`
+- **Test Tarihi:** 26.07.2025
+- **Durum:** ✅ %100 ÇALIŞAN
 
 ## 🔐 KİMLİK DOĞRULAMA SİSTEMİ
 
-### 🚀 JWT TOKEN İLE TÜM İŞLEMLER (TAM YETKİ):
-Bu endpoint'ler Authorization: Bearer <JWT_TOKEN> header'ı ile çalışır:
+### 🚀 JWT TOKEN (TAM YETKİ)
+```bash
+# Login - TEST EDİLDİ ✅
+curl -X POST \
+  "https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "ozgurhzm@gmail.com",
+    "password": "135427"
+  }'
+
+# Response:
+{
+  "success": true,
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "user": {
+      "id": 1,
+      "email": "ozgurhzm@gmail.com",
+      "name": "Ozgur Altintas",
+      "isAdmin": true
+    }
+  }
+}
+```
 
 #### 📋 Tablo Yönetimi:
 - **GET** `/api/v1/tables/project/5` - Proje tablolarını listele ✅ JWT İLE
@@ -34,28 +59,20 @@ Bu endpoint'ler Authorization: Bearer <JWT_TOKEN> header'ı ile çalışır:
 - **PUT** `/api/v1/projects/{id}` - Proje güncelle ✅ JWT İLE
 - **DELETE** `/api/v1/projects/{id}` - Proje sil ✅ JWT İLE
 
-### 🔑 JWT TOKEN NASIL ALINIR:
+### 🔑 API KEY (SINIRLI ERİŞİM)
 ```bash
-# ÇALIŞAN KULLANICI ✅
-curl -X POST \
-  "https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/auth/login" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "ozgurhzm@gmail.com",
-    "password": "135427"
-  }'
+# API Key Bilgisi - TEST EDİLDİ ✅
+curl -X GET \
+  "https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/tables/api-key-info" \
+  -H "X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7"
 
-# Response'dan token'ı alın:
+# Response:
 {
   "success": true,
   "data": {
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "user": {
-      "id": 1,
-      "email": "ozgurhzm@gmail.com", 
-      "name": "ÖZGÜR ALTINTAŞ",
-      "isAdmin": true
-    }
+    "project": {"id": 5, "name": "Vardiyali Nobet Asistani", "userId": 1},
+    "permissions": ["read", "write", "create_table", "add_field"],
+    "rateLimit": {"limit": 100, "window": "15m"}
   }
 }
 ```
@@ -80,81 +97,108 @@ X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7
 ```
 *Not: API Key ile sadece 1 endpoint çalışır (api-key-info)*
 
-## 📞 Test Edilmiş Örnekler
+## 📋 TABLO YÖNETİMİ
 
-### ✅ API Key ile ÇALIŞAN (SADECE 1 ENDPOINT):
+### 📊 Tablo Listesi
 ```bash
-# ✅ API Key bilgisi (SADECE BU ÇALIŞIYOR)
+# TEST EDİLDİ ✅
 curl -X GET \
-  "https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/tables/api-key-info" \
-  -H "X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7"
+  "https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/tables/project/5" \
+  -H "Authorization: Bearer <JWT_TOKEN>"
+
+# Response: Mevcut tablolar listelenir
+{
+  "success": true,
+  "data": {
+    "tables": [
+      {
+        "id": 30,
+        "name": "kurumlar_hiyerarsik",
+        "projectId": 5,
+        "fields": [
+          {
+            "id": "1753143381667", 
+            "name": "kurum_id", 
+            "type": "string", 
+            "isRequired": true
+          },
+          {
+            "id": "1753143381906", 
+            "name": "kurum_adi", 
+            "type": "string", 
+            "isRequired": true
+          }
+        ],
+        "metadata": {
+          "projectName": "Vardiyali Nobet Asistani",
+          "fieldCount": 11,
+          "hasPhysicalTable": true
+        }
+      }
+    ],
+    "total": 7
+  }
+}
+```
+
+### 🆕 Tablo Oluşturma
+```bash
+curl -X POST \
+  "https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/tables/project/5" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <JWT_TOKEN>" \
+  -d '{
+    "name": "yeni_tablo",
+    "description": "Test tablosu"
+  }'
+```
+
+## ⚡ FIELD YÖNETİMİ
+
+### ➕ Field Ekleme
+```bash
+# TEST EDİLDİ ✅
+curl -X POST \
+  "https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/tables/5/30/fields" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <JWT_TOKEN>" \
+  -d '{
+    "name": "aktif_mi",
+    "type": "boolean",
+    "isRequired": false,
+    "description": "Kurum aktif/pasif durumu",
+    "defaultValue": true
+  }'
 
 # Response:
 {
   "success": true,
   "data": {
-    "project": {"id": 5, "name": "Vardiyali Nobet Asistani", "userId": 1},
-    "permissions": ["read", "write", "create_table", "add_field"],
-    "rateLimit": {"limit": 100, "window": "15m"}
-  }
+    "field": {
+      "id": "1753558243402",
+      "name": "aktif_mi",
+      "type": "boolean",
+      "isRequired": false,
+      "description": "Kurum aktif/pasif durumu",
+      "createdAt": "2025-07-26T19:30:43.402Z"
+    },
+    "totalFields": 11
+  },
+  "message": "Field \"aktif_mi\" added successfully"
 }
 ```
 
-### ❌ API Key ile ÇALIŞMAYAN (JWT TOKEN GEREKLİ):
+### ✏️ Field Güncelleme
 ```bash
-# ❌ Normal veri okuma (JWT GEREKLI)
-curl -X GET \
-  "https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/data/table/10" \
-  -H "Authorization: Bearer <JWT_TOKEN>"
-
-# ❌ Normal tablo listesi (JWT GEREKLI)
-curl -X GET \
-  "https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/tables/project/5" \
-  -H "Authorization: Bearer <JWT_TOKEN>"
-
-# ❌ Yeni tablo oluştur (JWT GEREKLI)
-curl -X POST \
-  "https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/tables/project/5" \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <JWT_TOKEN>" \
-  -d '{"name": "test_tablosu", "description": "Test için tablo"}'
-
-# ❌ Field ekle (JWT GEREKLI)
-curl -X POST \
-  "https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/tables/project/5/10/fields" \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <JWT_TOKEN>" \
-  -d '{"name": "yeni_alan", "type": "string", "isRequired": false}'
-
-# ❌ Veri ekleme (JWT GEREKLI)
-curl -X POST \
-  "https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/data/table/10/rows" \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <JWT_TOKEN>" \
-  -d '{"Adi Soyadi": "Test User", "Tc": "12345678901"}'
-
-# ❌ Proje listesi (JWT GEREKLI)
-curl -X GET \
-  "https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/projects" \
-  -H "Authorization: Bearer <JWT_TOKEN>"
-
-# ❌ Field güncelle (JWT GEREKLI)
+# TEST EDİLDİ ✅
 curl -X PUT \
-  "https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/tables/10/fields/1" \
+  "https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/tables/30/fields/1753148242542" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <JWT_TOKEN>" \
-  -d '{"name": "guncellenen_alan"}'
-
-# ❌ API Key versiyonları da çalışmıyor
-curl -X GET \
-  "https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/tables/api-project/5" \
-  -H "X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7"
-# Response: {"success":false,"error":"No token provided","code":"NO_TOKEN"}
-
-curl -X GET \
-  "https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/data/api-table/10" \
-  -H "X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7"
-# Response: {"success":false,"error":"Table not found or access denied","code":"TABLE_NOT_FOUND"}
+  -d '{
+    "name": "guncellenmis_sutun",
+    "description": "Güncellenmiş sütun"
+  }'
 ```
 
 ## 🔄 Temel Workflow (JWT Token ile)
@@ -325,14 +369,49 @@ curl -X POST \
 - Field ekleme: `/api/v1/tables/project/5/{tableId}/fields` ❌ (404 NOT_FOUND)
 - Field ekleme: `/api/v1/tables/{tableId}/fields` ❌ (404 NOT_FOUND)
 
-**SONUÇ:** Field ekleme API'si ÇALIŞIYOR! Doğru endpoint format: `/api/v1/tables/{projectId}/{tableId}/fields`
+## 🎯 TEST SONUÇLARI
 
-**ÖNEMLİ:** API dokümantasyonundaki hata düzeltildi. Field ekleme için doğru endpoint:
-- ❌ Yanlış: `/api/v1/tables/30/fields` 
-- ✅ Doğru: `/api/v1/tables/5/30/fields` (projectId/tableId/fields)
+### ✅ ÇALIŞAN ENDPOINT'LER (TEST EDİLDİ):
+1. **POST** `/api/v1/auth/login` - JWT token alma ✅
+2. **GET** `/api/v1/tables/project/5` - Tablo listesi ✅
+3. **POST** `/api/v1/tables/5/30/fields` - Field ekleme ✅ (DOĞRU ENDPOINT!)
+4. **PUT** `/api/v1/tables/30/fields/{fieldId}` - Field güncelleme ✅
+5. **GET** `/api/v1/data/table/30` - Veri okuma ✅
+6. **POST** `/api/v1/data/table/30/rows` - Veri ekleme ✅
+7. **PUT** `/api/v1/data/table/30/rows/{rowId}` - Veri güncelleme ✅
+8. **GET** `/api/v1/tables/api-key-info` - API Key bilgisi ✅
+
+### 🛠️ FIELD TÜRLERİ
+- **string**: Metin veriler
+- **number**: Sayısal veriler (PostgreSQL NUMERIC)
+- **boolean**: true/false değerleri
+- **date**: Tarih ve saat (ISO format)
+- **currency**: Para birimi (JSONB format)
+
+### 📊 MEVCUT TABLOLAR (Proje ID: 5)
+| ID | Tablo Adı | Field Sayısı | Durum |
+|----|-----------|--------------|-------|
+| 30 | kurumlar_hiyerarsik | 11 | ✅ Aktif |
+| 33 | kullanicilar_final | 10 | ✅ Aktif |
+| 34 | departmanlar | 4 | ✅ Aktif |
+| 35 | birimler | 4 | ✅ Aktif |
+
+### 🔒 ÖNEMLİ NOTLAR
+- **Field ekleme endpoint'i**: `/api/v1/tables/{projectId}/{tableId}/fields`
+- **JWT Token gerekli**: Tüm CRUD işlemleri için
+- **Rate limiting**: 100 istek/15 dakika
+- **HTTPS zorunlu**: Tüm API istekleri
 
 ---
-*Vardiyali Nobet Asistani - API Bilgileri*
-*Test Edilme: 22.07.2025 01:27:00*
-*Son güncelleme: 22.07.2025 01:27:30 - Field ekleme çalışmıyor*
-*Durum: Field ekleme hariç %100 DOĞRU ✅* 
+
+## 📞 DESTEK
+- **Email:** ozgurhzm@gmail.com
+- **Proje:** Vardiyali Nobet Asistani
+- **Base URL:** https://hzmbackandveritabani-production-c660.up.railway.app
+- **API Key:** hzm_1ce98c92189d4a109cd604b22bfd86b7
+
+---
+*HZM Veritabanı - API Dokümantasyonu*
+*Son test: 26.07.2025 19:30*
+*Durum: %100 ÇALIŞAN VE DOĞRULANMIŞ ✅*
+*Test kullanıcısı: ozgurhzm@gmail.com* 
