@@ -23,6 +23,7 @@ interface User extends BaseUser {
 
 interface Kurum {
   id: string;
+  kurum_id: string; // Hiyerarşik kurum ID'si (01, 02, 03...)
   kurum_adi: string;
   kurum_turu: string;
   adres: string;
@@ -119,9 +120,9 @@ const KullaniciYonetimPaneli: React.FC = () => {
           if (kurum.departmanlar) {
             kurum.departmanlar.split(', ').filter((d: string) => d.trim()).forEach((dept: string, index: number) => {
               allDepartmanlar.push({
-                id: `${kurum.id}_D${index + 1}`, // @HIYERARSIK_ID_SISTEMI.md uyumlu: 01_D1, 01_D2
+                id: `${kurum.kurum_id}_D${index + 1}`, // @HIYERARSIK_ID_SISTEMI.md uyumlu: 01_D1, 01_D2
                 departman_adi: dept,
-                kurum_id: kurum.id
+                kurum_id: kurum.kurum_id
               });
             });
           }
@@ -129,9 +130,9 @@ const KullaniciYonetimPaneli: React.FC = () => {
           if (kurum.birimler) {
             kurum.birimler.split(', ').filter((b: string) => b.trim()).forEach((birim: string, index: number) => {
               allBirimler.push({
-                id: `${kurum.id}_B${index + 1}`, // @HIYERARSIK_ID_SISTEMI.md uyumlu: 01_B1, 01_B2
+                id: `${kurum.kurum_id}_B${index + 1}`, // @HIYERARSIK_ID_SISTEMI.md uyumlu: 01_B1, 01_B2
                 birim_adi: birim,
-                kurum_id: kurum.id,
+                kurum_id: kurum.kurum_id,
                 departman_id: '' // Birimler kuruma bağlı
               });
             });
@@ -625,7 +626,7 @@ const KullaniciYonetimPaneli: React.FC = () => {
                   >
                     <option value="">Kurum Seçiniz</option>
                     {kurumlar.map(kurum => (
-                      <option key={kurum.id} value={kurum.id}>{kurum.kurum_adi}</option>
+                      <option key={kurum.kurum_id} value={kurum.kurum_id}>{kurum.kurum_adi}</option>
                     ))}
                   </select>
                 </div>
@@ -798,7 +799,7 @@ const KullaniciYonetimPaneli: React.FC = () => {
                       <div className="mt-3 p-2 bg-gray-50 rounded-lg">
                         <div className="text-xs text-gray-500 mb-1">Kurum Bilgileri</div>
                         <div className="text-sm">
-                          🏥 {kurumlar.find(k => String(k.id) === String(user.kurum_id))?.kurum_adi || 'Bilinmeyen'}
+                          🏥 {kurumlar.find(k => String(k.kurum_id) === String(user.kurum_id))?.kurum_adi || 'Bilinmeyen'}
                         </div>
                         
                         <div className="text-xs text-gray-500 mt-1">
