@@ -476,10 +476,10 @@ const generateKullaniciId = async (kurum_id: string, departman_id: string, birim
     const newNumber = maxNumber + 1;
     
     // Hiyerarşik ID format: kurum_departman_birim_rolTipi+Numara
-    // Örnek: 01_D1_B1_Y1, 01_D1_B1_P1, 01_D1_B1_A1
-    // departman_id: "01_D1" -> "D1", birim_id: "01_D1_B1" -> "B1"
+    // YENİ YAPI: Departman ve Birim kuruma bağlı
+    // departman_id: "01_D1" -> "D1", birim_id: "01_B1" -> "B1"
     const departmanKodu = departman_id.split('_')[1]; // "01_D1" -> "D1"
-    const birimKodu = birim_id.split('_')[2]; // "01_D1_B1" -> "B1"
+    const birimKodu = birim_id.split('_')[1]; // "01_B1" -> "B1" (değişti!)
     const kullaniciId = `${kurum_id}_${departmanKodu}_${birimKodu}_${rolKodu}${newNumber}`;
     
     console.log(`🆔 KULLANICI_ID oluşturuldu: ${kullaniciId}`);

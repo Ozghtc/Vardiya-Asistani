@@ -5,11 +5,17 @@
 ### ID Kodlama Mantığı:
 ```
 KURUM:     01, 02, 03...
-DEPARTMAN: 01_D1, 01_D2, 02_D1...
-BİRİM:     01_D1_B1, 01_D1_B2, 01_D2_B1...
-YÖNETİCİ:  01_D1_B1_Y1, 01_D1_B1_Y2...
-PERSONEL:  01_D1_B1_P1, 01_D1_B1_P2...
+DEPARTMAN: 01_D1, 01_D2, 02_D1... (Kuruma bağlı)
+BİRİM:     01_B1, 01_B2, 02_B1... (Kuruma bağlı - departmana değil!)
+YÖNETİCİ:  01_D1_B1_Y1, 01_D1_B1_Y2... (Kurum+Departman+Birim+Rol)
+PERSONEL:  01_D1_B1_P1, 01_D1_B1_P2... (Kurum+Departman+Birim+Rol)
 ```
+
+### ⚠️ **ÖNEMLİ NOT:**
+- **DEPARTMAN ve BİRİM** ayrı ayrı **KURUMA BAĞLI**
+- **KULLANICILAR** hem departmana hem birime hem kuruma bağlı
+- **YÖNETİCİLER** Y1, Y2, Y3... ile numaralandırılır
+- **PERSONELLER** P1, P2, P3... ile numaralandırılır
 
 ## 📋 Tablo Yapıları
 
@@ -63,26 +69,26 @@ CREATE TABLE departmanlar (
 ```sql
 CREATE TABLE birimler (
   id SERIAL PRIMARY KEY,
-  birim_id VARCHAR(30) UNIQUE NOT NULL,
+  birim_id VARCHAR(20) UNIQUE NOT NULL,
   birim_adi VARCHAR(255) NOT NULL,
-  departman_id VARCHAR(20) NOT NULL,
+  kurum_id VARCHAR(10) NOT NULL,
   aciklama TEXT,
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW(),
   
-  FOREIGN KEY (departman_id) REFERENCES departmanlar(departman_id) ON DELETE CASCADE
+  FOREIGN KEY (kurum_id) REFERENCES kurumlar(kurum_id) ON DELETE CASCADE
 );
 ```
 
 **Örnek Veriler:**
-| id | birim_id | birim_adi | departman_id | aciklama |
-|----|----------|-----------|--------------|----------|
-| 1 | 01_D1_B1 | Kardiyoloji | 01_D1 | Kalp hastalıkları |
-| 2 | 01_D1_B2 | Nöroloji | 01_D1 | Beyin ve sinir hastalıkları |
-| 3 | 01_D1_B3 | Ortopedi | 01_D1 | Kemik ve eklem hastalıkları |
-| 4 | 01_D2_B1 | İnsan Kaynakları | 01_D2 | Personel yönetimi |
-| 5 | 01_D2_B2 | Satın Alma | 01_D2 | Tedarik zinciri yönetimi |
-| 6 | 01_D3_B1 | Bilgi İşlem | 01_D3 | IT destek hizmetleri |
+| id | birim_id | birim_adi | kurum_id | aciklama |
+|----|----------|-----------|----------|----------|
+| 1 | 01_B1 | Hemşire | 01 | Hemşirelik hizmetleri |
+| 2 | 01_B2 | Doktor | 01 | Doktorluk hizmetleri |
+| 3 | 01_B3 | Teknisyen | 01 | Teknik destek |
+| 4 | 02_B1 | İdari Personel | 02 | İdari işlemler |
+| 5 | 02_B2 | Güvenlik | 02 | Güvenlik hizmetleri |
+| 6 | 03_B1 | Temizlik | 03 | Temizlik hizmetleri |
 
 ### 4. PERSONELLER TABLOSU
 ```sql
@@ -108,14 +114,14 @@ CREATE TABLE personeller (
 ```
 
 **Örnek Veriler:**
-| id | personel_id | adi_soyadi | personel_tipi | birim_id | pozisyon | tc_no | telefon |
-|----|-------------|------------|---------------|----------|----------|-------|---------|
-| 1 | 01_D1_B1_Y1 | Dr. Ali Vural | YONETICI | 01_D1_B1 | Kardiyoloji Şef Doktoru | 12345678901 | 05551234567 |
-| 2 | 01_D1_B1_P1 | Ayşe Kaya | PERSONEL | 01_D1_B1 | Kardiyoloji Hemşiresi | 23456789012 | 05552345678 |
-| 3 | 01_D1_B1_P2 | Mehmet Yılmaz | PERSONEL | 01_D1_B1 | Kardiyoloji Teknisyeni | 34567890123 | 05553456789 |
-| 4 | 01_D1_B2_Y1 | Dr. Fatma Demir | YONETICI | 01_D1_B2 | Nöroloji Şef Doktoru | 45678901234 | 05554567890 |
-| 5 | 01_D2_B1_Y1 | Selin Özkan | YONETICI | 01_D2_B1 | İK Müdürü | 56789012345 | 05555678901 |
-| 6 | 01_D2_B1_P1 | Can Acar | PERSONEL | 01_D2_B1 | İK Uzmanı | 67890123456 | 05556789012 |
+| id | personel_id | adi_soyadi | personel_tipi | kurum_id | departman_id | birim_id | pozisyon | tc_no | telefon |
+|----|-------------|------------|---------------|----------|--------------|----------|----------|-------|---------|
+| 1 | 01_D1_B1_Y1 | Dr. Ali Vural | YONETICI | 01 | 01_D1 | 01_B1 | Başhekim | 12345678901 | 05551234567 |
+| 2 | 01_D1_B1_P1 | Ayşe Kaya | PERSONEL | 01 | 01_D1 | 01_B1 | Hemşire | 23456789012 | 05552345678 |
+| 3 | 01_D2_B2_P1 | Mehmet Yılmaz | PERSONEL | 01 | 01_D2 | 01_B2 | Doktor | 34567890123 | 05553456789 |
+| 4 | 01_D1_B1_Y2 | Dr. Fatma Demir | YONETICI | 01 | 01_D1 | 01_B1 | Hemşire Başı | 45678901234 | 05554567890 |
+| 5 | 02_D1_B1_Y1 | Selin Özkan | YONETICI | 02 | 02_D1 | 02_B1 | İK Müdürü | 56789012345 | 05555678901 |
+| 6 | 02_D1_B1_P1 | Can Acar | PERSONEL | 02 | 02_D1 | 02_B1 | İK Uzmanı | 67890123456 | 05556789012 |
 
 ## 🔧 Tablo Oluşturma Komutları
 
