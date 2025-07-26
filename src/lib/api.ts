@@ -459,15 +459,15 @@ const generateKullaniciId = async (kurum_id: string, departman_id: string, birim
       user.kurum_id === kurum_id && 
       user.departman_id === departman_id && 
       user.birim_id === birim_id &&
-      user.KULLANICI_ID && 
-      user.KULLANICI_ID.includes(`_${rolKodu}`)
+      user.kullanici_id && 
+      user.kullanici_id.includes(`_${rolKodu}`)
     );
 
     // En yüksek numarayı bul
     let maxNumber = 0;
     sameTypeUsers.forEach((user: any) => {
-      if (user.KULLANICI_ID) {
-        const match = user.KULLANICI_ID.match(new RegExp(`_${rolKodu}(\\d+)$`));
+      if (user.kullanici_id) {
+        const match = user.kullanici_id.match(new RegExp(`_${rolKodu}(\\d+)$`));
         if (match) {
           const num = parseInt(match[1]);
           if (num > maxNumber) maxNumber = num;
