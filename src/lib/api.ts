@@ -451,6 +451,9 @@ const generateKullaniciId = async (kurum_id: string, departman_id: string, birim
     if (rol === 'admin') rolKodu = 'A';
     else if (rol === 'yonetici') rolKodu = 'Y';
 
+    // ✅ DOĞRU KURUM_ID KULLAN - Parametreden gelen değeri kullan (frontend'den seçilen kurum)
+    console.log(`🔍 Frontend'den gelen kurum_id: ${kurum_id}`);
+
     // Mevcut kullanıcıları al ve aynı birimde aynı rol tipindeki en yüksek numarayı bul
     const existingUsers = await getUsers(33); // kullanicilar_final tablosu
     
