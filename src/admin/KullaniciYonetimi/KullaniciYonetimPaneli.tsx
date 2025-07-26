@@ -117,9 +117,9 @@ const KullaniciYonetimPaneli: React.FC = () => {
         
         apiKurumlar.forEach((kurum: Kurum) => {
           if (kurum.departmanlar) {
-            kurum.departmanlar.split(', ').filter((d: string) => d.trim()).forEach((dept: string) => {
+            kurum.departmanlar.split(', ').filter((d: string) => d.trim()).forEach((dept: string, index: number) => {
               allDepartmanlar.push({
-                id: `${kurum.id}_${dept}`,
+                id: `${kurum.id}_D${index + 1}`, // @HIYERARSIK_ID_SISTEMI.md uyumlu: 01_D1, 01_D2
                 departman_adi: dept,
                 kurum_id: kurum.id
               });
@@ -127,12 +127,12 @@ const KullaniciYonetimPaneli: React.FC = () => {
           }
           
           if (kurum.birimler) {
-            kurum.birimler.split(', ').filter((b: string) => b.trim()).forEach((birim: string) => {
+            kurum.birimler.split(', ').filter((b: string) => b.trim()).forEach((birim: string, index: number) => {
               allBirimler.push({
-                id: `${kurum.id}_${birim}`,
+                id: `${kurum.id}_B${index + 1}`, // @HIYERARSIK_ID_SISTEMI.md uyumlu: 01_B1, 01_B2
                 birim_adi: birim,
                 kurum_id: kurum.id,
-                departman_id: '' // Birimler kuruma bağlı, departmana göre filtrelenebilir
+                departman_id: '' // Birimler kuruma bağlı
               });
             });
           }
