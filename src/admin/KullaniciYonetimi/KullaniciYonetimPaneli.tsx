@@ -243,7 +243,11 @@ const KullaniciYonetimPaneli: React.FC = () => {
         });
         
         // 🧹 CACHE TEMİZLE VE FRESH DATA ÇEK
-        await loadUsers(true);
+        clearAllCache(); // Tüm cache'i temizle
+        clearTableCache(String(usersTableId)); // kullanicilar_final tablosu
+        
+        // Kullanıcı listesini ZORLA yeniden yükle
+        await loadUsers(true); // 🚀 FORCE REFRESH!
         
         // Form'u tamamen sıfırla
         setFormData({
