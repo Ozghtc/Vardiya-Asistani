@@ -16,6 +16,7 @@ interface BaseUser {
 }
 
 interface User extends BaseUser {
+  kullanici_id?: string; // Hiyerarşik kullanıcı ID'si
   kurum_id?: string;
   departman_id?: string;
   birim_id?: string;
@@ -160,10 +161,18 @@ const KullaniciYonetimPaneli: React.FC = () => {
     console.log('🔄 FRESH USER DATA ÇEKILIYOR - Cache temizleniyor!');
     
     try {
+      // 🧹 EXTRA CACHE TEMİZLEME - DOUBLE SURE!
+      if (forceRefresh) {
+        clearAllCache(); // Tüm cache'i temizle
+        clearTableCache(String(usersTableId)); // Kullanıcı tablosu cache'ini temizle
+        console.log('🧹 EXTRA CACHE TEMİZLEME YAPILDI!');
+      }
+      
       // 🧹 CACHE TEMİZLE VE FRESH DATA ÇEK
       const apiUsers = await getUsers(usersTableId, forceRefresh);
       setUsers(apiUsers);
       console.log('✅ FRESH USER DATA YÜKLENDI:', apiUsers.length, 'kullanıcı');
+      console.log('📊 Yüklenen kullanıcılar:', apiUsers.map((u: User) => ({ id: u.id, name: u.name, kullanici_id: u.kullanici_id })));
     } catch (error) {
       console.error('❌ Kullanıcılar yüklenirken hata:', error);
     }
