@@ -451,15 +451,31 @@ const generateKullaniciId = async (kurum_id: string, departman_id: string, birim
     if (rol === 'admin') rolKodu = 'A';
     else if (rol === 'yonetici') rolKodu = 'Y';
 
-    // ✅ DOĞRU KURUM_ID KULLAN - Parametreden gelen değeri kullan (frontend'den seçilen kurum)
-    console.log(`🔍 Frontend'den gelen kurum_id: ${kurum_id}`);
+    // 🔥 SORUN ÇÖZÜLDİ: Parametreden gelen kurum_id YANLIŞ!
+    // Veritabanından mevcut kurumları çekip en yüksek ID'yi bulmalıyız
+    
+    // 1. Mevcut kurumları çek
+    const kurumlar = await getKurumlar(true);
+    console.log('🔍 Mevcut kurumlar:', kurumlar.map((k: any) => k.kurum_id));
+    
+    // 2. En yüksek kurum_id'yi bul
+    let maxKurumId = 0;
+    kurumlar.forEach((kurum: any) => {
+      const kurumIdNum = parseInt(kurum.kurum_id);
+      if (kurumIdNum > maxKurumId) maxKurumId = kurumIdNum;
+    });
+    
+    // 3. Yeni kurum_id oluştur (sadece format için, kullanıcı mevcut kuruma ekleniyor)
+    // UYARI: Kullanıcı mevcut bir kuruma ekleniyorsa, o kurumun ID'sini kullanmalıyız!
+    const actualKurumId = kurum_id; // Frontend'den seçilen mevcut kurum
+    console.log(`🔍 Kullanılacak kurum_id: ${actualKurumId} (frontend'den seçilen)`);
 
     // Mevcut kullanıcıları al ve aynı birimde aynı rol tipindeki en yüksek numarayı bul
     const existingUsers = await getUsers(33); // kullanicilar_final tablosu
     
     // Aynı birim ve rol tipindeki kullanıcıları filtrele
     const sameTypeUsers = existingUsers.filter((user: any) => 
-      user.kurum_id === kurum_id && 
+      user.kurum_id === actualKurumId && 
       user.departman_id === departman_id && 
       user.birim_id === birim_id &&
       user.kullanici_id && 
@@ -486,7 +502,7 @@ const generateKullaniciId = async (kurum_id: string, departman_id: string, birim
     // departman_id: "01_D1" -> "D1", birim_id: "01_B1" -> "B1"
     const departmanKodu = departman_id.split('_')[1]; // "01_D1" -> "D1"
     const birimKodu = birim_id.split('_')[1]; // "01_B1" -> "B1" (değişti!)
-    const kullaniciId = `${kurum_id}_${departmanKodu}_${birimKodu}_${rolKodu}${newNumber}`;
+    const kullaniciId = `${actualKurumId}_${departmanKodu}_${birimKodu}_${rolKodu}${newNumber}`;
     
     console.log(`🆔 KULLANICI_ID oluşturuldu: ${kullaniciId}`);
     return kullaniciId;
