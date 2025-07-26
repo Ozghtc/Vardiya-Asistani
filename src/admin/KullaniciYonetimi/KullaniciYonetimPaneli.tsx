@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTemporaryState } from '../../hooks/useApiState';
 import { getKurumlar, createUsersTable, getUsers, addUser, updateUser, deleteUser, clearAllCache, clearTableCache } from '../../lib/api';
+import { useToast } from '../../components/ui/ToastContainer';
 
 // Types
 interface BaseUser {
@@ -55,6 +56,9 @@ interface Permission {
 }
 
 const KullaniciYonetimPaneli: React.FC = () => {
+  // Toast hook
+  const { showToast } = useToast();
+  
   // States - Tüm veriler API'den
   const [users, setUsers] = useState<User[]>([]);
   const [kurumlar, setKurumlar] = useState<Kurum[]>([]);
@@ -181,18 +185,30 @@ const KullaniciYonetimPaneli: React.FC = () => {
     e.preventDefault();
     
     if (!formData.name || !formData.email || !formData.password || !formData.phone) {
-      alert('Lütfen tüm alanları doldurunuz!');
+      showToast({
+        type: 'warning',
+        title: 'Eksik Bilgi',
+        message: 'Lütfen tüm zorunlu alanları doldurunuz.'
+      });
       return;
     }
 
     if ((formData.rol === 'yonetici' || formData.rol === 'personel') && 
         (!formData.kurum_id || !formData.departman_id || !formData.birim_id)) {
-      alert('Lütfen kurum, departman ve birim bilgilerini doldurunuz!');
+      showToast({
+        type: 'warning',
+        title: 'Kurum Bilgileri Eksik',
+        message: 'Lütfen kurum, departman ve birim bilgilerini seçiniz.'
+      });
       return;
     }
 
     if (!usersTableId) {
-      alert('❌ Kullanıcı tablosu bulunamadı! Önce "Kullanıcı Tablosu Oluştur" butonuna basın.');
+      showToast({
+        type: 'error',
+        title: 'Tablo Bulunamadı',
+        message: 'Kullanıcı tablosu bulunamadı. Lütfen önce tabloyu oluşturunuz.'
+      });
       return;
     }
     
@@ -204,7 +220,13 @@ const KullaniciYonetimPaneli: React.FC = () => {
         // Cache temizle ve veri yenile
         clearTableCache(usersTableId.toString());
         clearAllCache();
-        alert('✅ Kullanıcı başarıyla eklendi!');
+        
+        showToast({
+          type: 'success',
+          title: 'Kullanıcı Eklendi',
+          message: `${formData.name} başarıyla sisteme eklendi.`
+        });
+        
         // Kullanıcı listesini yenile
         await loadUsers();
         setFormData({
@@ -218,11 +240,19 @@ const KullaniciYonetimPaneli: React.FC = () => {
           birim_id: ''
         });
       } else {
-        alert('❌ Kullanıcı eklenemedi: ' + result.message);
+        showToast({
+          type: 'error',
+          title: 'Ekleme Başarısız',
+          message: result.message || 'Kullanıcı eklenirken bir hata oluştu.'
+        });
       }
     } catch (error) {
       console.error('❌ Kullanıcı ekleme hatası:', error);
-      alert('❌ Kullanıcı eklenemedi!');
+      showToast({
+        type: 'error',
+        title: 'Sistem Hatası',
+        message: 'Kullanıcı eklenirken beklenmeyen bir hata oluştu.'
+      });
     }
   };
 
@@ -238,17 +268,31 @@ const KullaniciYonetimPaneli: React.FC = () => {
           // Cache temizle ve veri yenile
           clearTableCache(usersTableId.toString());
           clearAllCache();
-          alert('✅ Kullanıcı başarıyla silindi!');
+          
+          showToast({
+            type: 'success',
+            title: 'Kullanıcı Silindi',
+            message: `${showDeleteModal.user.name} başarıyla sistemden kaldırıldı.`
+          });
+          
           await loadUsers();
           setPermissions(prev => prev.filter(p => p.kullanici_id !== showDeleteModal.user.id));
-    setShowDeleteModal(null);
+          setShowDeleteModal(null);
           setSelectedUser(null);
         } else {
-          alert('❌ Kullanıcı silinemedi');
+          showToast({
+            type: 'error',
+            title: 'Silme Başarısız',
+            message: 'Kullanıcı silinirken bir hata oluştu.'
+          });
         }
       } catch (error) {
         console.error('❌ Kullanıcı silme hatası:', error);
-        alert('❌ Kullanıcı silinemedi!');
+        showToast({
+          type: 'error',
+          title: 'Sistem Hatası',
+          message: 'Kullanıcı silinirken beklenmeyen bir hata oluştu.'
+        });
       }
     }
   };
