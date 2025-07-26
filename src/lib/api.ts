@@ -508,7 +508,10 @@ const generateKullaniciId = async (kurum_id: string, departman_id: string, birim
     
     // Hiyerarşik ID format: kurum_departman_birim_rolTipi+Numara
     // Örnek: 01_D1_B1_Y1, 01_D1_B1_P1, 01_D1_B1_A1
-    const kullaniciId = `${kurum_id}_${departman_id.split('_')[1]}_${birim_id.split('_')[2]}_${rolKodu}${newNumber}`;
+    // departman_id: "01_D1" -> "D1", birim_id: "01_D1_B1" -> "B1"
+    const departmanKodu = departman_id.split('_')[1]; // "01_D1" -> "D1"
+    const birimKodu = birim_id.split('_')[2]; // "01_D1_B1" -> "B1"
+    const kullaniciId = `${kurum_id}_${departmanKodu}_${birimKodu}_${rolKodu}${newNumber}`;
     
     console.log(`🆔 KULLANICI_ID oluşturuldu: ${kullaniciId}`);
     return kullaniciId;
@@ -548,6 +551,12 @@ export const getUsers = async (usersTableId: number) => {
     
     const data = await response.json();
     let users = data.data?.rows || [];
+    
+    // 🔍 DEBUG: API Response analizi
+    console.log('🔍 API Response:', data);
+    console.log('🔍 Raw rows:', data.data?.rows);
+    console.log('🔍 Row count:', data.data?.rows?.length);
+    console.log('🔍 Users data:', users);
     
     // Kurum adlarını ekle
     try {
