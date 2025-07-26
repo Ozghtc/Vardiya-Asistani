@@ -535,7 +535,7 @@ export const getUsers = async (usersTableId: number) => {
       const kurumlar = await getKurumlar(true);
       users = users.map((user: any) => {
         if (user.kurum_id) {
-          const kurum = kurumlar.find((k: any) => k.id === user.kurum_id);
+          const kurum = kurumlar.find((k: any) => k.kurum_id === user.kurum_id);
           if (kurum) {
             return {
               ...user,
