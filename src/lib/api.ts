@@ -593,7 +593,7 @@ export const addUser = async (usersTableId: number, userData: {
     }
     
     const requestBody = {
-      KULLANICI_ID: kullaniciId, // 🆔 YENİ: Hiyerarşik ID ekle
+      kullanici_id: kullaniciId, // 🆔 YENİ: Hiyerarşik ID ekle (field adı düzeltildi)
       name: userData.name,
       email: (userData.email || '').trim().toLowerCase(),
       password: (userData.password || '').trim(),
