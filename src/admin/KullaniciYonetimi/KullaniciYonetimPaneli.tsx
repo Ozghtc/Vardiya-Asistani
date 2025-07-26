@@ -524,7 +524,14 @@ const KullaniciYonetimPaneli: React.FC = () => {
                   type="radio"
                   value={rol}
                   checked={formData.rol === rol}
-                  onChange={(e) => setFormData(prev => ({ ...prev, rol: e.target.value as any }))}
+                  onChange={(e) => setFormData(prev => ({ 
+                    ...prev, 
+                    rol: e.target.value as any,
+                    // Admin seçildiğinde kurum bilgilerini temizle
+                    kurum_id: e.target.value === 'admin' ? '' : prev.kurum_id,
+                    departman_id: e.target.value === 'admin' ? '' : prev.departman_id,
+                    birim_id: e.target.value === 'admin' ? '' : prev.birim_id
+                  }))}
                   className="text-blue-600 focus:ring-blue-500"
                 />
                 <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getRoleColor(rol)}`}>
@@ -589,8 +596,8 @@ const KullaniciYonetimPaneli: React.FC = () => {
             </div>
           </div>
 
-          {/* Kurum Bilgileri - Tüm roller için (admin hariç opsiyonel) */}
-          {(formData.rol === 'yonetici' || formData.rol === 'personel' || formData.rol === 'admin') && (
+          {/* Kurum Bilgileri - Sadece yönetici ve personel için */}
+          {(formData.rol === 'yonetici' || formData.rol === 'personel') && (
             <div className="mt-6 p-4 bg-white rounded-lg border border-gray-200">
               <h3 className="text-lg font-medium text-gray-800 mb-4">Kurum Bilgileri</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -600,7 +607,7 @@ const KullaniciYonetimPaneli: React.FC = () => {
                     value={formData.kurum_id}
                     onChange={(e) => setFormData(prev => ({ ...prev, kurum_id: e.target.value, departman_id: '', birim_id: '' }))}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors hover:border-blue-300"
-                    required={formData.rol !== 'admin'}
+                    required
                   >
                     <option value="">Kurum Seçiniz</option>
                     {kurumlar.map(kurum => (
@@ -616,7 +623,7 @@ const KullaniciYonetimPaneli: React.FC = () => {
                     onChange={(e) => setFormData(prev => ({ ...prev, departman_id: e.target.value, birim_id: '' }))}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors hover:border-blue-300"
                     disabled={!formData.kurum_id}
-                    required={formData.rol !== 'admin'}
+                    required
                   >
                     <option value="">Departman Seçiniz</option>
                     {filteredDepartmanlar.map(departman => (
@@ -632,7 +639,7 @@ const KullaniciYonetimPaneli: React.FC = () => {
                     onChange={(e) => setFormData(prev => ({ ...prev, birim_id: e.target.value }))}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors hover:border-blue-300"
                     disabled={!formData.kurum_id}
-                    required={formData.rol !== 'admin'}
+                    required
                   >
                     <option value="">Birim Seçiniz</option>
                     {filteredBirimler.map(birim => (
