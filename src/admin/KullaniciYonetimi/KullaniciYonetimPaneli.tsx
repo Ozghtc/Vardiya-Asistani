@@ -37,12 +37,14 @@ interface Kurum {
 
 interface Departman {
   id: string;
+  departman_id?: string; // Hiyerarşik departman ID'si (01_D1, 01_D2...)
   departman_adi: string;
   kurum_id: string;
 }
 
 interface Birim {
   id: string;
+  birim_id?: string; // Hiyerarşik birim ID'si (01_B1, 01_B2...)
   birim_adi: string;
   kurum_id: string;
   departman_id: string;
@@ -642,7 +644,7 @@ const KullaniciYonetimPaneli: React.FC = () => {
                   >
                     <option value="">Departman Seçiniz</option>
                     {filteredDepartmanlar.map(departman => (
-                      <option key={departman.id} value={departman.id}>{departman.departman_adi}</option>
+                      <option key={departman.departman_id} value={departman.departman_id}>{departman.departman_adi}</option>
                     ))}
                   </select>
                 </div>
@@ -658,7 +660,7 @@ const KullaniciYonetimPaneli: React.FC = () => {
                   >
                     <option value="">Birim Seçiniz</option>
                     {filteredBirimler.map(birim => (
-                      <option key={birim.id} value={birim.id}>{birim.birim_adi}</option>
+                      <option key={birim.birim_id} value={birim.birim_id}>{birim.birim_adi}</option>
                     ))}
                   </select>
                 </div>
