@@ -449,7 +449,7 @@ const generateKullaniciId = async (kurum_id: string, departman_id: string, birim
     else if (rol === 'yonetici') rolKodu = 'Y';
 
     // Mevcut kullanıcıları al ve aynı birimde aynı rol tipindeki en yüksek numarayı bul
-    const existingUsers = await getUsers(13); // kullanicilar_final tablosu
+    const existingUsers = await getUsers(33); // kullanicilar_final tablosu
     
     // Aynı birim ve rol tipindeki kullanıcıları filtrele
     const sameTypeUsers = existingUsers.filter((user: any) => 
