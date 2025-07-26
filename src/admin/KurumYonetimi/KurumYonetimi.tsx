@@ -10,7 +10,8 @@ import {
   updateKurum, 
   deleteKurum,
   clearAllCache,
-  clearTableCache
+  clearTableCache,
+  apiRequest
 } from '../../lib/api';
 
 // Types
@@ -416,22 +417,61 @@ const KurumYonetimi = () => {
     setFormBirimler(prev => prev.filter(b => b !== birimToRemove));
   };
 
-  // Departman/Birim inline handlers
-  const addDepartman = (kurumId: string) => {
+  // Departman/Birim inline handlers - API İLE DUPLICATE KONTROLÜ
+  const addDepartman = async (kurumId: string) => {
     const departmanAdi = newDepartmanInputs[kurumId]?.trim();
     if (!departmanAdi) return;
 
-    const newDepartman: DepartmanBirim = {
-      id: Date.now().toString() + Math.random(),
-      kurum_id: kurumId,
-      departman_adi: departmanAdi.toLocaleUpperCase('tr-TR'),
-      birimler: '',
-      personel_turleri: ''
-    };
+    setLoading(true);
+    
+    try {
+      // Mevcut departmanları kontrol et
+      const existingDepartmanlar = await apiRequest(`/api/v1/data/table/34`, {
+        method: 'GET',
+      });
+      
+      // Bu kurum için departman ID'sini oluştur
+      const kurumDepartmanlar = existingDepartmanlar.data.rows.filter((row: any) => row.kurum_id === kurumId);
+      const nextDepartmanIndex = kurumDepartmanlar.length + 1;
+      const departmanId = `${kurumId}_D${nextDepartmanIndex}`;
+      
+      // DUPLICATE KONTROLÜ
+      const isDuplicate = existingDepartmanlar.data.rows.some((row: any) => row.departman_id === departmanId);
+      
+      if (isDuplicate) {
+        setErrorMsg(`⚠️ Bu departman zaten mevcut: ${departmanId}`);
+        return;
+      }
+      
+      // API'ye kaydet
+      await apiRequest(`/api/v1/data/table/34/rows`, {
+        method: 'POST',
+        body: JSON.stringify({
+          departman_id: departmanId,
+          departman_adi: departmanAdi.toLocaleUpperCase('tr-TR'),
+          kurum_id: kurumId,
+          aktif_mi: true
+        }),
+      });
 
-    setDepartmanBirimler(prev => [...prev, newDepartman]);
-    setNewDepartmanInputs(prev => ({ ...prev, [kurumId]: '' }));
-    setSuccessMsg('Departman başarıyla eklendi!');
+      // Frontend state'ini güncelle
+      const newDepartman: DepartmanBirim = {
+        id: Date.now().toString() + Math.random(),
+        kurum_id: kurumId,
+        departman_adi: departmanAdi.toLocaleUpperCase('tr-TR'),
+        birimler: '',
+        personel_turleri: ''
+      };
+
+      setDepartmanBirimler(prev => [...prev, newDepartman]);
+      setNewDepartmanInputs(prev => ({ ...prev, [kurumId]: '' }));
+      setSuccessMsg('✅ Departman başarıyla eklendi!');
+      
+    } catch (error: any) {
+      setErrorMsg(`❌ Departman eklenirken hata: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const removeDepartman = (departmanId: string) => {

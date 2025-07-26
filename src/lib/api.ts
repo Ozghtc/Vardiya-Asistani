@@ -323,13 +323,26 @@ export const addKurum = async (kurumData: {
       body: JSON.stringify(requestBody),
     });
     
-    // 2️⃣ DEPARTMANLARI AYRI TABLOYA KAYDET (ID: 34)
+    // 2️⃣ DEPARTMANLARI AYRI TABLOYA KAYDET (ID: 34) - DUPLICATE KONTROLÜ İLE
     if (departmanlar.trim()) {
       const departmanList = departmanlar.split(',').filter(d => d.trim());
+      
+      // Önce mevcut departmanları kontrol et
+      const existingDepartmanlar = await apiRequest(`/api/v1/data/table/34`, {
+        method: 'GET',
+      });
+      
+      const existingDepartmanIds = existingDepartmanlar.data.rows.map((row: any) => row.departman_id);
       
       for (let i = 0; i < departmanList.length; i++) {
         const departmanAdi = departmanList[i].trim();
         const departmanId = `${newKurumId}_D${i + 1}`;
+        
+        // DUPLICATE KONTROLÜ
+        if (existingDepartmanIds.includes(departmanId)) {
+          console.warn(`⚠️ Departman zaten mevcut, atlanıyor: ${departmanId} - ${departmanAdi}`);
+          continue;
+        }
         
         try {
           await apiRequest(`/api/v1/data/table/34/rows`, {
@@ -341,19 +354,33 @@ export const addKurum = async (kurumData: {
               aktif_mi: true
             }),
           });
+          console.log(`✅ Departman kaydedildi: ${departmanId} - ${departmanAdi}`);
         } catch (error) {
-          console.warn(`Departman kaydedilemedi: ${departmanAdi}`, error);
+          console.warn(`❌ Departman kaydedilemedi: ${departmanAdi}`, error);
         }
       }
     }
     
-    // 3️⃣ BİRİMLERİ AYRI TABLOYA KAYDET (ID: 35) - DOĞRUDAN KURUMA BAĞLI
+    // 3️⃣ BİRİMLERİ AYRI TABLOYA KAYDET (ID: 35) - DUPLICATE KONTROLÜ İLE
     if (birimler.trim()) {
       const birimList = birimler.split(',').filter(b => b.trim());
+      
+      // Önce mevcut birimleri kontrol et
+      const existingBirimler = await apiRequest(`/api/v1/data/table/35`, {
+        method: 'GET',
+      });
+      
+      const existingBirimIds = existingBirimler.data.rows.map((row: any) => row.birim_id);
       
       for (let i = 0; i < birimList.length; i++) {
         const birimAdi = birimList[i].trim();
         const birimId = `${newKurumId}_B${i + 1}`;
+        
+        // DUPLICATE KONTROLÜ
+        if (existingBirimIds.includes(birimId)) {
+          console.warn(`⚠️ Birim zaten mevcut, atlanıyor: ${birimId} - ${birimAdi}`);
+          continue;
+        }
         
         try {
           await apiRequest(`/api/v1/data/table/35/rows`, {
@@ -365,8 +392,9 @@ export const addKurum = async (kurumData: {
               aktif_mi: true
             }),
           });
+          console.log(`✅ Birim kaydedildi: ${birimId} - ${birimAdi}`);
         } catch (error) {
-          console.warn(`Birim kaydedilemedi: ${birimAdi}`, error);
+          console.warn(`❌ Birim kaydedilemedi: ${birimAdi}`, error);
         }
       }
     }
