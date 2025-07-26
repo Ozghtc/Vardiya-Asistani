@@ -500,8 +500,16 @@ const generateKullaniciId = async (kurum_id: string, departman_id: string, birim
 // ================================
 
 // Kullanıcıları getir - KULLANICILAR TABLOSU (ID: 33)
-export const getUsers = async (usersTableId: number) => {
+export const getUsers = async (usersTableId: number, forceRefresh: boolean = false) => {
   try {
+    // 🧹 CACHE TEMİZLE
+    if (forceRefresh) {
+      clearAllCache();
+      clearTableCache(String(usersTableId));
+      clearJWTToken();
+      console.log('🧹 USERS CACHE TEMİZLENDİ - FRESH DATA ÇEKILIYOR');
+    }
+    
     const token = await getJWTToken();
     
     const response = await fetch('/.netlify/functions/api-proxy', {

@@ -151,14 +151,14 @@ const KullaniciYonetimPaneli: React.FC = () => {
   }, []);
 
   // Load users from API - HER ZAMAN FRESH DATA
-  const loadUsers = async () => {
+  const loadUsers = async (forceRefresh: boolean = true) => {
     if (!usersTableId) return;
     
-    console.log('🔄 FRESH USER DATA ÇEKILIYOR - Cache yok!');
+    console.log('🔄 FRESH USER DATA ÇEKILIYOR - Cache temizleniyor!');
     
     try {
-      // 🚫 CACHE YOK - Her zaman fresh API request
-      const apiUsers = await getUsers(usersTableId);
+      // 🧹 CACHE TEMİZLE VE FRESH DATA ÇEK
+      const apiUsers = await getUsers(usersTableId, forceRefresh);
       setUsers(apiUsers);
       console.log('✅ FRESH USER DATA YÜKLENDI:', apiUsers.length, 'kullanıcı');
     } catch (error) {
@@ -234,8 +234,10 @@ const KullaniciYonetimPaneli: React.FC = () => {
           message: `${formData.name} başarıyla sisteme eklendi.`
         });
         
-        // 🔄 FRESH API REQUEST - Cache yok, direkt backend'den çek
-        await loadUsers();
+        // 🧹 CACHE TEMİZLE VE FRESH DATA ÇEK
+        await loadUsers(true);
+        
+        // Form'u tamamen sıfırla
         setFormData({
           rol: 'admin',
           name: '',
@@ -279,7 +281,7 @@ const KullaniciYonetimPaneli: React.FC = () => {
           });
           
           // 🔄 FRESH API REQUEST - Cache yok, direkt backend'den çek
-          await loadUsers();
+          await loadUsers(true);
           setPermissions(prev => prev.filter(p => p.kullanici_id !== showDeleteModal.user.id));
           setShowDeleteModal(null);
           setSelectedUser(null);
@@ -308,7 +310,7 @@ const KullaniciYonetimPaneli: React.FC = () => {
       const result = await updateUser(usersTableId, user.id, { aktif_mi: !user.aktif_mi });
       if (result.success) {
         // 🔄 FRESH API REQUEST - Cache yok, direkt backend'den çek
-        await loadUsers();
+        await loadUsers(true);
         
         showToast({
           type: 'success',
