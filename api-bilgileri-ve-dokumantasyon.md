@@ -17,7 +17,7 @@ Bu endpoint'ler Authorization: Bearer <JWT_TOKEN> header'ı ile çalışır:
 - **DELETE** `/api/v1/tables/{tableId}` - Tablo sil ✅ JWT İLE
 
 #### ⚡ Field Yönetimi:
-- **POST** `/api/v1/tables/5/{tableId}/fields` - Field ekle ❌ ÇALIŞMIYOR (404 NOT_FOUND)
+- **POST** `/api/v1/tables/5/{tableId}/fields` - Field ekle ✅ JWT İLE (Doğru endpoint format!)
 - **PUT** `/api/v1/tables/{tableId}/fields/{fieldId}` - Field güncelle ✅ JWT İLE
 - **DELETE** `/api/v1/tables/{tableId}/fields/{fieldId}` - Field sil ✅ JWT İLE
 
@@ -325,7 +325,11 @@ curl -X POST \
 - Field ekleme: `/api/v1/tables/project/5/{tableId}/fields` ❌ (404 NOT_FOUND)
 - Field ekleme: `/api/v1/tables/{tableId}/fields` ❌ (404 NOT_FOUND)
 
-**SONUÇ:** Field ekleme API'si hiçbir endpoint'de çalışmıyor. Mevcut sütunları kullanmak zorundayız.
+**SONUÇ:** Field ekleme API'si ÇALIŞIYOR! Doğru endpoint format: `/api/v1/tables/{projectId}/{tableId}/fields`
+
+**ÖNEMLİ:** API dokümantasyonundaki hata düzeltildi. Field ekleme için doğru endpoint:
+- ❌ Yanlış: `/api/v1/tables/30/fields` 
+- ✅ Doğru: `/api/v1/tables/5/30/fields` (projectId/tableId/fields)
 
 ---
 *Vardiyali Nobet Asistani - API Bilgileri*

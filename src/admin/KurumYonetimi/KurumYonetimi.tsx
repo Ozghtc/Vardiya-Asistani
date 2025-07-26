@@ -21,6 +21,7 @@ interface Kurum {
   adres?: string;
   telefon?: string;
   email?: string;
+  aktif_mi?: boolean;
   test_sutun?: string; // DEPARTMAN listesi (virgülle ayrılmış)
   test_yeni_sutun?: string; // BIRIM listesi (virgülle ayrılmış)
   created_at: string;
@@ -241,6 +242,7 @@ const KurumYonetimi = () => {
       adres: adres,
       telefon: '',
       email: '',
+      aktif_mi: kurumForm.aktif_mi, // Kurum aktif durumu
       departmanlar: formDepartmanlar.join(','), // DEPARTMAN listesi
       birimler: formBirimler.join(',') // BIRIM listesi
     };

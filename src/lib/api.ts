@@ -234,7 +234,8 @@ export const getKurumlar = async (forceRefresh: boolean = false) => {
       departman_id: kurum.DEPARTMAN_ID || '',
       departmanlar: kurum.DEPARTMAN_ADI || '',
       birim_id: kurum.BIRIM_ID || '',
-      birimler: kurum.BIRIM || '' // BIRIM_ADI değil, BIRIM kullanılmalı
+      birimler: kurum.BIRIM || '', // BIRIM_ADI değil, BIRIM kullanılmalı
+      aktif_mi: kurum.aktif_mi !== false // Varsayılan: true
     }));
     
     console.log('🔍 getKurumlar - Raw data count:', response.data?.rows?.length);
@@ -310,6 +311,7 @@ export const addKurum = async (kurumData: {
       adres: kurumData.adres || '',
       telefon: kurumData.telefon || '',
       email: kurumData.email || '',
+      aktif_mi: kurumData.aktif_mi !== false, // Varsayılan: true
       DEPARTMAN_ID: departmanIdList,
       DEPARTMAN_ADI: departmanlar,
       BIRIM_ID: birimIdList,
@@ -396,6 +398,7 @@ export const updateKurum = async (kurumId: string, kurumData: {
   adres?: string;
   telefon?: string;
   email?: string;
+  aktif_mi?: boolean;
 }) => {
   try {
     const response = await apiRequest(`/api/v1/data/table/30/rows/${kurumId}`, {
