@@ -102,7 +102,7 @@ const KullaniciYonetimPaneli: React.FC = () => {
     const loadKurumlar = async () => {
       setLoading(true);
       try {
-        const apiKurumlar = await getKurumlar();
+        const apiKurumlar = await getKurumlar(true); // Fresh data
         
         if (!apiKurumlar || apiKurumlar.length === 0) {
           console.warn('⚠️ API\'den kurum verisi gelmedi!');
@@ -166,12 +166,20 @@ const KullaniciYonetimPaneli: React.FC = () => {
     }
   };
 
-  // Kullanıcı tablosu ID'si değiştiğinde kullanıcıları yükle
+  // Kullanıcıları yükle - Sayfa açılınca ve tablo ID değişince
   useEffect(() => {
     if (usersTableId) {
-      loadUsers();
+      loadUsers(true); // Her zaman fresh data
     }
   }, [usersTableId]);
+
+  // Sayfa ilk açıldığında kullanıcıları yükle
+  useEffect(() => {
+    console.log('🚀 KULLANICI PANELİ AÇILDI - Fresh data çekiliyor');
+    if (usersTableId) {
+      loadUsers(true);
+    }
+  }, []); // Component mount olduğunda bir kez çalış
 
   // Filtered data
   const filteredUsers = users.filter(user => {
