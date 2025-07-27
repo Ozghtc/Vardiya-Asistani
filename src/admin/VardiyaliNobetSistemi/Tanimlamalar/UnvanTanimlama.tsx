@@ -126,10 +126,10 @@ const UnvanTanimlama: React.FC = () => {
       const unvanArray = Array.isArray(existingUnvanlar) ? existingUnvanlar : [];
       const nextSira = unvanArray.length + 1;
       
-      // Doğru format: kurum_departman_birim_sira
-      const departmanAdi = user.departman_id.split('_')[1] || 'BILINMIYOR';
-      const birimAdi = user.birim_id.split('_')[1] || 'BILINMIYOR';
-      const unvanId = `${user.kurum_id}_${departmanAdi}_${birimAdi}_${nextSira}`;
+      // DOĞRU FORMAT: kurum_D#_B#_sira (HIYERARSIK_ID_SISTEMI.md uyumlu)
+      const departmanKodu = user.departman_id.split('_')[1] || 'D1'; // "6_D1" -> "D1"
+      const birimKodu = user.birim_id.split('_')[1] || 'B1'; // "6_B1" -> "B1"
+      const unvanId = `${user.kurum_id}_${departmanKodu}_${birimKodu}_${nextSira}`;
 
       const newUnvan = {
         unvan_id: unvanId,
@@ -209,8 +209,10 @@ const UnvanTanimlama: React.FC = () => {
     const mesaiArray = Array.isArray(existingMesaiTurleri) ? existingMesaiTurleri : [];
     const nextSira = mesaiArray.length + 1;
     
-    // DOĞRU FORMAT: kurum_id + departman_id + birim_id + sira
-    const mesaiId = `${user.kurum_id}_${user.departman_id}_${user.birim_id}_${nextSira}`;
+    // DOĞRU FORMAT: kurum_D#_B#_sira (HIYERARSIK_ID_SISTEMI.md uyumlu)
+    const departmanKodu = user.departman_id.split('_')[1] || 'D1'; // "6_D1" -> "D1"
+    const birimKodu = user.birim_id.split('_')[1] || 'B1'; // "6_B1" -> "B1"
+    const mesaiId = `${user.kurum_id}_${departmanKodu}_${birimKodu}_${nextSira}`;
 
     const mesaiData = {
       mesai_id: mesaiId,

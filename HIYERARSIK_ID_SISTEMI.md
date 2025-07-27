@@ -277,6 +277,65 @@ function generatePersonelId(birimId, personelTipi, existingPersoneller) {
 4. **Otomatik Field Ekleme** - Tüm gerekli alanları toplu olarak
 5. **Veri Doğrulama** - Oluşturma sonrası GET ile kontrol
 
+## 🏷️ TANIMLAMA ID'LERİ (Personel/Yönetici Hariç)
+
+### ID Formatı:
+```
+TANIMLAMALAR: {kurum_id}_D{departman_sira}_B{birim_sira}_{sıra}
+```
+
+### Örnek Veriler (Kurum: 6, Departman: D1-ACİL SERVİS, Birim: B1-HEMSİRE):
+
+#### 1. ÜNVAN TANIMLAMA ID'LERİ:
+```
+6_D1_B1_1  → Başhemşire
+6_D1_B1_2  → Hemşire
+6_D1_B1_3  → Stajyer Hemşire
+6_D1_B1_4  → Sorumlu Hemşire
+6_D1_B1_5  → Klinik Hemşiresi
+```
+
+#### 2. İZİN TÜRÜ ID'LERİ:
+```
+6_D1_B1_1  → Yıllık İzin
+6_D1_B1_2  → Hastalık İzni
+6_D1_B1_3  → Doğum İzni
+6_D1_B1_4  → Mazeret İzni
+6_D1_B1_5  → Ücretsiz İzin
+```
+
+#### 3. VARDİYA TANIMLAMA ID'LERİ:
+```
+6_D1_B1_1  → Gündüz Vardiyası (08:00-16:00)
+6_D1_B1_2  → Akşam Vardiyası (16:00-00:00)
+6_D1_B1_3  → Gece Vardiyası (00:00-08:00)
+6_D1_B1_4  → Uzun Vardiya (08:00-20:00)
+6_D1_B1_5  → Kısa Vardiya (12:00-18:00)
+```
+
+#### 4. MESAİ TÜRÜ ID'LERİ:
+```
+6_D1_B1_1  → Tam Mesai (40 saat/hafta)
+6_D1_B1_2  → Yarım Mesai (20 saat/hafta)
+6_D1_B1_3  → Esnek Mesai (35 saat/hafta)
+6_D1_B1_4  → Fazla Mesai (45 saat/hafta)
+6_D1_B1_5  → Part-time (24 saat/hafta)
+```
+
+#### 5. ALAN TANIMLAMA ID'LERİ:
+```
+6_D1_B1_1  → Acil Servis Giriş
+6_D1_B1_2  → Müşahede Odası
+6_D1_B1_3  → Travma Ünitesi
+6_D1_B1_4  → Resüsitasyon
+6_D1_B1_5  → Triaj Alanı
+```
+
+### ⚠️ FARK:
+- **TANIMLAMALAR**: `6_D1_B1_1` (kurum + departman kodu + birim kodu + sıra)
+- **YÖNETİCİLER**: `6_D1_B1_Y1` (kurum + departman kodu + birim kodu + Y + sıra)
+- **PERSONELLER**: `6_D1_B1_P1` (kurum + departman kodu + birim kodu + P + sıra)
+
 ---
 *Hiyerarşik ID Sistemi Dokümantasyonu*
 *Oluşturulma: 21.07.2025 23:00:00*
