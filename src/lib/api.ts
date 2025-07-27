@@ -231,6 +231,7 @@ export const getKurumlar = async (forceRefresh: boolean = false) => {
     // DEPARTMAN ve BIRIM verilerini eşle
     data = data.map((kurum: any) => ({
       ...kurum,
+      kurum_id: kurum.kurum_id, // 🔧 KURUM_ID'Yİ KORU!
       departman_id: kurum.DEPARTMAN_ID || '',
       departmanlar: kurum.DEPARTMAN_ADI || '',
       birim_id: kurum.BIRIM_ID || '',
