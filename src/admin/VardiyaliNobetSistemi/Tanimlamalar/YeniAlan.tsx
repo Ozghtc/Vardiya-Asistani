@@ -238,6 +238,19 @@ const handleSaveToDatabase = async () => {
     // Yeni alan ID'si oluştur
     const existingAlanlar = await getTableData('72', `kurum_id=${user?.kurum_id}&departman_id=${user?.departman_id}&birim_id=${user?.birim_id}`);
     const alanArray = Array.isArray(existingAlanlar) ? existingAlanlar : [];
+    
+    // ÇİFT KAYIT KONTROLÜ - Alan adı kontrolü (büyük/küçük harf duyarsız)
+    const normalizedNewAlan = area.name.trim().toUpperCase().replace(/İ/g, 'I').replace(/Ğ/g, 'G').replace(/Ü/g, 'U').replace(/Ş/g, 'S').replace(/Ö/g, 'O').replace(/Ç/g, 'C');
+    const isDuplicate = alanArray.some((alan: any) => {
+      const normalizedExisting = (alan.alan_adi || '').toUpperCase().replace(/İ/g, 'I').replace(/Ğ/g, 'G').replace(/Ü/g, 'U').replace(/Ş/g, 'S').replace(/Ö/g, 'O').replace(/Ç/g, 'C');
+      return normalizedExisting === normalizedNewAlan;
+    });
+    
+    if (isDuplicate) {
+      alert(`"${area.name}" alanı zaten mevcut. Aynı alan adı tekrar eklenemez.`);
+      return;
+    }
+    
     const nextSira = alanArray.length + 1;
     
     // DOĞRU FORMAT: kurum_D#_B#_sira (HIYERARSIK_ID_SISTEMI.md uyumlu)

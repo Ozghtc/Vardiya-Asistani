@@ -97,11 +97,6 @@ const VardiyaTanimlama: React.FC = () => {
       return;
     }
     
-    if (shifts.some(shift => shift.vardiya_adi === safeName.trim())) {
-      setError('Bu vardiya adı zaten kullanılmış');
-      return;
-    }
-    
     if (!startHour || !endHour) {
       setError('Başlangıç ve bitiş saatleri gereklidir');
       return;
@@ -112,8 +107,8 @@ const VardiyaTanimlama: React.FC = () => {
     if (end <= start) end = new Date(`2024-01-02 ${endHour}`);
     const toplamSaat = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
 
-    const user = getCurrentUser();
-    if (!user) {
+    const currentUser = getCurrentUser();
+    if (!currentUser) {
       setError('Kullanıcı bilgisi bulunamadı');
       return;
     }
@@ -121,9 +116,22 @@ const VardiyaTanimlama: React.FC = () => {
     try {
       setLoading(true);
       
-      // Yeni vardiya ID'si oluştur
+      // Mevcut vardiyaları kontrol et
       const existingVardiyalar = await getTableData('71', `kurum_id=${currentUser.kurum_id}&departman_id=${currentUser.departman_id}&birim_id=${currentUser.birim_id}`);
       const vardiyaArray = Array.isArray(existingVardiyalar) ? existingVardiyalar : [];
+      
+      // ÇİFT KAYIT KONTROLÜ - Vardiya adı kontrolü (büyük/küçük harf duyarsız)
+      const normalizedNewVardiya = safeName.trim().toUpperCase().replace(/İ/g, 'I').replace(/Ğ/g, 'G').replace(/Ü/g, 'U').replace(/Ş/g, 'S').replace(/Ö/g, 'O').replace(/Ç/g, 'C');
+      const isDuplicate = vardiyaArray.some((vardiya: any) => {
+        const normalizedExisting = (vardiya.vardiya_adi || '').toUpperCase().replace(/İ/g, 'I').replace(/Ğ/g, 'G').replace(/Ü/g, 'U').replace(/Ş/g, 'S').replace(/Ö/g, 'O').replace(/Ç/g, 'C');
+        return normalizedExisting === normalizedNewVardiya;
+      });
+      
+      if (isDuplicate) {
+        setError(`"${safeName}" vardiyası zaten mevcut. Aynı vardiya adı tekrar eklenemez.`);
+        return;
+      }
+      
       const nextSira = vardiyaArray.length + 1;
       
       // DOĞRU FORMAT: kurum_D#_B#_sira (HIYERARSIK_ID_SISTEMI.md uyumlu)

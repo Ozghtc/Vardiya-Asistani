@@ -115,8 +115,9 @@ const UnvanTanimlama: React.FC = () => {
       setError('Ünvan adı gereklidir');
       return;
     }
+
     if (!user?.kurum_id || !user?.departman_id || !user?.birim_id) {
-      setError('Kurum, departman ve birim seçili değil!');
+      setError('Kullanıcı bilgisi bulunamadı');
       return;
     }
 
@@ -124,6 +125,19 @@ const UnvanTanimlama: React.FC = () => {
       // Yeni ünvan ID'si oluştur
       const existingUnvanlar = await getTableData('69', `kurum_id=${user.kurum_id}&departman_id=${user.departman_id}&birim_id=${user.birim_id}`);
       const unvanArray = Array.isArray(existingUnvanlar) ? existingUnvanlar : [];
+      
+      // ÇİFT KAYIT KONTROLÜ - Büyük/küçük harf duyarsız
+      const normalizedNewUnvan = yeniUnvan.trim().toUpperCase().replace(/İ/g, 'I').replace(/Ğ/g, 'G').replace(/Ü/g, 'U').replace(/Ş/g, 'S').replace(/Ö/g, 'O').replace(/Ç/g, 'C');
+      const isDuplicate = unvanArray.some((unvan: any) => {
+        const normalizedExisting = (unvan.unvan_adi || '').toUpperCase().replace(/İ/g, 'I').replace(/Ğ/g, 'G').replace(/Ü/g, 'U').replace(/Ş/g, 'S').replace(/Ö/g, 'O').replace(/Ç/g, 'C');
+        return normalizedExisting === normalizedNewUnvan;
+      });
+      
+      if (isDuplicate) {
+        setError(`"${yeniUnvan}" ünvanı zaten mevcut. Aynı ünvan tekrar eklenemez.`);
+        return;
+      }
+      
       const nextSira = unvanArray.length + 1;
       
       // DOĞRU FORMAT: kurum_D#_B#_sira (HIYERARSIK_ID_SISTEMI.md uyumlu)
@@ -207,6 +221,28 @@ const UnvanTanimlama: React.FC = () => {
     // Yeni mesai ID'si oluştur
     const existingMesaiTurleri = await getTableData('73', `kurum_id=${user.kurum_id}&departman_id=${user.departman_id}&birim_id=${user.birim_id}`);
     const mesaiArray = Array.isArray(existingMesaiTurleri) ? existingMesaiTurleri : [];
+    
+    // ÇİFT KAYIT KONTROLÜ - Mesai adı ve saati kontrolü
+    const normalizedNewMesai = mesaiAdi.trim().toUpperCase().replace(/İ/g, 'I').replace(/Ğ/g, 'G').replace(/Ü/g, 'U').replace(/Ş/g, 'S').replace(/Ö/g, 'O').replace(/Ç/g, 'C');
+    const isDuplicateName = mesaiArray.some((mesai: any) => {
+      const normalizedExisting = (mesai.mesai_adi || '').toUpperCase().replace(/İ/g, 'I').replace(/Ğ/g, 'G').replace(/Ü/g, 'U').replace(/Ş/g, 'S').replace(/Ö/g, 'O').replace(/Ç/g, 'C');
+      return normalizedExisting === normalizedNewMesai;
+    });
+    
+    const isDuplicateHour = mesaiArray.some((mesai: any) => {
+      return parseInt(mesai.mesai_saati) === parseInt(mesaiSaati.toString());
+    });
+    
+    if (isDuplicateName) {
+      showErrorToast(`"${mesaiAdi}" mesai türü zaten mevcut. Aynı mesai türü tekrar eklenemez.`);
+      return;
+    }
+    
+    if (isDuplicateHour) {
+      showErrorToast(`${mesaiSaati} saatlik mesai türü zaten mevcut. Aynı mesai saati tekrar eklenemez.`);
+      return;
+    }
+    
     const nextSira = mesaiArray.length + 1;
     
     // DOĞRU FORMAT: kurum_D#_B#_sira (HIYERARSIK_ID_SISTEMI.md uyumlu)

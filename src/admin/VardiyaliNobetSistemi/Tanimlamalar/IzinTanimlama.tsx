@@ -86,6 +86,31 @@ const IzinTanimlama: React.FC = () => {
       // Yeni izin ID'si oluştur
       const existingIzinler = await getTableData('70', `kurum_id=${kurum_id}&departman_id=${departman_id}&birim_id=${birim_id}`);
       const izinArray = Array.isArray(existingIzinler) ? existingIzinler : [];
+      
+      // ÇİFT KAYIT KONTROLÜ - İzin adı ve kısaltma kontrolü (büyük/küçük harf duyarsız)
+      const normalizedNewIzin = izinAdi.trim().toUpperCase().replace(/İ/g, 'I').replace(/Ğ/g, 'G').replace(/Ü/g, 'U').replace(/Ş/g, 'S').replace(/Ö/g, 'O').replace(/Ç/g, 'C');
+      const normalizedNewKisaltma = kisaltma.trim().toUpperCase().replace(/İ/g, 'I').replace(/Ğ/g, 'G').replace(/Ü/g, 'U').replace(/Ş/g, 'S').replace(/Ö/g, 'O').replace(/Ç/g, 'C');
+      
+      const isDuplicateName = izinArray.some((izin: any) => {
+        const normalizedExisting = (izin.izin_turu || '').toUpperCase().replace(/İ/g, 'I').replace(/Ğ/g, 'G').replace(/Ü/g, 'U').replace(/Ş/g, 'S').replace(/Ö/g, 'O').replace(/Ç/g, 'C');
+        return normalizedExisting === normalizedNewIzin;
+      });
+      
+      const isDuplicateKisaltma = izinArray.some((izin: any) => {
+        const normalizedExisting = (izin.kisaltma || '').toUpperCase().replace(/İ/g, 'I').replace(/Ğ/g, 'G').replace(/Ü/g, 'U').replace(/Ş/g, 'S').replace(/Ö/g, 'O').replace(/Ç/g, 'C');
+        return normalizedExisting === normalizedNewKisaltma;
+      });
+      
+      if (isDuplicateName) {
+        setErrorMsg(`"${izinAdi}" izin türü zaten mevcut. Aynı izin türü tekrar eklenemez.`);
+        return;
+      }
+      
+      if (isDuplicateKisaltma) {
+        setErrorMsg(`"${kisaltma}" kısaltması zaten kullanılıyor. Farklı bir kısaltma seçin.`);
+        return;
+      }
+      
       const nextSira = izinArray.length + 1;
       
       // DOĞRU FORMAT: kurum_D#_B#_sira (HIYERARSIK_ID_SISTEMI.md uyumlu)
