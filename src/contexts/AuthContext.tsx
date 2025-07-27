@@ -66,18 +66,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (!userData || userData.rol === 'admin') {
       return {
         ...userData,
-        name: cleanUserName(userData.name || ''), // Admin için de temizle
-        kurum_adi: 'Sistem',
-        departman_adi: 'Yönetim',
-        birim_adi: 'Sistem',
+        name: cleanUserName(userData.name || ''),
+        kurum_adi: 'Bilinmiyor',
+        departman_adi: 'Bilinmiyor', 
+        birim_adi: 'Bilinmiyor',
         lastActivity: new Date().toISOString(),
         loginTime: new Date().toISOString()
       };
     }
     
-    let kurum_adi = 'Sistem';
-    let departman_adi = 'Yönetim';
-    let birim_adi = 'Sistem';
+    let kurum_adi = 'Bilinmiyor';
+    let departman_adi = 'Bilinmiyor';
+    let birim_adi = 'Bilinmiyor';
 
     try {
       const kurumlar = await getKurumlar();

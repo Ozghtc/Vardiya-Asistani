@@ -137,15 +137,15 @@ const VardiyaliNobet: React.FC = () => {
               <div className="flex items-center gap-6 text-sm text-gray-600">
                 <div className="flex items-center gap-2">
                   <Building2 className="w-4 h-4 text-blue-600" />
-                  <span className="font-medium">{currentUser.kurum_adi || 'Sistem'}</span>
+                  <span className="font-medium">{currentUser.kurum_adi || 'Bilinmiyor'}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <UserCircle className="w-4 h-4 text-purple-600" />
-                  <span>{currentUser.rol || 'Yönetici'} - {currentUser.departman_adi || 'Sistem'}</span>
+                  <span>{currentUser.rol || 'Bilinmiyor'} - {currentUser.departman_adi || 'Bilinmiyor'}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <MapPin className="w-4 h-4 text-green-600" />
-                  <span>{currentUser.birim_adi || 'Sistem'}</span>
+                  <span>{currentUser.birim_adi || 'Bilinmiyor'}</span>
                 </div>
               </div>
             </div>
