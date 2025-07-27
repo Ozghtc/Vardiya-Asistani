@@ -64,31 +64,31 @@ export const useAuth = () => {
     if (!user || user.rol === 'admin') {
       return {
         ...user,
-        name: cleanUserName(user.name || ''), // Admin için de temizle
-        kurum_adi: 'Sistem',
-        departman_adi: 'Yönetim',
-        birim_adi: 'Sistem',
+        name: cleanUserName(user.name || ''),
+        kurum_adi: 'Bilinmiyor',
+        departman_adi: 'Bilinmiyor',
+        birim_adi: 'Bilinmiyor',
         lastActivity: new Date().toISOString(),
         loginTime: new Date().toISOString()
       };
     }
     
-    let kurum_adi = 'Sistem';
-    let departman_adi = 'Yönetim';
-    let birim_adi = 'Sistem';
+    let kurum_adi = 'Bilinmiyor';
+    let departman_adi = 'Bilinmiyor';
+    let birim_adi = 'Bilinmiyor';
 
     try {
       const kurumlar = await getKurumlar();
       
       if (user.kurum_id && kurumlar.length > 0) {
         const kurum = kurumlar.find((k: any) => 
-          k.id === user.kurum_id || 
-          k.id === String(user.kurum_id) || 
-          String(k.id) === String(user.kurum_id)
+          k.kurum_id === user.kurum_id || 
+          k.kurum_id === String(user.kurum_id) || 
+          String(k.kurum_id) === String(user.kurum_id)
         );
         
         if (kurum) {
-          kurum_adi = kurum.kurum_adi || 'Sistem';
+          kurum_adi = kurum.kurum_adi || 'Bilinmiyor';
           
           // Departman bilgisi
           if (kurum.departmanlar && user.departman_id) {
@@ -96,12 +96,12 @@ export const useAuth = () => {
               if (typeof kurum.departmanlar === 'string' && kurum.departmanlar.startsWith('[')) {
                 const departmanlar = JSON.parse(kurum.departmanlar);
                 const departman = departmanlar.find((d: any) => d.id === user.departman_id);
-                departman_adi = departman?.departman_adi || 'Yönetim';
+                departman_adi = departman?.departman_adi || 'Bilinmiyor';
               } else {
-                departman_adi = kurum.departmanlar.split(',')[0]?.trim() || 'Yönetim';
+                departman_adi = kurum.departmanlar.split(',')[0]?.trim() || 'Bilinmiyor';
               }
             } catch (e) {
-              departman_adi = 'Yönetim';
+              departman_adi = 'Bilinmiyor';
             }
           }
           
@@ -111,12 +111,12 @@ export const useAuth = () => {
               if (typeof kurum.birimler === 'string' && kurum.birimler.startsWith('[')) {
                 const birimler = JSON.parse(kurum.birimler);
                 const birim = birimler.find((b: any) => b.id === user.birim_id);
-                birim_adi = birim?.birim_adi || 'Sistem';
+                birim_adi = birim?.birim_adi || 'Bilinmiyor';
               } else {
-                birim_adi = kurum.birimler.split(',')[0]?.trim() || 'Sistem';
+                birim_adi = kurum.birimler.split(',')[0]?.trim() || 'Bilinmiyor';
               }
             } catch (e) {
-              birim_adi = 'Sistem';
+              birim_adi = 'Bilinmiyor';
             }
           }
         }
