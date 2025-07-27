@@ -7,27 +7,6 @@ import { useAuthContext } from '../../contexts/AuthContext';
 // Bölüm 4: Authentication Logic
 // 150 satır - KURAL 9 uyumlu
 
-// Hiyerarşik ID'yi kullanıcı adından temizle
-const cleanUserName = (userName: string): string => {
-  // HIYERARSIK_ID_SISTEMI.md formatı: {kurum_id}_D{departman_sira}_B{birim_sira}_{Y/P}{kullanici_sira}_{isim}
-  // Örnek: "01_D1_B1_P1_HATİCE ALTINTAŞ" -> "HATİCE ALTINTAŞ"
-  
-  if (!userName) return userName;
-  
-  // Underscore ile ayrılmış parçaları al
-  const parts = userName.split('_');
-  
-  // HIYERARSIK format kontrolü: kurum_D#_B#_Y#/P#_isim_soyisim (6 parça)
-  if (parts.length >= 6) {
-    // Son 2 parçayı al (ad ve soyad)
-    const nameParts = parts.slice(-2);
-    return nameParts.join(' ');
-  }
-  
-  // Eğer hiyerarşik ID formatında değilse, orijinal ismi döndür
-  return userName;
-};
-
 export const useAuth = () => {
   const navigate = useNavigate();
   const { login: contextLogin } = useAuthContext();
@@ -64,7 +43,7 @@ export const useAuth = () => {
     if (!user || user.rol === 'admin') {
       return {
         ...user,
-        name: cleanUserName(user.name || ''),
+        name: user.name || 'Bilinmiyor',
         kurum_adi: 'Bilinmiyor',
         departman_adi: 'Bilinmiyor',
         birim_adi: 'Bilinmiyor',
@@ -127,7 +106,7 @@ export const useAuth = () => {
     
     return {
       ...user,
-      name: cleanUserName(user.name || ''), // Kullanıcı adını temizle
+      name: user.name || 'Bilinmiyor', // Kullanıcı adını temizle
       kurum_adi,
       departman_adi,
       birim_adi,
@@ -281,7 +260,7 @@ export const useAuth = () => {
           ...userData,
           id: userResult.data?.row?.id || Date.now().toString(),
           rol: rol as 'admin' | 'yonetici' | 'personel',
-          name: cleanUserName(userData.name),
+          name: userData.name,
           kurum_adi: organization,
           departman_adi: 'Genel Müdürlük',
           birim_adi: 'Yönetim',

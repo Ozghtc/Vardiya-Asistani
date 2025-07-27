@@ -25,37 +25,12 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
-// Hiyerarşik ID'yi kullanıcı adından temizle
-const cleanUserName = (userName: string): string => {
-  // HIYERARSIK_ID_SISTEMI.md formatı: {kurum_id}_D{departman_sira}_B{birim_sira}_{Y/P}{kullanici_sira}_{isim}
-  // Örnek: "01_D1_B1_P1_HATİCE ALTINTAŞ" -> "HATİCE ALTINTAŞ"
-  
-  if (!userName) return userName;
-  
-  // Underscore ile ayrılmış parçaları al
-  const parts = userName.split('_');
-  
-  // HIYERARSIK format kontrolü: kurum_D#_B#_Y#/P#_isim_soyisim (6 parça)
-  if (parts.length >= 6) {
-    // Son 2 parçayı al (ad ve soyad)
-    const nameParts = parts.slice(-2);
-    return nameParts.join(' ');
-  }
-  
-  // Eğer hiyerarşik ID formatında değilse, orijinal ismi döndür
-  return userName;
-};
-
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<EnrichedUser | null>(null);
 
   const login = useCallback((userData: EnrichedUser) => {
-    // Kullanıcı adını temizle
-    const cleanedUserData = {
-      ...userData,
-      name: cleanUserName(userData.name || '')
-    };
-    setUser(cleanedUserData);
+    // Kullanıcı adını olduğu gibi kullan - artık ID temizlemeye gerek yok
+    setUser(userData);
   }, []);
 
   const logout = useCallback(() => {
@@ -66,7 +41,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (!userData || userData.rol === 'admin') {
       return {
         ...userData,
-        name: cleanUserName(userData.name || ''),
+        name: userData.name || 'Bilinmiyor',
         kurum_adi: 'Bilinmiyor',
         departman_adi: 'Bilinmiyor', 
         birim_adi: 'Bilinmiyor',
@@ -129,7 +104,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     return {
       ...userData,
-      name: cleanUserName(userData.name || ''), // Kullanıcı adını temizle
+      name: userData.name || 'Bilinmiyor', // Kullanıcı adını temizle
       kurum_adi,
       departman_adi,
       birim_adi,
