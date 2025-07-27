@@ -123,8 +123,11 @@ const VardiyaTanimlama: React.FC = () => {
       
       // Yeni vardiya ID'si oluştur
       const existingVardiyalar = await getTableData('71', `kurum_id=${user.kurum_id}&departman_id=${user.departman_id}&birim_id=${user.birim_id}`);
-      const nextSira = existingVardiyalar.length + 1;
-      const vardiyaId = `${user.kurum_id}_${user.departman_id.split('_')[1]}_${user.birim_id.split('_')[2]}_${nextSira}`;
+      const vardiyaArray = Array.isArray(existingVardiyalar) ? existingVardiyalar : [];
+      const nextSira = vardiyaArray.length + 1;
+      
+      // DOĞRU FORMAT: kurum_id + departman_id + birim_id + sira (HIYERARSIK_ID_SISTEMI.md uyumlu)
+      const vardiyaId = `${user.kurum_id}_${user.departman_id}_${user.birim_id}_${nextSira}`;
 
       const newShift = {
         vardiya_id: vardiyaId,

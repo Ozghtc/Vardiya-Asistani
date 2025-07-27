@@ -4,6 +4,7 @@ import { useCapitalization } from '../../../hooks/useCapitalization';
 import { useAuthContext } from '../../../contexts/AuthContext';
 import { useToast } from '../../../components/ui/ToastContainer';
 import { clearAllCache, clearTableCache } from '../../../lib/api';
+import { getTableData } from '../../../lib/api';
 
 const colorMap = {
   '#DC2626': 'Kırmızı',
@@ -235,22 +236,12 @@ const handleSaveToDatabase = async () => {
     const area = areas[areas.length - 1];
     
     // Yeni alan ID'si oluştur
-    const existingAlanlar = await fetch('/.netlify/functions/api-proxy', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        path: '/api/v1/data/table/72',
-        method: 'GET',
-        apiKey: 'hzm_1ce98c92189d4a109cd604b22bfd86b7'
-      })
-    });
+    const existingAlanlar = await getTableData('72', `kurum_id=${user?.kurum_id}&departman_id=${user?.departman_id}&birim_id=${user?.birim_id}`);
+    const alanArray = Array.isArray(existingAlanlar) ? existingAlanlar : [];
+    const nextSira = alanArray.length + 1;
     
-    const existingData = await existingAlanlar.json();
-    const existingCount = existingData.data?.rows?.length || 0;
-    const nextSira = existingCount + 1;
-    const alanId = `${user?.kurum_id}_${user?.departman_id?.split('_')[1]}_${user?.birim_id?.split('_')[2]}_${nextSira}`;
+    // DOĞRU FORMAT: kurum_id + departman_id + birim_id + sira (HIYERARSIK_ID_SISTEMI.md uyumlu)
+    const alanId = `${user?.kurum_id}_${user?.departman_id}_${user?.birim_id}_${nextSira}`;
     
     const data = {
       alan_id: alanId,
