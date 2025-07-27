@@ -232,6 +232,29 @@ const handleSaveToDatabase = async () => {
   setIsProcessing(true);
   
   try {
+    // API çağrısı geçici olarak devre dışı
+    console.log('API çağrısı geçici olarak devre dışı - Yeni alan kaydetme');
+    
+    // Toast notification göster
+    showToast({
+      type: 'info',
+      title: 'API Devre Dışı',
+      message: 'API bağlantıları geçici olarak devre dışı. Tablolar oluşturulduktan sonra aktif edilecek.',
+      duration: 4000
+    });
+    
+    // Sayfayı eski haline döndür
+    setAreas([]);
+    setShowShiftSettings(false);
+    setShowShiftAddition(false);
+    setSelectedDays(weekDays.map(day => day.value));
+    setDayHours(weekDays.reduce((acc, day) => ({ ...acc, [day.value]: 40 }), {}));
+    setDailyWorkHours(40);
+    setSelectedShiftDays([]);
+    setSelectedShift(vardiyalar[0].name);
+    
+    return;
+
     const area = areas[areas.length - 1];
     
     const data = {

@@ -105,6 +105,12 @@ const VardiyaTanimlama: React.FC = () => {
 
     try {
       setLoading(true);
+      
+      // API çağrısı geçici olarak devre dışı
+      console.log('API çağrısı geçici olarak devre dışı - Vardiya silme');
+      setError('API bağlantıları geçici olarak devre dışı. Tablolar oluşturulduktan sonra aktif edilecek.');
+      return;
+
       const response = await apiRequest(`/api/v1/data/table/17/rows/${id}`, {
         method: 'DELETE',
       });
@@ -129,6 +135,11 @@ const VardiyaTanimlama: React.FC = () => {
   };
 
   const handleQuickAdd = async (shiftName: string, startHour: string, endHour: string) => {
+    // API çağrısı geçici olarak devre dışı
+    console.log('API çağrısı geçici olarak devre dışı - Hızlı vardiya ekleme');
+    setError('API bağlantıları geçici olarak devre dışı. Tablolar oluşturulduktan sonra aktif edilecek.');
+    return;
+
     if (shifts.some(shift => shift.vardiya_adi === shiftName)) {
       setError(`${shiftName} vardiyası zaten tanımlı`);
       setTimeout(() => setError(''), 2000);
