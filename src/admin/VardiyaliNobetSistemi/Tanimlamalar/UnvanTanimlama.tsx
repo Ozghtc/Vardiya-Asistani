@@ -54,7 +54,9 @@ const UnvanTanimlama: React.FC = () => {
       const data = await getTableData('73', filterParams, true); // Force fresh
       
       console.log('📋 Fresh mesai türleri:', data);
-      setKaydedilenMesaiTurleri(data);
+      // Veriyi array olarak garanti et
+      const mesaiArray = Array.isArray(data) ? data : [];
+      setKaydedilenMesaiTurleri(mesaiArray);
     } catch (error) {
       console.error('Mesai türleri yüklenirken hata:', error);
       // Tablo yoksa boş array set et, hata verme
@@ -83,7 +85,9 @@ const UnvanTanimlama: React.FC = () => {
           const data = await getTableData('69', filterParams);
           
           console.log('📦 Ünvanlar yüklendi:', data);
-          setUnvanlar(data);
+          // Veriyi array olarak garanti et
+          const unvanArray = Array.isArray(data) ? data : [];
+          setUnvanlar(unvanArray);
         } catch (error) {
           console.error('🚨 Ünvanlar yüklenemedi:', error);
           // Tablo yoksa boş array set et ve bilgilendirici mesaj göster

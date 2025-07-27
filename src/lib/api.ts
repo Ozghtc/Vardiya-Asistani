@@ -581,6 +581,107 @@ export const cascadeDeleteKurum = async (kurumId: string): Promise<any> => {
   }
 };
 
+// GELECEK İÇİN: Otomatik CASCADE DELETE sistemi
+// Tüm tabloları tarayıp kurum_id field'ı olanları bulur
+export const getTablesWithKurumId = async (): Promise<string[]> => {
+  try {
+    // Tüm tabloları listele
+    const response = await apiRequest('/api/v1/tables/project/5', {
+      method: 'GET'
+    });
+    
+    if (response.success && response.data?.tables) {
+      const tablesWithKurumId: string[] = [];
+      
+      for (const table of response.data.tables) {
+        // Her tablonun field'larını kontrol et
+        if (table.fields) {
+          const hasKurumId = table.fields.some((field: any) => 
+            field.name === 'kurum_id'
+          );
+          
+          if (hasKurumId) {
+            tablesWithKurumId.push(table.id.toString());
+            console.log(`📋 Kurum ID'li tablo bulundu: ${table.name} (ID: ${table.id})`);
+          }
+        }
+      }
+      
+      return tablesWithKurumId;
+    }
+    
+    return [];
+  } catch (error) {
+    console.error('❌ Tablo tarama hatası:', error);
+    return [];
+  }
+};
+
+// GELİŞTİRİLMİŞ CASCADE DELETE - Otomatik tablo bulma
+export const smartCascadeDeleteKurum = async (kurumId: string): Promise<any> => {
+  try {
+    console.log('🤖 SMART CASCADE DELETE başlatılıyor - Kurum ID:', kurumId);
+    
+    // Otomatik olarak kurum_id field'ı olan tüm tabloları bul
+    const tablesWithKurumId = await getTablesWithKurumId();
+    console.log(`📊 Toplam ${tablesWithKurumId.length} tablo bulundu`);
+    
+    // Kurum tablosunu hariç tut (30)
+    const tablesToDelete = tablesWithKurumId.filter(id => id !== '30');
+    
+    // Tüm tabloları temizle
+    for (const tableId of tablesToDelete) {
+      try {
+        const data = await getTableData(tableId, `kurum_id=${kurumId}`);
+        console.log(`📋 Tablo ${tableId}: ${data.length} kayıt bulundu`);
+        
+        for (const kayit of data) {
+          await apiRequest(`/api/v1/data/table/${tableId}/rows/${kayit.id}`, {
+            method: 'DELETE'
+          });
+          console.log(`✅ Tablo ${tableId} kaydı silindi: ${kayit.id}`);
+        }
+      } catch (error) {
+        console.error(`❌ Tablo ${tableId} silme hatası:`, error);
+      }
+    }
+    
+    // Son olarak kurumu sil
+    try {
+      const kurumlar = await getTableData('30', `kurum_id=${kurumId}`);
+      if (kurumlar.length > 0) {
+        const kurum = kurumlar[0];
+        await apiRequest(`/api/v1/data/table/30/rows/${kurum.id}`, {
+          method: 'DELETE'
+        });
+        console.log(`✅ Kurum silindi: ${kurum.id}`);
+      }
+    } catch (error) {
+      console.error('❌ Kurum silme hatası:', error);
+    }
+    
+    // Tüm cache'leri temizle
+    clearAllCache();
+    tablesWithKurumId.forEach(tableId => {
+      clearTableCache(tableId);
+    });
+    
+    console.log('🎉 SMART CASCADE DELETE tamamlandı!');
+    
+    return {
+      success: true,
+      message: `Kurum ve ${tablesToDelete.length} tablodaki ilgili veriler silindi`
+    };
+    
+  } catch (error) {
+    console.error('❌ SMART CASCADE DELETE hatası:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Bilinmeyen hata'
+    };
+  }
+};
+
 // ================================
 // HİYERARŞİK ID GENERATOR FONKSİYONLARI
 // ================================

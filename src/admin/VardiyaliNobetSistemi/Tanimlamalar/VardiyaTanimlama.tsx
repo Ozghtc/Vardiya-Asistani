@@ -58,7 +58,9 @@ const VardiyaTanimlama: React.FC = () => {
       const filterParams = `kurum_id=${currentUser.kurum_id}&departman_id=${currentUser.departman_id}&birim_id=${currentUser.birim_id}`;
       const data = await getTableData('71', filterParams);
       
-      const shiftData = data.map((row: any) => ({
+      // Veriyi array olarak garanti et
+      const dataArray = Array.isArray(data) ? data : [];
+      const shiftData = dataArray.map((row: any) => ({
         id: row.id,
         vardiya_adi: row.vardiya_adi,
         baslangic_saati: row.baslangic_saati,

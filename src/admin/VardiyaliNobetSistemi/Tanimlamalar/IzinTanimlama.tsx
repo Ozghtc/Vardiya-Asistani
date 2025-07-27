@@ -57,7 +57,9 @@ const IzinTanimlama: React.FC = () => {
           // YENİ TABLO ID: 70
           const filterParams = `kurum_id=${kurum_id}&departman_id=${departman_id}&birim_id=${birim_id}`;
           const data = await getTableData('70', filterParams);
-          setPersonnelRequests(data);
+          // Veriyi array olarak garanti et
+          const izinArray = Array.isArray(data) ? data : [];
+          setPersonnelRequests(izinArray);
         } catch (error) {
           console.error('İzin istekleri yüklenemedi:', error);
           // Tablo yoksa boş array set et, sayfa erişimini engelleme

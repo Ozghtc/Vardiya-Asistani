@@ -310,9 +310,12 @@ const TanimliAlanlar: React.FC = () => {
           rows = result.data;
         }
         
-        if (rows && rows.length > 0) {
+        // Veriyi array olarak garanti et
+        const safeRows = Array.isArray(rows) ? rows : [];
+        
+        if (safeRows && safeRows.length > 0) {
           
-          const apiData = rows
+          const apiData = safeRows
             .filter((row: any) => {
               return row.kurum_id === currentUser.kurum_id && 
                      row.departman_id === currentUser.departman_id && 
