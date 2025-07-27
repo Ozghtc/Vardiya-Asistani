@@ -85,8 +85,13 @@ const IzinTanimlama: React.FC = () => {
     try {
       // Yeni izin ID'si oluştur
       const existingIzinler = await getTableData('70', `kurum_id=${kurum_id}&departman_id=${departman_id}&birim_id=${birim_id}`);
-      const nextSira = existingIzinler.length + 1;
-      const izinId = `${kurum_id}_${departman_id.split('_')[1]}_${birim_id.split('_')[2]}_${nextSira}`;
+      const izinArray = Array.isArray(existingIzinler) ? existingIzinler : [];
+      const nextSira = izinArray.length + 1;
+      
+      // Doğru format: kurum_departman_birim_sira
+      const departmanAdi = departman_id.split('_')[1] || 'BILINMIYOR';
+      const birimAdi = birim_id.split('_')[1] || 'BILINMIYOR';
+      const izinId = `${kurum_id}_${departmanAdi}_${birimAdi}_${nextSira}`;
 
       const newIzinIstek = {
         izin_id: izinId,

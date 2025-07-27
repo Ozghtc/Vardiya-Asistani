@@ -261,9 +261,9 @@ const handleSaveToDatabase = async () => {
       aktif_gunler: JSON.stringify(area.activeDays),
       vardiyalar: JSON.stringify(area.shifts),
       kullanici_id: user?.id || 1,
-      kurum_id: user?.kurum_id || "6",
-      departman_id: user?.departman_id || "6_ACİL SERVİS",
-      birim_id: user?.birim_id || "6_HEMSİRE"
+      kurum_id: user?.kurum_id,
+      departman_id: user?.departman_id,
+      birim_id: user?.birim_id
     };
 
     // YENİ TABLO ID: 72

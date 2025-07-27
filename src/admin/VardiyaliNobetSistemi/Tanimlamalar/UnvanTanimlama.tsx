@@ -123,8 +123,13 @@ const UnvanTanimlama: React.FC = () => {
     try {
       // Yeni ünvan ID'si oluştur
       const existingUnvanlar = await getTableData('69', `kurum_id=${user.kurum_id}&departman_id=${user.departman_id}&birim_id=${user.birim_id}`);
-      const nextSira = existingUnvanlar.length + 1;
-      const unvanId = `${user.kurum_id}_${user.departman_id.split('_')[1]}_${user.birim_id.split('_')[2]}_${nextSira}`;
+      const unvanArray = Array.isArray(existingUnvanlar) ? existingUnvanlar : [];
+      const nextSira = unvanArray.length + 1;
+      
+      // Doğru format: kurum_departman_birim_sira
+      const departmanAdi = user.departman_id.split('_')[1] || 'BILINMIYOR';
+      const birimAdi = user.birim_id.split('_')[1] || 'BILINMIYOR';
+      const unvanId = `${user.kurum_id}_${departmanAdi}_${birimAdi}_${nextSira}`;
 
       const newUnvan = {
         unvan_id: unvanId,
@@ -201,8 +206,11 @@ const UnvanTanimlama: React.FC = () => {
 
     // Yeni mesai ID'si oluştur
     const existingMesaiTurleri = await getTableData('73', `kurum_id=${user.kurum_id}&departman_id=${user.departman_id}&birim_id=${user.birim_id}`);
-    const nextSira = existingMesaiTurleri.length + 1;
-    const mesaiId = `${user.kurum_id}_${user.departman_id.split('_')[1]}_${user.birim_id.split('_')[2]}_${nextSira}`;
+    const mesaiArray = Array.isArray(existingMesaiTurleri) ? existingMesaiTurleri : [];
+    const nextSira = mesaiArray.length + 1;
+    
+    // DOĞRU FORMAT: kurum_id + departman_id + birim_id + sira
+    const mesaiId = `${user.kurum_id}_${user.departman_id}_${user.birim_id}_${nextSira}`;
 
     const mesaiData = {
       mesai_id: mesaiId,
