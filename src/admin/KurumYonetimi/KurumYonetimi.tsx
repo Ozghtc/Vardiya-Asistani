@@ -11,7 +11,8 @@ import {
   deleteKurum,
   clearAllCache,
   clearTableCache,
-  apiRequest
+  apiRequest,
+  cascadeDeleteKurum
 } from '../../lib/api';
 
 // Types
@@ -328,15 +329,30 @@ const KurumYonetimi = () => {
   const confirmDelete = async () => {
     if (showDeleteModal && showDeleteModal.confirmText === showDeleteModal.kurum.kurum_adi) {
       try {
-        await deleteKurum(showDeleteModal.kurum.id);
-        setKurumlar(prev => prev.filter(k => k.id !== showDeleteModal.kurum.id));
-        // Remove related departmanlar
-        setDepartmanBirimler(prev => prev.filter(d => d.kurum_id !== showDeleteModal.kurum.id));
-        setShowDeleteModal(null);
-        setSelectedKurum(null);
-        setSuccessMsg('Kurum başarıyla silindi!');
+        console.log('🗑️ CASCADE DELETE başlatılıyor - Kurum ID:', showDeleteModal.kurum.kurum_id);
+        
+        // CASCADE DELETE fonksiyonunu kullan
+        const result = await cascadeDeleteKurum(showDeleteModal.kurum.kurum_id);
+        
+        if (result.success) {
+          setKurumlar(prev => prev.filter(k => k.id !== showDeleteModal.kurum.id));
+          // Remove related departmanlar
+          setDepartmanBirimler(prev => prev.filter(d => d.kurum_id !== showDeleteModal.kurum.id));
+          setShowDeleteModal(null);
+          setSelectedKurum(null);
+          setSuccessMsg('✅ Kurum ve ona bağlı tüm veriler başarıyla silindi!');
+          
+          // Cache temizle
+          clearAllCache();
+          ['30', '33', '34', '35', '69', '70', '71', '72', '73'].forEach(tableId => {
+            clearTableCache(tableId);
+          });
+        } else {
+          setErrorMsg('❌ ' + (result.error || 'Kurum silinirken hata oluştu'));
+        }
       } catch (error: any) {
-        setErrorMsg('Kurum silinirken hata oluştu: ' + error.message);
+        console.error('❌ CASCADE DELETE hatası:', error);
+        setErrorMsg('❌ Kurum silinirken hata oluştu: ' + error.message);
       }
     }
   };

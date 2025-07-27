@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { List, Plus, Trash2, Pencil, X, Check, Eye, EyeOff } from 'lucide-react';
 import { getKurumlar, updateKurum, deleteKurum } from '../../lib/api';
-import { clearTableCache, clearAllCache } from '../../lib/api';
+import { clearTableCache, clearAllCache, cascadeDeleteKurum } from '../../lib/api';
 
 const Kurumlar = () => {
   const [kurumlar, setKurumlar] = useState<any[]>([]);
@@ -48,28 +48,40 @@ const Kurumlar = () => {
     }
   };
 
-  // Kurum silme fonksiyonu
+  // Kurum silme fonksiyonu - CASCADE DELETE ile
   const handleKurumSil = async (kurumId: string) => {
     setOperationLoading(kurumId);
     try {
-      const result = await deleteKurum(kurumId);
+      console.log('🗑️ CASCADE DELETE başlatılıyor - Kurum ID:', kurumId);
+      
+      // Önce kuruma ait kurum_id'yi bul
+      const kurum = kurumlar.find(k => k.id === kurumId);
+      if (!kurum) {
+        setErrorMsg('Kurum bulunamadı');
+        return;
+      }
+      
+      // CASCADE DELETE fonksiyonunu kullan
+      const result = await cascadeDeleteKurum(kurum.kurum_id);
+      
       if (result.success) {
         setKurumlar(prev => prev.filter(k => k.id !== kurumId));
         setShowDeleteModal(null);
         setDeleteConfirmInput('');
-        setSuccessMsg('Kurum başarıyla silindi!');
+        setSuccessMsg('✅ Kurum ve ona bağlı tüm veriler başarıyla silindi!');
         
         // Cache temizle
         clearTableCache('30');
         clearAllCache();
         
-        setTimeout(() => setSuccessMsg(''), 3000);
+        setTimeout(() => setSuccessMsg(''), 5000);
       } else {
-        setErrorMsg(result.message || 'Kurum silinirken hata oluştu');
+        setErrorMsg('❌ ' + (result.error || 'Kurum silinirken hata oluştu'));
         setTimeout(() => setErrorMsg(''), 5000);
       }
     } catch (error: any) {
-      setErrorMsg('Kurum silinirken hata oluştu: ' + error.message);
+      console.error('❌ CASCADE DELETE hatası:', error);
+      setErrorMsg('❌ Kurum silinirken hata oluştu: ' + error.message);
       setTimeout(() => setErrorMsg(''), 5000);
     } finally {
       setOperationLoading(null);

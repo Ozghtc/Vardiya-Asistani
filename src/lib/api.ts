@@ -468,6 +468,119 @@ export const deleteKurum = async (kurumId: string) => {
   }
 };
 
+// CASCADE DELETE: Kurum silindiğinde ona bağlı tüm verileri sil
+export const cascadeDeleteKurum = async (kurumId: string): Promise<any> => {
+  try {
+    console.log('🗑️ CASCADE DELETE başlatılıyor - Kurum ID:', kurumId);
+    
+    // 1. Tanımlamalar tabloları (69, 70, 71, 72, 73)
+    const tanimlamaTablolari = [
+      { id: '69', name: 'personel_unvan_tanimlama' },
+      { id: '70', name: 'izin_istek_tanimlama' },
+      { id: '71', name: 'vardiya_tanimlama' },
+      { id: '72', name: 'tanimli_alanlar' },
+      { id: '73', name: 'mesai_turleri' }
+    ];
+    
+    for (const tablo of tanimlamaTablolari) {
+      try {
+        // Bu kuruma ait kayıtları bul
+        const data = await getTableData(tablo.id, `kurum_id=${kurumId}`);
+        console.log(`📋 ${tablo.name}: ${data.length} kayıt bulundu`);
+        
+        // Her kaydı sil
+        for (const kayit of data) {
+          await apiRequest(`/api/v1/data/table/${tablo.id}/rows/${kayit.id}`, {
+            method: 'DELETE'
+          });
+          console.log(`✅ ${tablo.name} kaydı silindi: ${kayit.id}`);
+        }
+      } catch (error) {
+        console.error(`❌ ${tablo.name} silme hatası:`, error);
+      }
+    }
+    
+    // 2. Kullanıcılar tablosu (33)
+    try {
+      const kullanicilar = await getTableData('33', `kurum_id=${kurumId}`);
+      console.log(`👥 Kullanıcılar: ${kullanicilar.length} kayıt bulundu`);
+      
+      for (const kullanici of kullanicilar) {
+        await apiRequest(`/api/v1/data/table/33/rows/${kullanici.id}`, {
+          method: 'DELETE'
+        });
+        console.log(`✅ Kullanıcı silindi: ${kullanici.id}`);
+      }
+    } catch (error) {
+      console.error('❌ Kullanıcı silme hatası:', error);
+    }
+    
+    // 3. Birimler tablosu (35)
+    try {
+      const birimler = await getTableData('35', `kurum_id=${kurumId}`);
+      console.log(`🏢 Birimler: ${birimler.length} kayıt bulundu`);
+      
+      for (const birim of birimler) {
+        await apiRequest(`/api/v1/data/table/35/rows/${birim.id}`, {
+          method: 'DELETE'
+        });
+        console.log(`✅ Birim silindi: ${birim.id}`);
+      }
+    } catch (error) {
+      console.error('❌ Birim silme hatası:', error);
+    }
+    
+    // 4. Departmanlar tablosu (34)
+    try {
+      const departmanlar = await getTableData('34', `kurum_id=${kurumId}`);
+      console.log(`🏬 Departmanlar: ${departmanlar.length} kayıt bulundu`);
+      
+      for (const departman of departmanlar) {
+        await apiRequest(`/api/v1/data/table/34/rows/${departman.id}`, {
+          method: 'DELETE'
+        });
+        console.log(`✅ Departman silindi: ${departman.id}`);
+      }
+    } catch (error) {
+      console.error('❌ Departman silme hatası:', error);
+    }
+    
+    // 5. Son olarak kurumu sil (30)
+    try {
+      const kurumlar = await getTableData('30', `kurum_id=${kurumId}`);
+      if (kurumlar.length > 0) {
+        const kurum = kurumlar[0];
+        await apiRequest(`/api/v1/data/table/30/rows/${kurum.id}`, {
+          method: 'DELETE'
+        });
+        console.log(`✅ Kurum silindi: ${kurum.id}`);
+      }
+    } catch (error) {
+      console.error('❌ Kurum silme hatası:', error);
+    }
+    
+    // Cache'leri temizle
+    clearAllCache();
+    ['30', '33', '34', '35', '69', '70', '71', '72', '73'].forEach(tableId => {
+      clearTableCache(tableId);
+    });
+    
+    console.log('🎉 CASCADE DELETE tamamlandı!');
+    
+    return {
+      success: true,
+      message: 'Kurum ve ona bağlı tüm veriler başarıyla silindi'
+    };
+    
+  } catch (error) {
+    console.error('❌ CASCADE DELETE hatası:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Bilinmeyen hata'
+    };
+  }
+};
+
 // ================================
 // HİYERARŞİK ID GENERATOR FONKSİYONLARI
 // ================================
