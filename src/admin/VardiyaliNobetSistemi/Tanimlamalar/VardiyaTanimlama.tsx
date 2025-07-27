@@ -122,12 +122,14 @@ const VardiyaTanimlama: React.FC = () => {
       setLoading(true);
       
       // Yeni vardiya ID'si oluştur
-      const existingVardiyalar = await getTableData('71', `kurum_id=${user.kurum_id}&departman_id=${user.departman_id}&birim_id=${user.birim_id}`);
+      const existingVardiyalar = await getTableData('71', `kurum_id=${currentUser.kurum_id}&departman_id=${currentUser.departman_id}&birim_id=${currentUser.birim_id}`);
       const vardiyaArray = Array.isArray(existingVardiyalar) ? existingVardiyalar : [];
       const nextSira = vardiyaArray.length + 1;
       
-      // DOĞRU FORMAT: kurum_id + departman_id + birim_id + sira (HIYERARSIK_ID_SISTEMI.md uyumlu)
-      const vardiyaId = `${user.kurum_id}_${user.departman_id}_${user.birim_id}_${nextSira}`;
+      // DOĞRU FORMAT: kurum_D#_B#_sira (HIYERARSIK_ID_SISTEMI.md uyumlu)
+      const departmanKodu = currentUser.departman_id.split('_')[1] || 'D1'; // "6_D1" -> "D1"
+      const birimKodu = currentUser.birim_id.split('_')[1] || 'B1'; // "6_B1" -> "B1"
+      const vardiyaId = `${currentUser.kurum_id}_${departmanKodu}_${birimKodu}_${nextSira}`;
 
       const newShift = {
         vardiya_id: vardiyaId,

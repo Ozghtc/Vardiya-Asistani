@@ -88,10 +88,10 @@ const IzinTanimlama: React.FC = () => {
       const izinArray = Array.isArray(existingIzinler) ? existingIzinler : [];
       const nextSira = izinArray.length + 1;
       
-      // Doğru format: kurum_departman_birim_sira
-      const departmanAdi = departman_id.split('_')[1] || 'BILINMIYOR';
-      const birimAdi = birim_id.split('_')[1] || 'BILINMIYOR';
-      const izinId = `${kurum_id}_${departmanAdi}_${birimAdi}_${nextSira}`;
+      // DOĞRU FORMAT: kurum_D#_B#_sira (HIYERARSIK_ID_SISTEMI.md uyumlu)
+      const departmanKodu = departman_id.split('_')[1] || 'D1'; // "6_D1" -> "D1"
+      const birimKodu = birim_id.split('_')[1] || 'B1'; // "6_B1" -> "B1"
+      const izinId = `${kurum_id}_${departmanKodu}_${birimKodu}_${nextSira}`;
 
       const newIzinIstek = {
         izin_id: izinId,

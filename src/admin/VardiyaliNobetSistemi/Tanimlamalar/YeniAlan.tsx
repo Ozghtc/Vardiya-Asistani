@@ -240,8 +240,10 @@ const handleSaveToDatabase = async () => {
     const alanArray = Array.isArray(existingAlanlar) ? existingAlanlar : [];
     const nextSira = alanArray.length + 1;
     
-    // DOĞRU FORMAT: kurum_id + departman_id + birim_id + sira (HIYERARSIK_ID_SISTEMI.md uyumlu)
-    const alanId = `${user?.kurum_id}_${user?.departman_id}_${user?.birim_id}_${nextSira}`;
+    // DOĞRU FORMAT: kurum_D#_B#_sira (HIYERARSIK_ID_SISTEMI.md uyumlu)
+    const departmanKodu = user?.departman_id?.split('_')[1] || 'D1'; // "6_D1" -> "D1"
+    const birimKodu = user?.birim_id?.split('_')[1] || 'B1'; // "6_B1" -> "B1"
+    const alanId = `${user?.kurum_id}_${departmanKodu}_${birimKodu}_${nextSira}`;
     
     const data = {
       alan_id: alanId,
