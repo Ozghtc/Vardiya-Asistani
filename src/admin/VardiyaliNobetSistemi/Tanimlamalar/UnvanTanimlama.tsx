@@ -46,15 +46,9 @@ const UnvanTanimlama: React.FC = () => {
 
     setMesaiLoading(true);
     try {
-      // Cache'i zorla temizle
-      clearTableCache('24');
-      
-      // Fresh data çek
-      const filterParams = `kurum_id=${user.kurum_id}&departman_id=${user.departman_id}&birim_id=${user.birim_id}`;
-      const data = await getTableData('24', filterParams, true); // Force fresh
-      
-      console.log('📋 Fresh mesai türleri:', data);
-      setKaydedilenMesaiTurleri(data);
+      // API çağrısı geçici olarak devre dışı
+      console.log('API çağrısı geçici olarak devre dışı - Mesai türleri');
+      setKaydedilenMesaiTurleri([]);
     } catch (error) {
       console.error('Mesai türleri yüklenirken hata:', error);
       // Tablo yoksa boş array set et, hata verme
@@ -72,24 +66,16 @@ const UnvanTanimlama: React.FC = () => {
         setError(null);
         
         try {
-          console.log('🔍 Ünvanlar yükleniyor...', {
-            kurum_id: user.kurum_id,
-            departman_id: user.departman_id,
-            birim_id: user.birim_id
-          });
-          
-          const filterParams = `kurum_id=${user.kurum_id}&departman_id=${user.departman_id}&birim_id=${user.birim_id}`;
-          const data = await getTableData('15', filterParams);
-          
-          console.log('📦 Ünvanlar yüklendi:', data);
-          setUnvanlar(data);
+          // API çağrısı geçici olarak devre dışı
+          console.log('API çağrısı geçici olarak devre dışı - Ünvanlar');
+          setUnvanlar([]);
         } catch (error) {
           console.error('🚨 Ünvanlar yüklenemedi:', error);
           // Tablo yoksa boş array set et ve bilgilendirici mesaj göster
           setUnvanlar([]);
           const errorMessage = error instanceof Error ? error.message : String(error);
           if (errorMessage.includes('404') || errorMessage.includes('401')) {
-            setError('Ünvan tablosu henüz oluşturulmamış. İlk ünvanı ekleyerek tabloyu oluşturabilirsiniz.');
+            setError('Ünvan tablosu bulunamadı. Lütfen önce tabloyu oluşturun.');
           } else {
             setError('Ünvanlar yüklenemedi. Lütfen tekrar deneyin.');
           }
@@ -116,6 +102,11 @@ const UnvanTanimlama: React.FC = () => {
     }
 
     try {
+      // API çağrısı geçici olarak devre dışı
+      console.log('API çağrısı geçici olarak devre dışı - Ünvan ekleme');
+      setError('API bağlantıları geçici olarak devre dışı. Tablolar oluşturulduktan sonra aktif edilecek.');
+      return;
+
       const newUnvan = {
         unvan_adi: yeniUnvan.trim(),
         kurum_id: user.kurum_id,

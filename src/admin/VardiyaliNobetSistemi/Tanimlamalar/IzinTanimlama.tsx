@@ -54,9 +54,9 @@ const IzinTanimlama: React.FC = () => {
     const loadIzinIstekleri = async () => {
       if (kurum_id && departman_id && birim_id) {
         try {
-          const filterParams = `kurum_id=${kurum_id}&departman_id=${departman_id}&birim_id=${birim_id}`;
-          const data = await getTableData('16', filterParams);
-          setPersonnelRequests(data);
+          // API çağrısı geçici olarak devre dışı
+          console.log('API çağrısı geçici olarak devre dışı - İzin istekleri');
+          setPersonnelRequests([]);
         } catch (error) {
           console.error('İzin istekleri yüklenemedi:', error);
           // Tablo yoksa boş array set et, sayfa erişimini engelleme
@@ -80,6 +80,11 @@ const IzinTanimlama: React.FC = () => {
     }
 
     try {
+      // API çağrısı geçici olarak devre dışı
+      console.log('API çağrısı geçici olarak devre dışı - İzin ekleme');
+      setErrorMsg('API bağlantıları geçici olarak devre dışı. Tablolar oluşturulduktan sonra aktif edilecek.');
+      return;
+
       const newIzinIstek = {
         izin_turu: izinAdi.trim(),
         kisaltma: kisaltma.trim().toUpperCase(),
