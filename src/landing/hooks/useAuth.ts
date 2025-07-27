@@ -9,16 +9,16 @@ import { useAuthContext } from '../../contexts/AuthContext';
 
 // Hiyerarşik ID'yi kullanıcı adından temizle
 const cleanUserName = (userName: string): string => {
-  // Hiyerarşik ID formatı: {kurum_id}_{departman_sira}_{birim_sira}_{kullanici_sira}_{isim}
-  // Örnek: "18_1_1_1_HATİCE ALTINTAŞ" -> "HATİCE ALTINTAŞ"
+  // HIYERARSIK_ID_SISTEMI.md formatı: {kurum_id}_D{departman_sira}_B{birim_sira}_{Y/P}{kullanici_sira}_{isim}
+  // Örnek: "01_D1_B1_P1_HATİCE ALTINTAŞ" -> "HATİCE ALTINTAŞ"
   
   if (!userName) return userName;
   
   // Underscore ile ayrılmış parçaları al
   const parts = userName.split('_');
   
-  // En az 5 parça varsa (hiyerarşik ID + isim)
-  if (parts.length >= 5) {
+  // HIYERARSIK format kontrolü: kurum_D#_B#_Y#/P#_isim_soyisim (6 parça)
+  if (parts.length >= 6) {
     // Son 2 parçayı al (ad ve soyad)
     const nameParts = parts.slice(-2);
     return nameParts.join(' ');
