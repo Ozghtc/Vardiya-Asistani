@@ -54,9 +54,10 @@ const IzinTanimlama: React.FC = () => {
     const loadIzinIstekleri = async () => {
       if (kurum_id && departman_id && birim_id) {
         try {
-          // API çağrısı geçici olarak devre dışı
-          console.log('API çağrısı geçici olarak devre dışı - İzin istekleri');
-          setPersonnelRequests([]);
+          // YENİ TABLO ID: 70
+          const filterParams = `kurum_id=${kurum_id}&departman_id=${departman_id}&birim_id=${birim_id}`;
+          const data = await getTableData('70', filterParams);
+          setPersonnelRequests(data);
         } catch (error) {
           console.error('İzin istekleri yüklenemedi:', error);
           // Tablo yoksa boş array set et, sayfa erişimini engelleme
@@ -80,32 +81,34 @@ const IzinTanimlama: React.FC = () => {
     }
 
     try {
-      // API çağrısı geçici olarak devre dışı
-      console.log('API çağrısı geçici olarak devre dışı - İzin ekleme');
-      setErrorMsg('API bağlantıları geçici olarak devre dışı. Tablolar oluşturulduktan sonra aktif edilecek.');
-      return;
+      // Yeni izin ID'si oluştur
+      const existingIzinler = await getTableData('70', `kurum_id=${kurum_id}&departman_id=${departman_id}&birim_id=${birim_id}`);
+      const nextSira = existingIzinler.length + 1;
+      const izinId = `${kurum_id}_${departman_id.split('_')[1]}_${birim_id.split('_')[2]}_${nextSira}`;
 
       const newIzinIstek = {
+        izin_id: izinId,
         izin_turu: izinAdi.trim(),
-        kisaltma: kisaltma.trim().toUpperCase(),
+        kisaltma: kisaltma.trim(),
         renk: seciliRenk,
         mesai_dusumu: mesaiDusumu,
-        kurum_id,
-        departman_id,
-        birim_id,
+        kurum_id: kurum_id,
+        departman_id: departman_id,
+        birim_id: birim_id,
         aktif_mi: true
       };
 
-      const result = await addTableData('16', newIzinIstek);
+      // YENİ TABLO ID: 70
+      const result = await addTableData('70', newIzinIstek);
 
       if (result.success) {
         // Cache'i zorla temizle
         clearAllCache();
-        clearTableCache('16');
+        clearTableCache('70');
         
         // Fresh veriyi yeniden yükle
         const filterParams = `kurum_id=${kurum_id}&departman_id=${departman_id}&birim_id=${birim_id}`;
-        const data = await getTableData('16', filterParams, true);
+        const data = await getTableData('70', filterParams, true);
         setPersonnelRequests(data);
         
         setShowSuccess(true);

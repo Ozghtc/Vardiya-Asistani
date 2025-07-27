@@ -232,32 +232,28 @@ const handleSaveToDatabase = async () => {
   setIsProcessing(true);
   
   try {
-    // API çağrısı geçici olarak devre dışı
-    console.log('API çağrısı geçici olarak devre dışı - Yeni alan kaydetme');
-    
-    // Toast notification göster
-    showToast({
-      type: 'info',
-      title: 'API Devre Dışı',
-      message: 'API bağlantıları geçici olarak devre dışı. Tablolar oluşturulduktan sonra aktif edilecek.',
-      duration: 4000
-    });
-    
-    // Sayfayı eski haline döndür
-    setAreas([]);
-    setShowShiftSettings(false);
-    setShowShiftAddition(false);
-    setSelectedDays(weekDays.map(day => day.value));
-    setDayHours(weekDays.reduce((acc, day) => ({ ...acc, [day.value]: 40 }), {}));
-    setDailyWorkHours(40);
-    setSelectedShiftDays([]);
-    setSelectedShift(vardiyalar[0].name);
-    
-    return;
-
     const area = areas[areas.length - 1];
     
+    // Yeni alan ID'si oluştur
+    const existingAlanlar = await fetch('/.netlify/functions/api-proxy', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        path: '/api/v1/data/table/72',
+        method: 'GET',
+        apiKey: 'hzm_1ce98c92189d4a109cd604b22bfd86b7'
+      })
+    });
+    
+    const existingData = await existingAlanlar.json();
+    const existingCount = existingData.data?.rows?.length || 0;
+    const nextSira = existingCount + 1;
+    const alanId = `${user?.kurum_id}_${user?.departman_id?.split('_')[1]}_${user?.birim_id?.split('_')[2]}_${nextSira}`;
+    
     const data = {
+      alan_id: alanId,
       alan_adi: area.name,
       renk: area.color,
       aciklama: area.description,
@@ -270,13 +266,14 @@ const handleSaveToDatabase = async () => {
       birim_id: user?.birim_id || "6_HEMSİRE"
     };
 
+    // YENİ TABLO ID: 72
     const response = await fetch('/.netlify/functions/api-proxy', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        path: '/api/v1/data/table/18/rows',
+        path: '/api/v1/data/table/72/rows',
         method: 'POST',
         body: data,
         apiKey: 'hzm_1ce98c92189d4a109cd604b22bfd86b7'

@@ -281,12 +281,122 @@ const TanimliAlanlar: React.FC = () => {
       
       console.log('🚀 loadAlanlar başladı, user:', currentUser);
       
-      // API çağrısı geçici olarak devre dışı
-      console.log('API çağrısı geçici olarak devre dışı - Tanımlı alanlar');
-      setAlanlar([]);
+      // 1. HZM API'den veri oku (TanimliAlanlar tablosu - YENİ TABLO ID: 72)
+      try {
+        // Netlify proxy üzerinden API çağrısı
+        const response = await fetch('/.netlify/functions/api-proxy', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            path: '/api/v1/data/table/72',
+            method: 'GET',
+            apiKey: 'hzm_1ce98c92189d4a109cd604b22bfd86b7'
+          })
+        });
+        
+        const result = await response.json();
+        
+        // API response yapısını kontrol et
+        let rows = [];
+        if (result.success && result.data && result.data.rows) {
+          rows = result.data.rows;
+        } else if (result.rows) {
+          rows = result.rows;
+        } else if (Array.isArray(result)) {
+          rows = result;
+        } else if (result.data && Array.isArray(result.data)) {
+          rows = result.data;
+        }
+        
+        if (rows && rows.length > 0) {
+          
+          const apiData = rows
+            .filter((row: any) => {
+              return row.kurum_id === currentUser.kurum_id && 
+                     row.departman_id === currentUser.departman_id && 
+                     row.birim_id === currentUser.birim_id;
+            })
+            .map((row: any) => {
+              let parsedGunlukSaatler = {};
+              let parsedAktifGunler = [];
+              let parsedVardiyalar = [];
+              
+              try {
+                parsedGunlukSaatler = JSON.parse(row.gunluk_saatler || '{}');
+                parsedAktifGunler = JSON.parse(row.aktif_gunler || '[]');
+                const rawVardiyalar = JSON.parse(row.vardiyalar || '[]');
+                
+                // API'den gelen yapıyı dönüştür
+                parsedVardiyalar = rawVardiyalar.map((vardiya: any) => ({
+                  id: vardiya.id,
+                  name: vardiya.name,
+                  startTime: vardiya.hours ? vardiya.hours.split(' - ')[0] : '',
+                  endTime: vardiya.hours ? vardiya.hours.split(' - ')[1] : '',
+                  duration: vardiya.duration || 0,
+                  gunler: vardiya.days || [] // API'de 'days' olarak geliyor
+                }));
+              } catch (e) {
+                // JSON parse hatası - varsayılan değerlerle devam et
+              }
+              
+              // Computed fields'i hesapla - Haftalık toplamlar
+              const gunler = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
+              
+              // Her gün için vardiya sayısını ve saatini hesapla
+              const gunlukVardiyaSayilari = gunler.map(gunAdi => {
+                return parsedVardiyalar.filter((vardiya: Vardiya) => 
+                  vardiya.gunler && vardiya.gunler.includes(gunAdi)
+                ).length;
+              });
+              
+              const gunlukSaatler = gunler.map(gunAdi => {
+                const gunVardiyalari = parsedVardiyalar.filter((vardiya: Vardiya) => 
+                  vardiya.gunler && vardiya.gunler.includes(gunAdi)
+                );
+                return gunVardiyalari.reduce((toplam: number, vardiya: Vardiya) => toplam + (vardiya.duration || 0), 0);
+              });
+              
+              // Haftalık toplam saat = her günün toplam saatlerinin toplamı
+              const totalHours = gunlukSaatler.reduce((toplam, gunSaat) => toplam + gunSaat, 0);
+              
+              // Haftalık toplam vardiya sayısı
+              const totalVardiya = gunlukVardiyaSayilari.reduce((toplam, sayi) => toplam + sayi, 0);
+              const activeDays = parsedAktifGunler.length;
+              
+              const mappedRow = {
+                id: parseInt(row.id.toString(), 10),
+                alan_adi: row.alan_adi,
+                aciklama: row.aciklama,
+                renk: row.renk,
+                gunluk_saatler: row.gunluk_saatler,
+                aktif_gunler: row.aktif_gunler,
+                vardiyalar: row.vardiyalar,
+                kullanici_id: row.kullanici_id,
+                kurum_id: row.kurum_id,
+                departman_id: row.departman_id,
+                birim_id: row.birim_id,
+                totalHours: totalHours,
+                totalVardiya: totalVardiya,
+                activeDays: activeDays,
+                nobetler: parsedVardiyalar,
+                parsedVardiyalar: parsedVardiyalar
+              };
+              
+              return mappedRow;
+            });
+          
+          alanData = [...alanData, ...apiData];
+        }
+      } catch (error) {
+        // API hatası - sessizce devam et
+      }
+      
+      setAlanlar(alanData);
     } catch (error) {
       // Alanlar yükleme hatası - sessizce devam et
-      console.log('API çağrısı geçici olarak devre dışı');
+      console.log('Alanlar yükleme hatası:', error);
     } finally {
       setLoading(false);
     }

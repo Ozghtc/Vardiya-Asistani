@@ -46,9 +46,15 @@ const UnvanTanimlama: React.FC = () => {
 
     setMesaiLoading(true);
     try {
-      // API çağrısı geçici olarak devre dışı
-      console.log('API çağrısı geçici olarak devre dışı - Mesai türleri');
-      setKaydedilenMesaiTurleri([]);
+      // Cache'i zorla temizle
+      clearTableCache('73');
+      
+      // Fresh data çek - YENİ TABLO ID: 73
+      const filterParams = `kurum_id=${user.kurum_id}&departman_id=${user.departman_id}&birim_id=${user.birim_id}`;
+      const data = await getTableData('73', filterParams, true); // Force fresh
+      
+      console.log('📋 Fresh mesai türleri:', data);
+      setKaydedilenMesaiTurleri(data);
     } catch (error) {
       console.error('Mesai türleri yüklenirken hata:', error);
       // Tablo yoksa boş array set et, hata verme
@@ -66,9 +72,18 @@ const UnvanTanimlama: React.FC = () => {
         setError(null);
         
         try {
-          // API çağrısı geçici olarak devre dışı
-          console.log('API çağrısı geçici olarak devre dışı - Ünvanlar');
-          setUnvanlar([]);
+          console.log('🔍 Ünvanlar yükleniyor...', {
+            kurum_id: user.kurum_id,
+            departman_id: user.departman_id,
+            birim_id: user.birim_id
+          });
+          
+          // YENİ TABLO ID: 69
+          const filterParams = `kurum_id=${user.kurum_id}&departman_id=${user.departman_id}&birim_id=${user.birim_id}`;
+          const data = await getTableData('69', filterParams);
+          
+          console.log('📦 Ünvanlar yüklendi:', data);
+          setUnvanlar(data);
         } catch (error) {
           console.error('🚨 Ünvanlar yüklenemedi:', error);
           // Tablo yoksa boş array set et ve bilgilendirici mesaj göster
@@ -102,12 +117,13 @@ const UnvanTanimlama: React.FC = () => {
     }
 
     try {
-      // API çağrısı geçici olarak devre dışı
-      console.log('API çağrısı geçici olarak devre dışı - Ünvan ekleme');
-      setError('API bağlantıları geçici olarak devre dışı. Tablolar oluşturulduktan sonra aktif edilecek.');
-      return;
+      // Yeni ünvan ID'si oluştur
+      const existingUnvanlar = await getTableData('69', `kurum_id=${user.kurum_id}&departman_id=${user.departman_id}&birim_id=${user.birim_id}`);
+      const nextSira = existingUnvanlar.length + 1;
+      const unvanId = `${user.kurum_id}_${user.departman_id.split('_')[1]}_${user.birim_id.split('_')[2]}_${nextSira}`;
 
       const newUnvan = {
+        unvan_id: unvanId,
         unvan_adi: yeniUnvan.trim(),
         kurum_id: user.kurum_id,
         departman_id: user.departman_id,
@@ -115,16 +131,17 @@ const UnvanTanimlama: React.FC = () => {
         aktif_mi: true
       };
 
-      const result = await addTableData('15', newUnvan);
+      // YENİ TABLO ID: 69
+      const result = await addTableData('69', newUnvan);
 
       if (result.success) {
         // Cache'i zorla temizle
         clearAllCache();
-        clearTableCache('15');
+        clearTableCache('69');
         
         // Fresh veriyi yeniden yükle
         const filterParams = `kurum_id=${user.kurum_id}&departman_id=${user.departman_id}&birim_id=${user.birim_id}`;
-        const data = await getTableData('15', filterParams, true);
+        const data = await getTableData('69', filterParams, true);
         setUnvanlar(data);
         
         setYeniUnvan('');

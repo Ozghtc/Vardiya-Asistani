@@ -54,9 +54,22 @@ const VardiyaTanimlama: React.FC = () => {
         return;
       }
 
-      // API çağrısı geçici olarak devre dışı
-      console.log('API çağrısı geçici olarak devre dışı - Vardiyalar');
-      setShifts([]);
+      // YENİ TABLO ID: 71
+      const filterParams = `kurum_id=${currentUser.kurum_id}&departman_id=${currentUser.departman_id}&birim_id=${currentUser.birim_id}`;
+      const data = await getTableData('71', filterParams);
+      
+      const shiftData = data.map((row: any) => ({
+        id: row.id,
+        vardiya_adi: row.vardiya_adi,
+        baslangic_saati: row.baslangic_saati,
+        bitis_saati: row.bitis_saati,
+        calisma_saati: row.calisma_saati || 8,
+        aktif_mi: row.aktif_mi,
+        kurum_id: row.kurum_id,
+        departman_id: row.departman_id,
+        birim_id: row.birim_id
+      }));
+      setShifts(shiftData);
     } catch (error) {
       console.error('Vardiya yükleme hatası:', error);
       // Tablo yoksa boş array set et ve bilgilendirici mesaj göster
@@ -82,16 +95,70 @@ const VardiyaTanimlama: React.FC = () => {
       return;
     }
     
+    if (shifts.some(shift => shift.vardiya_adi === safeName.trim())) {
+      setError('Bu vardiya adı zaten kullanılmış');
+      return;
+    }
+    
     if (!startHour || !endHour) {
       setError('Başlangıç ve bitiş saatleri gereklidir');
       return;
     }
 
-    try {
-      // API çağrısı geçici olarak devre dışı
-      console.log('API çağrısı geçici olarak devre dışı - Vardiya ekleme');
-      setError('API bağlantıları geçici olarak devre dışı. Tablolar oluşturulduktan sonra aktif edilecek.');
+    const start = new Date(`2024-01-01 ${startHour}`);
+    let end = new Date(`2024-01-01 ${endHour}`);
+    if (end <= start) end = new Date(`2024-01-02 ${endHour}`);
+    const toplamSaat = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+
+    const user = getCurrentUser();
+    if (!user) {
+      setError('Kullanıcı bilgisi bulunamadı');
       return;
+    }
+
+    try {
+      setLoading(true);
+      
+      // Yeni vardiya ID'si oluştur
+      const existingVardiyalar = await getTableData('71', `kurum_id=${user.kurum_id}&departman_id=${user.departman_id}&birim_id=${user.birim_id}`);
+      const nextSira = existingVardiyalar.length + 1;
+      const vardiyaId = `${user.kurum_id}_${user.departman_id.split('_')[1]}_${user.birim_id.split('_')[2]}_${nextSira}`;
+
+      const newShift = {
+        vardiya_id: vardiyaId,
+        vardiya_adi: safeName.trim(),
+        baslangic_saati: startHour,
+        bitis_saati: endHour,
+        calisma_saati: Math.round(toplamSaat),
+        aktif_mi: true,
+        kurum_id: user.kurum_id,
+        departman_id: user.departman_id,
+        birim_id: user.birim_id
+      };
+
+      // YENİ TABLO ID: 71
+      const response = await apiRequest('/api/v1/data/table/71/rows', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newShift),
+      });
+      
+      if (response.success) {
+        // Cache'i zorla temizle
+        clearAllCache();
+        clearTableCache('71');
+        
+        setError('');
+        setShowSuccess(true);
+        setTimeout(() => setShowSuccess(false), 2000);
+        loadShifts(); // Listeyi yenile
+        
+        console.log('✅ Vardiya eklendi ve liste güncellendi');
+      } else {
+        setError(response.error || 'Vardiya eklenirken hata oluştu');
+      }
     } catch (error) {
       console.error('Vardiya ekleme hatası:', error);
       setError('Vardiya eklenirken hata oluştu');
