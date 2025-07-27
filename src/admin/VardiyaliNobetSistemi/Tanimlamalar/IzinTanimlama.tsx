@@ -59,6 +59,8 @@ const IzinTanimlama: React.FC = () => {
           setPersonnelRequests(data);
         } catch (error) {
           console.error('İzin istekleri yüklenemedi:', error);
+          // Tablo yoksa boş array set et, sayfa erişimini engelleme
+          setPersonnelRequests([]);
         }
       }
     };

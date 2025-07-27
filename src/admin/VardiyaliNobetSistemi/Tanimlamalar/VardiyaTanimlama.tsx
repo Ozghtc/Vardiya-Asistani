@@ -71,7 +71,14 @@ const VardiyaTanimlama: React.FC = () => {
       setShifts(shiftData);
     } catch (error) {
       console.error('Vardiya yükleme hatası:', error);
-      setError('Vardiyalar yüklenirken hata oluştu');
+      // Tablo yoksa boş array set et ve bilgilendirici mesaj göster
+      setShifts([]);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('404') || errorMessage.includes('401')) {
+        setError('Vardiya tablosu henüz oluşturulmamış. İlk vardiyayı ekleyerek tabloyu oluşturabilirsiniz.');
+      } else {
+        setError('Vardiyalar yüklenirken hata oluştu');
+      }
     } finally {
       setLoading(false);
     }

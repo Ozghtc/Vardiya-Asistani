@@ -57,6 +57,8 @@ const UnvanTanimlama: React.FC = () => {
       setKaydedilenMesaiTurleri(data);
     } catch (error) {
       console.error('Mesai türleri yüklenirken hata:', error);
+      // Tablo yoksa boş array set et, hata verme
+      setKaydedilenMesaiTurleri([]);
     } finally {
       setMesaiLoading(false);
     }
@@ -83,7 +85,14 @@ const UnvanTanimlama: React.FC = () => {
           setUnvanlar(data);
         } catch (error) {
           console.error('🚨 Ünvanlar yüklenemedi:', error);
-          setError('Ünvanlar yüklenemedi. Lütfen tekrar deneyin.');
+          // Tablo yoksa boş array set et ve bilgilendirici mesaj göster
+          setUnvanlar([]);
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          if (errorMessage.includes('404') || errorMessage.includes('401')) {
+            setError('Ünvan tablosu henüz oluşturulmamış. İlk ünvanı ekleyerek tabloyu oluşturabilirsiniz.');
+          } else {
+            setError('Ünvanlar yüklenemedi. Lütfen tekrar deneyin.');
+          }
         } finally {
           setLoading(false);
         }
