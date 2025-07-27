@@ -111,7 +111,9 @@ const IzinTanimlama: React.FC = () => {
         // Fresh veriyi yeniden yükle
         const filterParams = `kurum_id=${kurum_id}&departman_id=${departman_id}&birim_id=${birim_id}`;
         const data = await getTableData('70', filterParams, true);
-        setPersonnelRequests(data);
+        // Veriyi array olarak garanti et
+        const izinArray = Array.isArray(data) ? data : [];
+        setPersonnelRequests(izinArray);
         
         setShowSuccess(true);
         setTimeout(() => setShowSuccess(false), 2000);
@@ -134,17 +136,19 @@ const IzinTanimlama: React.FC = () => {
 
   const handleRemoveRequest = async (id: string) => {
     try {
-      const result = await deleteTableData('16', id);
+      const result = await deleteTableData('70', id);
 
       if (result.success) {
         // Cache'i zorla temizle
         clearAllCache();
-        clearTableCache('16');
+        clearTableCache('70');
         
         // Fresh veriyi yeniden yükle
         const filterParams = `kurum_id=${kurum_id}&departman_id=${departman_id}&birim_id=${birim_id}`;
-        const data = await getTableData('16', filterParams, true);
-        setPersonnelRequests(data);
+        const data = await getTableData('70', filterParams, true);
+        // Veriyi array olarak garanti et
+        const izinArray = Array.isArray(data) ? data : [];
+        setPersonnelRequests(izinArray);
         
         console.log('✅ İzin türü silindi ve liste güncellendi:', data);
       } else {

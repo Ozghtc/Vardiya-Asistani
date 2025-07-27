@@ -163,17 +163,18 @@ const UnvanTanimlama: React.FC = () => {
 
   const handleUnvanSil = async (unvanId: number) => {
     try {
-      const result = await deleteTableData('15', unvanId.toString());
+      const result = await deleteTableData('69', unvanId.toString());
 
       if (result.success && user) {
         // Cache'i zorla temizle
         clearAllCache();
-        clearTableCache('15');
+        clearTableCache('69');
         
         // Fresh veriyi yeniden yükle
         const filterParams = `kurum_id=${user.kurum_id}&departman_id=${user.departman_id}&birim_id=${user.birim_id}`;
-        const data = await getTableData('15', filterParams, true);
-        setUnvanlar(data);
+        const data = await getTableData('69', filterParams, true);
+        const unvanArray = Array.isArray(data) ? data : [];
+        setUnvanlar(unvanArray);
         
         console.log('✅ Ünvan silindi ve liste güncellendi:', data);
       } else {
@@ -188,17 +189,23 @@ const UnvanTanimlama: React.FC = () => {
 
 
   const handleMesaiEkle = async () => {
-    if (!mesaiAdi.trim() || !mesaiSaati || mesaiSaati <= 0) {
-      showErrorToast('Lütfen mesai adı girin ve geçerli bir saat girin');
+    if (!mesaiAdi.trim()) {
+      showErrorToast('Mesai adı gereklidir!');
       return;
     }
 
     if (!user?.kurum_id || !user?.departman_id || !user?.birim_id) {
-      showErrorToast('Kullanıcı bilgisi bulunamadı');
+      showErrorToast('Kullanıcı bilgileri eksik!');
       return;
     }
 
+    // Yeni mesai ID'si oluştur
+    const existingMesaiTurleri = await getTableData('73', `kurum_id=${user.kurum_id}&departman_id=${user.departman_id}&birim_id=${user.birim_id}`);
+    const nextSira = existingMesaiTurleri.length + 1;
+    const mesaiId = `${user.kurum_id}_${user.departman_id.split('_')[1]}_${user.birim_id.split('_')[2]}_${nextSira}`;
+
     const mesaiData = {
+      mesai_id: mesaiId,
       mesai_adi: mesaiAdi,
       gunler: JSON.stringify(['Haftalık']),
       mesai_saati: parseInt(mesaiSaati.toString()),
@@ -214,13 +221,13 @@ const UnvanTanimlama: React.FC = () => {
       // Tüm cache'i temizle
       clearAllCache();
       
-      const result = await addTableData('24', mesaiData);
+      const result = await addTableData('73', mesaiData);
       
       if (result.success) {
         console.log('✅ Mesai başarıyla kaydedildi');
         
         // Cache'i tekrar temizle ve fresh data çek
-        clearTableCache('24');
+        clearTableCache('73');
         
         // Formu temizle
         setMesaiAdi('');
@@ -252,9 +259,9 @@ const UnvanTanimlama: React.FC = () => {
       console.log('🗑️ Mesai türü siliniyor:', mesaiId);
       
       // Cache'i temizle
-      clearTableCache('24');
+      clearTableCache('73');
       
-      const result = await deleteTableData('24', mesaiId.toString());
+      const result = await deleteTableData('73', mesaiId.toString());
       
       console.log('📥 Silme API yanıtı:', result);
       

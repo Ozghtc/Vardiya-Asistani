@@ -239,7 +239,7 @@ const VardiyaTanimlama: React.FC = () => {
 
     try {
       setLoading(true);
-      const response = await apiRequest('/api/v1/data/table/17/rows', {
+      const response = await apiRequest('/api/v1/data/table/71/rows', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -250,7 +250,7 @@ const VardiyaTanimlama: React.FC = () => {
       if (response.success) {
         // Cache'i zorla temizle
         clearAllCache();
-        clearTableCache('17');
+        clearTableCache('71');
         
         setError('');
         setShowSuccess(true);
