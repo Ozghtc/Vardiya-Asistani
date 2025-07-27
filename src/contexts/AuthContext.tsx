@@ -84,9 +84,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       if (userData.kurum_id && kurumlar.length > 0) {
         const kurum = kurumlar.find((k: any) => 
-          k.id === userData.kurum_id || 
-          k.id === String(userData.kurum_id) || 
-          String(k.id) === String(userData.kurum_id)
+          k.kurum_id === userData.kurum_id || 
+          k.kurum_id === String(userData.kurum_id) || 
+          String(k.kurum_id) === String(userData.kurum_id)
         );
         
         if (kurum) {
