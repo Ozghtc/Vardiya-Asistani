@@ -113,16 +113,18 @@ const getJWTToken = async (): Promise<string> => {
   try {
     console.log('🔄 YENİ JWT TOKEN ALIYOR...');
     
-    // DİREKT HZM API KULLAN - NETLIFY PROXY DEĞİL
-    const response = await fetch(`${API_CONFIG.baseURL}/api/v1/auth/login`, {
+    // NETLIFY PROXY İLE LOGIN
+    const response = await fetch('/.netlify/functions/api-proxy', {
       method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        email: 'ozgurhzm@gmail.com',
-        password: '135427'
+        path: '/api/v1/auth/login',
+        method: 'POST',
+        body: {
+          email: 'ozgurhzm@gmail.com',
+          password: '135427'
+        },
+        apiKey: API_CONFIG.apiKey
       })
     });
     
@@ -770,16 +772,17 @@ export const getUsers = async (usersTableId: number, forceRefresh: boolean = fal
       console.log('🧹 USERS CACHE TEMİZLENDİ - FRESH DATA ÇEKILIYOR');
     }
     
-    // JWT TOKEN AL
-    const token = await getJWTToken();
-    
-    // DİREKT HZM API KULLAN - JWT TOKEN İLE
-    const response = await fetch(`${API_CONFIG.baseURL}/api/v1/data/table/${usersTableId}`, {
-      method: 'GET',
+    // NETLIFY PROXY İLE GÜVENLİ ERİŞİM
+    const response = await fetch('/.netlify/functions/api-proxy', {
+      method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      }
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        path: `/api/v1/data/table/${usersTableId}`,
+        method: 'GET',
+        apiKey: API_CONFIG.apiKey
+      })
     });
     
     if (!response.ok) {
@@ -790,9 +793,9 @@ export const getUsers = async (usersTableId: number, forceRefresh: boolean = fal
     let users = data.data?.rows || [];
     
     // 🔍 DEBUG: API Response analizi
-    console.log('🔍 HZM API Response:', data);
-    console.log('🔍 Raw rows:', data.data?.rows);
-    console.log('🔍 Row count:', data.data?.rows?.length);
+    console.log('🔍 Netlify Proxy Response:', data);
+    console.log('🔍 Raw users:', users);
+    console.log('🔍 User count:', users.length);
     console.log('🔍 Users data:', users);
     
     // Kurum adlarını ekle
