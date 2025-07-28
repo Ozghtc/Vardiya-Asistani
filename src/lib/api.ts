@@ -772,19 +772,13 @@ export const getUsers = async (usersTableId: number, forceRefresh: boolean = fal
       console.log('🧹 USERS CACHE TEMİZLENDİ - FRESH DATA ÇEKILIYOR');
     }
     
-    const token = await getJWTToken();
-    
-    const response = await fetch('/.netlify/functions/api-proxy', {
-      method: 'POST',
+    // DİREKT HZM API KULLAN - NETLIFY PROXY DEĞİL
+    const response = await fetch(`${API_CONFIG.baseURL}/api/v1/data/table/${usersTableId}`, {
+      method: 'GET',
       headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        path: `/api/v1/data/table/${usersTableId}?page=1&limit=100&sort=id&order=DESC`,
-        method: 'GET',
-        jwtToken: token,
-        apiKey: API_CONFIG.apiKey
-      })
+        'Content-Type': 'application/json',
+        'X-API-Key': API_CONFIG.apiKey
+      }
     });
     
     if (!response.ok) {
@@ -795,7 +789,7 @@ export const getUsers = async (usersTableId: number, forceRefresh: boolean = fal
     let users = data.data?.rows || [];
     
     // 🔍 DEBUG: API Response analizi
-    console.log('🔍 API Response:', data);
+    console.log('🔍 HZM API Response:', data);
     console.log('🔍 Raw rows:', data.data?.rows);
     console.log('🔍 Row count:', data.data?.rows?.length);
     console.log('🔍 Users data:', users);
