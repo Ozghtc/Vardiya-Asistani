@@ -123,7 +123,8 @@ const getJWTToken = async (): Promise<string> => {
     // 🚨 GÜVENLİK: Hardcoded credentials kaldırıldı!
     // Token artık sadece kullanıcı giriş yaptığında alınacak
     if (!jwtToken) {
-      throw new Error('JWT Token bulunamadı - Lütfen tekrar giriş yapın');
+      console.warn('⚠️ JWT Token bulunamadı - API Key fallback kullanılacak');
+      return ''; // Boş string döndür, apiRequest'te handle edilecek
     }
     
     return jwtToken;
@@ -131,7 +132,7 @@ const getJWTToken = async (): Promise<string> => {
   } catch (error) {
     console.error('🚨 JWT Token alınamadı:', error);
     // Fallback: API Key ile sınırlı işlemler
-    throw error;
+    return '';
   }
 };
 
@@ -158,7 +159,7 @@ const apiRequest = async (path: string, options: RequestInit = {}) => {
           path: `${path}${path.includes('?') ? '&' : '?'}_t=${Date.now()}`, // Timestamp cache buster
           method: options.method || 'GET',
           body: options.body ? JSON.parse(options.body as string) : undefined,
-          jwtToken: token,
+          jwtToken: token || undefined, // Token yoksa undefined gönder
           apiKey: API_CONFIG.apiKey,
         }),
         signal: controller.signal
