@@ -772,7 +772,10 @@ export const getUsers = async (usersTableId: number, forceRefresh: boolean = fal
       console.log('🧹 USERS CACHE TEMİZLENDİ - FRESH DATA ÇEKILIYOR');
     }
     
-    // NETLIFY PROXY İLE GÜVENLİ ERİŞİM
+    // JWT TOKEN AL
+    const token = await getJWTToken();
+    
+    // NETLIFY PROXY İLE GÜVENLİ ERİŞİM - JWT TOKEN İLE
     const response = await fetch('/.netlify/functions/api-proxy', {
       method: 'POST',
       headers: {
@@ -781,6 +784,7 @@ export const getUsers = async (usersTableId: number, forceRefresh: boolean = fal
       body: JSON.stringify({
         path: `/api/v1/data/table/${usersTableId}`,
         method: 'GET',
+        jwtToken: token,
         apiKey: API_CONFIG.apiKey
       })
     });
