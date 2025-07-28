@@ -113,18 +113,16 @@ const getJWTToken = async (): Promise<string> => {
   try {
     console.log('🔄 YENİ JWT TOKEN ALIYOR...');
     
-    // 🔧 LOGIN İÇİN NETLIFY PROXY KULLAN (CORS sorununu çözmek için)
-    const response = await fetch('/.netlify/functions/api-proxy', {
+    // DİREKT HZM API KULLAN - NETLIFY PROXY DEĞİL
+    const response = await fetch(`${API_CONFIG.baseURL}/api/v1/auth/login`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      },
       body: JSON.stringify({
-        path: '/api/v1/auth/login',
-        method: 'POST',
-        body: {
-          email: 'ozgurhzm@gmail.com',
-          password: '135427'
-        },
-        apiKey: API_CONFIG.apiKey
+        email: 'ozgurhzm@gmail.com',
+        password: '135427'
       })
     });
     
