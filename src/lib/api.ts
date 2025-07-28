@@ -772,12 +772,15 @@ export const getUsers = async (usersTableId: number, forceRefresh: boolean = fal
       console.log('🧹 USERS CACHE TEMİZLENDİ - FRESH DATA ÇEKILIYOR');
     }
     
-    // DİREKT HZM API KULLAN - NETLIFY PROXY DEĞİL
+    // JWT TOKEN AL
+    const token = await getJWTToken();
+    
+    // DİREKT HZM API KULLAN - JWT TOKEN İLE
     const response = await fetch(`${API_CONFIG.baseURL}/api/v1/data/table/${usersTableId}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'X-API-Key': API_CONFIG.apiKey
+        'Authorization': `Bearer ${token}`
       }
     });
     
