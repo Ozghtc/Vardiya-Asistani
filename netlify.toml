@@ -26,18 +26,39 @@
   to = "/.netlify/functions/api-proxy"
   status = 200
 
-# CORS headers
+# CORS headers - 3 Katmanlı API Key sistemi için
 [[headers]]
   for = "/*"
   [headers.values]
     Access-Control-Allow-Origin = "*"
     Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS"
-    Access-Control-Allow-Headers = "Content-Type, Authorization, X-API-Key"
+    Access-Control-Allow-Headers = "Content-Type, Authorization, X-API-Key, X-User-Email, X-Project-Password, X-Request-ID, X-Client-Version"
 
-# Functions için CORS
+# Functions için CORS - 3 Katmanlı API Key sistemi için
 [[headers]]
   for = "/.netlify/functions/*"
   [headers.values]
     Access-Control-Allow-Origin = "*"
     Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS"
-    Access-Control-Allow-Headers = "Content-Type, Authorization, X-API-Key"
+    Access-Control-Allow-Headers = "Content-Type, Authorization, X-API-Key, X-User-Email, X-Project-Password, X-Request-ID, X-Client-Version"
+
+# Environment Variables (Production)
+[context.production.environment]
+  VITE_HZM_API_KEY = "hzm_1ce98c92189d4a109cd604b22bfd86b7"
+  VITE_HZM_USER_EMAIL = "ozgurhzm@gmail.com"
+  VITE_HZM_PROJECT_PASSWORD = "hzmsoft123456"
+  VITE_HZM_BASE_URL = "https://hzmbackandveritabani-production-c660.up.railway.app"
+  VITE_HZM_PROJECT_ID = "5"
+  VITE_NETLIFY_SITE_URL = "https://vardiyaasistani.netlify.app"
+  VITE_DEV_MODE = "false"
+  VITE_DEBUG_API = "false"
+
+# Environment Variables (Deploy Previews)
+[context.deploy-preview.environment]
+  VITE_HZM_API_KEY = "hzm_1ce98c92189d4a109cd604b22bfd86b7"
+  VITE_HZM_USER_EMAIL = "ozgurhzm@gmail.com"
+  VITE_HZM_PROJECT_PASSWORD = "hzmsoft123456"
+  VITE_HZM_BASE_URL = "https://hzmbackandveritabani-production-c660.up.railway.app"
+  VITE_HZM_PROJECT_ID = "5"
+  VITE_DEV_MODE = "true"
+  VITE_DEBUG_API = "true"

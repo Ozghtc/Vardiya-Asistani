@@ -4,6 +4,14 @@ import { addUser, addKurum, getUsers, getKurumlar, setJWTToken } from '../../lib
 import { LoginData, RegisterData, User, EnrichedUser, AuthResponse } from '../types/auth.types';
 import { useAuthContext } from '../../contexts/AuthContext';
 
+// 3-Layer API Key Configuration
+const API_CONFIG = {
+  apiKey: import.meta.env.VITE_HZM_API_KEY || 'hzm_1ce98c92189d4a109cd604b22bfd86b7',
+  userEmail: import.meta.env.VITE_HZM_USER_EMAIL || 'ozgurhzm@gmail.com',
+  projectPassword: import.meta.env.VITE_HZM_PROJECT_PASSWORD || 'hzmsoft123456',
+  proxyURL: '/.netlify/functions/api-proxy'
+};
+
 // Bölüm 4: Authentication Logic
 // 150 satır - KURAL 9 uyumlu
 
@@ -130,16 +138,19 @@ export const useAuth = () => {
 
       console.log('🔐 Güvenli login başlatılıyor...');
       
-      // 1. ÖNCE JWT TOKEN AL (GÜVENLİ ŞEKİLDE)
+      // 1. ÖNCE JWT TOKEN AL (3-Layer API Key System ile)
       try {
-        const response = await fetch('/.netlify/functions/api-proxy', {
+        const response = await fetch(API_CONFIG.proxyURL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             path: '/api/v1/auth/login',
             method: 'POST',
             body: { email, password },
-            apiKey: 'hzm_1ce98c92189d4a109cd604b22bfd86b7'
+            // 3-Layer Authentication
+            apiKey: API_CONFIG.apiKey,
+            userEmail: API_CONFIG.userEmail,
+            projectPassword: API_CONFIG.projectPassword
           })
         });
 
@@ -163,7 +174,7 @@ export const useAuth = () => {
         return { success: false };
       }
       
-      // 2. ŞIMDI KULLANICILARI ÇEK (JWT token ile)
+      // 2. ŞIMDI KULLANICILARI ÇEK (3-Layer API Key System ile)
       const users = await getUsers(33);
       
       if (!users || users.length === 0) {

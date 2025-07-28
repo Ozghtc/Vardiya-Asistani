@@ -1,10 +1,21 @@
-// Optimized API Configuration
+// 3-Layer API Key System Configuration
 const API_CONFIG = {
-  baseURL: 'https://hzmbackandveritabani-production-c660.up.railway.app',
-  apiKey: 'hzm_1ce98c92189d4a109cd604b22bfd86b7',
-  projectId: '5',
+  baseURL: import.meta.env.VITE_HZM_BASE_URL || 'https://hzmbackandveritabani-production-c660.up.railway.app',
+  apiKey: import.meta.env.VITE_HZM_API_KEY || 'hzm_1ce98c92189d4a109cd604b22bfd86b7',
+  userEmail: import.meta.env.VITE_HZM_USER_EMAIL || 'ozgurhzm@gmail.com',
+  projectPassword: import.meta.env.VITE_HZM_PROJECT_PASSWORD || 'hzmsoft123456',
+  projectId: import.meta.env.VITE_HZM_PROJECT_ID || '5',
   proxyURL: '/.netlify/functions/api-proxy'
 };
+
+// Debug: Environment variables kontrolü
+console.log('🔧 API_CONFIG initialized:', {
+  baseURL: API_CONFIG.baseURL,
+  apiKey: API_CONFIG.apiKey ? 'PRESENT' : 'MISSING',
+  userEmail: API_CONFIG.userEmail ? 'PRESENT' : 'MISSING',
+  projectPassword: API_CONFIG.projectPassword ? 'PRESENT' : 'MISSING',
+  projectId: API_CONFIG.projectId
+});
 
 // 🚫 CACHE SİSTEMİ KALDIRILDI - KALICI ÇÖZÜM
 // Tüm API çağrıları direkt backend'e gidecek
@@ -74,7 +85,7 @@ export const deleteTableData = async (tableId: string, rowId: string) => {
 // Kullanıcı tablosu oluşturma - eski sistem uyumluluğu
 export const createUsersTable = async () => {
   try {
-    const response = await apiRequest(`/api/v1/tables/project/5`, {
+    const response = await apiRequest(`/api/v1/tables/project/${API_CONFIG.projectId}`, {
       method: 'POST',
       body: JSON.stringify({
         name: 'kullanicilar_new',
@@ -93,7 +104,7 @@ const logError = (message: string, error?: any) => {
   console.error(`❌ ${message}`, error || '');
 };
 
-// JWT Token yönetimi - GÜVENLİ YÖNTEM
+// JWT Token yönetimi - GÜVENLİ YÖNTEM (Backward compatibility için)
 let jwtToken: string | null = null;
 let tokenExpiry: number | null = null;
 
@@ -123,7 +134,7 @@ const getJWTToken = async (): Promise<string> => {
     // 🚨 GÜVENLİK: Hardcoded credentials kaldırıldı!
     // Token artık sadece kullanıcı giriş yaptığında alınacak
     if (!jwtToken) {
-      console.warn('⚠️ JWT Token bulunamadı - API Key fallback kullanılacak');
+      console.warn('⚠️ JWT Token bulunamadı - 3-Layer API Key sistem kullanılacak');
       return ''; // Boş string döndür, apiRequest'te handle edilecek
     }
     
@@ -131,23 +142,23 @@ const getJWTToken = async (): Promise<string> => {
     
   } catch (error) {
     console.error('🚨 JWT Token alınamadı:', error);
-    // Fallback: API Key ile sınırlı işlemler
+    // Fallback: 3-Layer API Key sistemi
     return '';
   }
 };
 
-// API Request with timeout - TÜM İSTEKLER PROXY ÜZERİNDEN
+// API Request with 3-Layer Authentication - TÜM İSTEKLER PROXY ÜZERİNDEN
 const apiRequest = async (path: string, options: RequestInit = {}) => {
   try {
     const token = await getJWTToken();
     
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 saniye timeout - API Key sistem için
     
     try {
       // 🔧 TÜM API İSTEKLERİ NETLIFY PROXY ÜZERİNDEN (CORS sorunu çözümü)
       // 🚫 CACHE ENGELLEME - Sekme/Browser cache'i tamamen devre dışı
-      const response = await fetch('/.netlify/functions/api-proxy', {
+      const response = await fetch(API_CONFIG.proxyURL, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -159,8 +170,12 @@ const apiRequest = async (path: string, options: RequestInit = {}) => {
           path: `${path}${path.includes('?') ? '&' : '?'}_t=${Date.now()}`, // Timestamp cache buster
           method: options.method || 'GET',
           body: options.body ? JSON.parse(options.body as string) : undefined,
-          jwtToken: token || undefined, // Token yoksa undefined gönder
+          // 3-Layer Authentication
           apiKey: API_CONFIG.apiKey,
+          userEmail: API_CONFIG.userEmail,
+          projectPassword: API_CONFIG.projectPassword,
+          // JWT Token backward compatibility için
+          jwtToken: token || undefined,
         }),
         signal: controller.signal
       });
@@ -172,14 +187,20 @@ const apiRequest = async (path: string, options: RequestInit = {}) => {
         throw new Error(data.message || 'API Error');
       }
       
-      console.log(`✅ API SUCCESS (PROXY): ${options.method || 'GET'} ${path}`, data);
+      console.log(`✅ API SUCCESS (3-Layer): ${options.method || 'GET'} ${path}`, data);
+      
+      // API Key usage bilgisini logla
+      if (data.data && data.data.apiKeyUsage) {
+        console.log('📊 API Key Usage:', data.data.apiKeyUsage);
+      }
+      
       return data;
     } catch (fetchError: any) {
       clearTimeout(timeoutId);
       if (fetchError.name === 'AbortError') {
-        throw new Error('Request timeout - API yanıt vermiyor');
+        throw new Error('Request timeout - API yanıt vermiyor (15s)');
       }
-      console.error(`❌ API ERROR (PROXY): ${options.method || 'GET'} ${path}`, fetchError);
+      console.error(`❌ API ERROR (3-Layer): ${options.method || 'GET'} ${path}`, fetchError);
       throw fetchError;
     }
   } catch (error) {
@@ -575,7 +596,7 @@ export const cascadeDeleteKurum = async (kurumId: string): Promise<any> => {
 export const getTablesWithKurumId = async (): Promise<string[]> => {
   try {
     // Tüm tabloları listele
-    const response = await apiRequest('/api/v1/tables/project/5', {
+    const response = await apiRequest(`/api/v1/tables/project/${API_CONFIG.projectId}`, {
       method: 'GET'
     });
     
@@ -776,32 +797,13 @@ export const getUsers = async (usersTableId: number, forceRefresh: boolean = fal
       console.log('🧹 USERS CACHE TEMİZLENDİ - FRESH DATA ÇEKILIYOR');
     }
     
-    // JWT TOKEN AL
-    const token = await getJWTToken();
+    // 3-Layer API Key System ile direkt API çağrısı
+    const response = await apiRequest(`/api/v1/data/table/${usersTableId}`);
     
-    // NETLIFY PROXY İLE GÜVENLİ ERİŞİM - JWT TOKEN İLE
-    const response = await fetch('/.netlify/functions/api-proxy', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        path: `/api/v1/data/table/${usersTableId}`,
-        method: 'GET',
-        jwtToken: token,
-        apiKey: API_CONFIG.apiKey
-      })
-    });
-    
-    if (!response.ok) {
-      throw new Error(`API Error: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    let users = data.data?.rows || [];
+    let users = response.data?.rows || [];
     
     // 🔍 DEBUG: API Response analizi
-    console.log('🔍 Netlify Proxy Response:', data);
+    console.log('🔍 3-Layer API Response:', response);
     console.log('🔍 Raw users:', users);
     console.log('🔍 User count:', users.length);
     console.log('🔍 Users data:', users);
@@ -897,27 +899,10 @@ export const addUser = async (usersTableId: number, userData: {
     
     console.log('🆔 Kullanıcı ekleniyor - KULLANICI_ID:', kullaniciId);
     
-    const token = await getJWTToken();
-    
-    const response = await fetch('/.netlify/functions/api-proxy', {
+    const response = await apiRequest(`/api/v1/data/table/${usersTableId}/rows`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        path: `/api/v1/data/table/${usersTableId}/rows`,
-        method: 'POST',
-        body: requestBody,
-        jwtToken: token,
-        apiKey: API_CONFIG.apiKey
-      })
+      body: JSON.stringify(requestBody)
     });
-    
-    if (!response.ok) {
-      throw new Error(`API Error: ${response.status}`);
-    }
-    
-    const data = await response.json();
     
     // Cache temizle
     clearAllCache();
@@ -925,7 +910,7 @@ export const addUser = async (usersTableId: number, userData: {
     
     return {
       success: true,
-      data: data,
+      data: response,
       message: `Kullanıcı başarıyla eklendi - ID: ${kullaniciId}`
     };
   } catch (error) {
@@ -950,28 +935,12 @@ export const updateUser = async (usersTableId: number, userId: string, userData:
   aktif_mi?: boolean;
 }) => {
   try {
-    const token = await getJWTToken();
-    
-    const response = await fetch('/.netlify/functions/api-proxy', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        path: `/api/v1/data/table/${usersTableId}/rows/${userId}`,
-        method: 'PUT',
-        body: userData,
-        jwtToken: token,
-        apiKey: API_CONFIG.apiKey
-      })
+    const response = await apiRequest(`/api/v1/data/table/${usersTableId}/rows/${userId}`, {
+      method: 'PUT',
+      body: JSON.stringify(userData)
     });
     
-    if (!response.ok) {
-      throw new Error(`API Error: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    return { success: true, data: data };
+    return { success: true, data: response };
   } catch (error) {
     logError('updateUser hatası', error);
     return {
@@ -984,27 +953,11 @@ export const updateUser = async (usersTableId: number, userId: string, userData:
 // Kullanıcı sil - KULLANICILAR TABLOSU (ID: 33)
 export const deleteUser = async (usersTableId: number, userId: string) => {
   try {
-    const token = await getJWTToken();
-    
-    const response = await fetch('/.netlify/functions/api-proxy', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        path: `/api/v1/data/table/${usersTableId}/rows/${userId}`,
-        method: 'DELETE',
-        jwtToken: token,
-        apiKey: API_CONFIG.apiKey
-      })
+    const response = await apiRequest(`/api/v1/data/table/${usersTableId}/rows/${userId}`, {
+      method: 'DELETE'
     });
     
-    if (!response.ok) {
-      throw new Error(`API Error: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    return { success: true, data: data };
+    return { success: true, data: response };
   } catch (error) {
     logError('deleteUser hatası', error);
     return {

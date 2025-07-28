@@ -1,939 +1,480 @@
-import React, { useState } from 'react';
-import { Check, X, Clock, Save } from 'lucide-react';
-import { useCapitalization } from '../../../hooks/useCapitalization';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, Save, AlertCircle } from 'lucide-react';
 import { useAuthContext } from '../../../contexts/AuthContext';
-import { useToast } from '../../../components/ui/ToastContainer';
-import { clearAllCache, clearTableCache } from '../../../lib/api';
-import { getTableData } from '../../../lib/api';
 
-const colorMap = {
-  '#DC2626': 'Kırmızı',
-  '#059669': 'Yeşil', 
-  '#2563EB': 'Mavi',
-  '#7C3AED': 'Mor',
-  '#EA580C': 'Turuncu',
-  '#CA8A04': 'Sarı',
-  '#DB2777': 'Pembe',
-  '#0891B2': 'Turkuaz',
-  '#4B5563': 'Gri',
-  '#312E81': 'Lacivert',
-  '#991B1B': 'Bordo',
-  '#166534': 'Koyu Yeşil',
-  '#1E40AF': 'Kraliyet Mavisi',
-  '#92400E': 'Kahverengi',
-  '#4338CA': 'İndigo',
-  '#6B21A8': 'Mor',
-  '#0F766E': 'Çam Yeşili',
-  '#3730A3': 'Gece Mavisi',
-  '#9F1239': 'Vişne',
-  '#1F2937': 'Antrasit',
-  '#831843': 'Magenta',
-  '#115E59': 'Okyanus',
-  '#86198F': 'Fuşya',
-  '#374151': 'Kömür'
-} as const;
-
-interface Area {
-  id: string;
-  name: string;
-  color: string;
-  description: string;
-  dailyHours: number;
-  activeDays: string[];
-  dayHours: DayHours;
-  shifts: Shift[];
-}
-
-interface DayHours {
-  [key: string]: number;
-}
-
-interface Shift {
-  id: string;
-  name: string;
-  hours: string;
-  duration: number;
-  days: string[];
-}
-
-const weekDays = [
-  { value: 'Pazartesi', name: 'Pazartesi', short: 'Pzt' },
-  { value: 'Salı', name: 'Salı', short: 'Sal' },
-  { value: 'Çarşamba', name: 'Çarşamba', short: 'Çar' },
-  { value: 'Perşembe', name: 'Perşembe', short: 'Per' },
-  { value: 'Cuma', name: 'Cuma', short: 'Cum' },
-  { value: 'Cumartesi', name: 'Cumartesi', short: 'Cmt' },
-  { value: 'Pazar', name: 'Pazar', short: 'Paz' }
-];
-
-const vardiyalar = [
-  { name: 'GÜNDÜZ', hours: '08:00 - 16:00', duration: 8 },
-  { name: 'AKŞAM', hours: '16:00 - 24:00', duration: 8 },
-  { name: 'GECE', hours: '00:00 - 08:00', duration: 8 },
-  { name: '24 SAAT', hours: '08:00 - 08:00', duration: 24 },
-  { name: 'SABAH', hours: '08:00 - 13:00', duration: 5 },
-  { name: 'ÖĞLE', hours: '13:00 - 18:00', duration: 5 },
-  { name: 'GEÇ', hours: '16:00 - 08:00', duration: 16 },
-  { name: 'GÜNDÜZ UZUN', hours: '08:00 - 00:00', duration: 16 }
-];
-
-const YeniAlan: React.FC = () => {
-  const { user } = useAuthContext();
-  const { showToast } = useToast();
-  const [name, handleNameChange] = useCapitalization('');
-  const [description, setDescription] = useState('');
-  const [selectedColor, setSelectedColor] = useState('');
-  const [usedColors, setUsedColors] = useState<string[]>([]);
-  const [showShiftSettings, setShowShiftSettings] = useState(false);
-  const [showShiftAddition, setShowShiftAddition] = useState(false);
-  const [areas, setAreas] = useState<Area[]>([]);
-  const [dailyWorkHours, setDailyWorkHours] = useState(40);
-  const [selectedDays, setSelectedDays] = useState<string[]>(weekDays.map(day => day.value));
-  const [dayHours, setDayHours] = useState<DayHours>(
-    weekDays.reduce((acc, day) => ({ ...acc, [day.value]: 40 }), {})
-  );
-  const [selectedShift, setSelectedShift] = useState(vardiyalar[0].name);
-  const [selectedShiftDays, setSelectedShiftDays] = useState<string[]>([]);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [hasShownCompletionToast, setHasShownCompletionToast] = useState(false);
-
-  // Textarea için ayrı handler
-  const handleDescriptionTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setDescription(e.target.value.toUpperCase());
-  };
-
-  const handleAddArea = () => {
-    if (!name.trim() || !selectedColor || isProcessing) {
-      if (isProcessing) {
-        alert('İşlem devam ediyor, lütfen bekleyin!');
-        return;
-      }
-      alert('Lütfen alan adı ve renk seçin!');
-      return;
-    }
-
-    setIsProcessing(true);
-    
-    const newArea: Area = {
-      id: Date.now().toString(),
-      name: name.trim(),
-      color: selectedColor,
-      description: description.trim(),
-      dailyHours: dailyWorkHours,
-      activeDays: [...selectedDays],
-      dayHours: { ...dayHours },
-      shifts: []
-    };
-
-    setAreas([...areas, newArea]);
-    setShowShiftSettings(true);
-    
-    // Form reset
-    handleNameChange({ target: { value: '' } } as React.ChangeEvent<HTMLInputElement>);
-    setDescription('');
-    setSelectedColor('');
-    
-    setIsProcessing(false);
-  };
-
-  const handleAddShiftSettings = () => {
-    if (selectedDays.length === 0 || isProcessing) {
-      if (isProcessing) {
-        alert('İşlem devam ediyor, lütfen bekleyin!');
-        return;
-      }
-      alert('Lütfen en az bir gün seçin!');
-      return;
-    }
-
-    setIsProcessing(true);
-
-    // Son eklenen alanı güncelle
-    setAreas(prevAreas => {
-      const updatedAreas = [...prevAreas];
-      if (updatedAreas.length > 0) {
-        const lastArea = updatedAreas[updatedAreas.length - 1];
-        lastArea.activeDays = [...selectedDays];
-        lastArea.dayHours = { ...dayHours };
-        lastArea.dailyHours = dailyWorkHours;
-        lastArea.shifts = [];
-      }
-      return updatedAreas;
-    });
-
-    setShowShiftAddition(true);
-    setSelectedShiftDays([...selectedDays]);
-    
-    setIsProcessing(false);
-  };
-
-  const handleAddShift = () => {
-    if (selectedShiftDays.length === 0 || isProcessing) {
-      if (isProcessing) {
-        alert('İşlem devam ediyor, lütfen bekleyin!');
-        return;
-      }
-      alert('Lütfen en az bir gün seçin!');
-      return;
-    }
-
-    setIsProcessing(true);
-
-    const shift = vardiyalar.find(v => v.name === selectedShift);
-    if (!shift) {
-      setIsProcessing(false);
-      return;
-    }
-
-    const newShift: Shift = {
-      id: Date.now().toString(),
-      name: shift.name,
-      hours: shift.hours,
-      duration: shift.duration,
-      days: [...selectedShiftDays]
-    };
-
-    // Son eklenen alana vardiyayı ekle
-    setAreas(prevAreas => {
-      const updatedAreas = [...prevAreas];
-      if (updatedAreas.length > 0) {
-        const lastArea = updatedAreas[updatedAreas.length - 1];
-        lastArea.shifts = [...lastArea.shifts, newShift];
-      }
-      return updatedAreas;
-    });
-
-    // Kalan mesai saati olan tüm günleri otomatik seç
-    const remainingDays = selectedDays.filter(day => getRemainingHoursForDay(day) > 0);
-    setSelectedShiftDays(remainingDays);
-    
-    // Toast notification göster
-    showToast({
-      type: 'success',
-      title: 'Vardiya başarıyla eklendi!',
-      message: `${shift.name} vardiyası seçilen günlere eklendi.`,
-      duration: 3000
-    });
-    
-    setIsProcessing(false);
-  };
-
-const handleSaveToDatabase = async () => {
-  if (areas.length === 0 || isProcessing) {
-    if (isProcessing) {
-      alert('İşlem devam ediyor, lütfen bekleyin!');
-      return;
-    }
-    alert('Kaydedilecek alan bulunamadı!');
-    return;
-  }
-
-  setIsSaving(true);
-  setIsProcessing(true);
-  
-  try {
-    const area = areas[areas.length - 1];
-    
-    // Yeni alan ID'si oluştur
-    const existingAlanlar = await getTableData('72', `kurum_id=${user?.kurum_id}&departman_id=${user?.departman_id}&birim_id=${user?.birim_id}`);
-    const alanArray = Array.isArray(existingAlanlar) ? existingAlanlar : [];
-    
-    // ÇİFT KAYIT KONTROLÜ - Alan adı kontrolü (büyük/küçük harf duyarsız)
-    const normalizedNewAlan = area.name.trim().toUpperCase().replace(/İ/g, 'I').replace(/Ğ/g, 'G').replace(/Ü/g, 'U').replace(/Ş/g, 'S').replace(/Ö/g, 'O').replace(/Ç/g, 'C');
-    const isDuplicate = alanArray.some((alan: any) => {
-      const normalizedExisting = (alan.alan_adi || '').toUpperCase().replace(/İ/g, 'I').replace(/Ğ/g, 'G').replace(/Ü/g, 'U').replace(/Ş/g, 'S').replace(/Ö/g, 'O').replace(/Ç/g, 'C');
-      return normalizedExisting === normalizedNewAlan;
-    });
-    
-    if (isDuplicate) {
-      alert(`"${area.name}" alanı zaten mevcut. Aynı alan adı tekrar eklenemez.`);
-      return;
-    }
-    
-    const nextSira = alanArray.length + 1;
-    
-    // DOĞRU FORMAT: kurum_D#_B#_sira (HIYERARSIK_ID_SISTEMI.md uyumlu)
-    const departmanKodu = user?.departman_id?.split('_')[1] || 'D1'; // "6_D1" -> "D1"
-    const birimKodu = user?.birim_id?.split('_')[1] || 'B1'; // "6_B1" -> "B1"
-    const alanId = `${user?.kurum_id}_${departmanKodu}_${birimKodu}_${nextSira}`;
-    
-    const data = {
-      alan_id: alanId,
-      alan_adi: area.name,
-      renk: area.color,
-      aciklama: area.description,
-      gunluk_saatler: JSON.stringify(area.dayHours),
-      aktif_gunler: JSON.stringify(area.activeDays),
-      vardiyalar: JSON.stringify(area.shifts),
-      kullanici_id: user?.id || 1,
-      kurum_id: user?.kurum_id,
-      departman_id: user?.departman_id,
-      birim_id: user?.birim_id
-    };
-
-    // YENİ TABLO ID: 72
-    const response = await fetch('/.netlify/functions/api-proxy', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        path: '/api/v1/data/table/72/rows',
-        method: 'POST',
-        body: data,
-        apiKey: 'hzm_1ce98c92189d4a109cd604b22bfd86b7'
-      })
-    });
-
-    if (response.ok) {
-      const result = await response.json();
-      console.log('✅ Kaydetme başarılı:', result);
-      
-      // Cache temizle ve veri yenile
-      clearTableCache('18');
-      clearAllCache();
-      
-      // Toast notification göster
-      showToast({
-        type: 'success',
-        title: 'Alan başarıyla kaydedildi!',
-        message: 'Tüm günlere vardiya başarılı bir şekilde eklendi.',
-        duration: 4000
-      });
-      
-      // Sayfayı eski haline döndür
-      setAreas([]);
-      setShowShiftSettings(false);
-      setShowShiftAddition(false);
-      setSelectedDays(weekDays.map(day => day.value));
-      setDayHours(weekDays.reduce((acc, day) => ({ ...acc, [day.value]: 40 }), {}));
-      setDailyWorkHours(40);
-      setSelectedShiftDays([]);
-      setSelectedShift(vardiyalar[0].name);
-    } else {
-      let errorMessage = 'Bilinmeyen hata';
-      try {
-        const errorData = await response.json();
-        errorMessage = errorData.message || errorData.error || 'API hatası';
-        console.error('❌ API Hatası:', errorData);
-      } catch (parseError) {
-        console.error('❌ Response parse hatası:', parseError);
-        errorMessage = `HTTP ${response.status}: ${response.statusText}`;
-      }
-      
-      // Hata toast notification'ı göster
-      showToast({
-        type: 'error',
-        title: 'Kaydetme hatası!',
-        message: errorMessage,
-        duration: 5000
-      });
-    }
-  } catch (error: any) {
-    console.error('🚨 Kaydetme hatası:', error);
-    let errorMessage = 'Bilinmeyen hata';
-    
-    if (error?.name === 'TypeError' && error?.message?.includes('Failed to fetch')) {
-      errorMessage = 'Ağ bağlantısı hatası. Lütfen internet bağlantınızı kontrol edin.';
-    } else if (error?.name === 'AbortError') {
-      errorMessage = 'İstek zaman aşımına uğradı. Lütfen tekrar deneyin.';
-    } else {
-      errorMessage = error?.message || 'Bilinmeyen hata';
-    }
-    
-    // Hata toast notification'ı göster
-    showToast({
-      type: 'error',
-      title: 'Kaydetme hatası!',
-      message: `Kaydetme sırasında bir hata oluştu: ${errorMessage}`,
-      duration: 5000
-    });
-  } finally {
-    setIsSaving(false);
-    setIsProcessing(false);
-  }
+// 3-Layer API Key Configuration
+const API_CONFIG = {
+  apiKey: import.meta.env.VITE_HZM_API_KEY || 'hzm_1ce98c92189d4a109cd604b22bfd86b7',
+  userEmail: import.meta.env.VITE_HZM_USER_EMAIL || 'ozgurhzm@gmail.com',
+  projectPassword: import.meta.env.VITE_HZM_PROJECT_PASSWORD || 'hzmsoft123456',
+  baseURL: import.meta.env.VITE_HZM_BASE_URL || 'https://hzmbackandveritabani-production-c660.up.railway.app'
 };
 
-  const toggleDay = (day: string) => {
-    setSelectedDays(prev => 
-      prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]
-    );
-  };
+interface FormData {
+  alan_adi: string;
+  aciklama: string;
+  aktif_mi: boolean;
+}
 
-  const toggleAllDays = () => {
-    if (selectedDays.length === weekDays.length) {
-      setSelectedDays([]);
-    } else {
-      setSelectedDays(weekDays.map(day => day.value));
+// Turkish character normalization function
+const normalizeTurkishText = (text: string): string => {
+  return text
+    .toLowerCase()
+    .replace(/ğ/g, 'g')
+    .replace(/ü/g, 'u')
+    .replace(/ş/g, 's')
+    .replace(/ı/g, 'i')
+    .replace(/ö/g, 'o')
+    .replace(/ç/g, 'c')
+    .trim();
+};
+
+const YeniAlan: React.FC = () => {
+  const navigate = useNavigate();
+  const { user } = useAuthContext();
+  const [formData, setFormData] = useState<FormData>({
+    alan_adi: '',
+    aciklama: '',
+    aktif_mi: true
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  // Form validation
+  const validateForm = (): boolean => {
+    if (!formData.alan_adi.trim()) {
+      setError('Alan adı gereklidir');
+      return false;
     }
-  };
 
-  const updateAllDaysHours = () => {
-    const newDayHours = { ...dayHours };
-    weekDays.forEach(day => {
-      newDayHours[day.value] = dailyWorkHours;
-    });
-    setDayHours(newDayHours);
-  };
-
-  const updateDayHour = (day: string, hours: number) => {
-    setDayHours(prev => ({
-      ...prev,
-      [day]: hours
-    }));
-  };
-
-  const toggleShiftDay = (day: string) => {
-    setSelectedShiftDays((prev: string[]) => 
-      prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]
-    );
-  };
-
-  // Eklenmemiş günleri hesapla
-  const getUnaddedDays = () => {
-    if (areas.length === 0) return selectedDays;
-    
-    const lastArea = areas[areas.length - 1];
-    if (!lastArea.shifts || lastArea.shifts.length === 0) {
-      return selectedDays;
+    if (formData.alan_adi.length < 2) {
+      setError('Alan adı en az 2 karakter olmalıdır');
+      return false;
     }
-    
-    // Tüm vardiyalarda hangi günlerin eklendiğini topla
-    const addedDays = new Set<string>();
-    lastArea.shifts.forEach(shift => {
-      shift.days.forEach(day => addedDays.add(day));
-    });
-    
-    // Eklenmemiş günleri döndür
-    return selectedDays.filter(day => !addedDays.has(day));
+
+    if (formData.alan_adi.length > 100) {
+      setError('Alan adı en fazla 100 karakter olabilir');
+      return false;
+    }
+
+    return true;
   };
 
-  // Gün için eklenen mesai saatini hesapla
-  const getAddedHoursForDay = (day: string) => {
-    if (areas.length === 0) return 0;
-    
-    const lastArea = areas[areas.length - 1];
-    if (!lastArea.shifts) return 0;
-    
-    return lastArea.shifts
-      .filter(shift => shift.days.includes(day))
-      .reduce((total, shift) => total + shift.duration, 0);
-  };
+  // Check for duplicate area names
+  const checkDuplicateAlan = async (alanAdi: string): Promise<boolean> => {
+    if (!user) return false;
 
-  // Gün için kalan mesai saatini hesapla
-  const getRemainingHoursForDay = (day: string) => {
-    const totalHours = dayHours[day] || 0;
-    const addedHours = getAddedHoursForDay(day);
-    return Math.max(0, totalHours - addedHours);
-  };
-
-  // Gün için vardiya bilgilerini al
-  const getShiftsForDay = (day: string) => {
-    if (areas.length === 0) return [];
-    
-    const lastArea = areas[areas.length - 1];
-    if (!lastArea.shifts) return [];
-    
-    return lastArea.shifts.filter(shift => shift.days.includes(day));
-  };
-
-  // Haftalık toplam mesai saatini hesapla
-  const getWeeklyTotalHours = () => {
-    return Object.values(dayHours).reduce((total, hours) => total + hours, 0);
-  };
-
-  const unaddedDays = getUnaddedDays();
-
-  // Tüm günlerin kalan mesaisi 0 mı kontrol et
-  const allDaysCompleted = selectedDays.every(day => getRemainingHoursForDay(day) === 0);
-
-  // Tüm günler tamamlandığında toast notification göster
-  React.useEffect(() => {
-    if (showShiftAddition && allDaysCompleted && !hasShownCompletionToast) {
-      showToast({
-        type: 'success',
-        title: 'Tüm günlere vardiya başarılı bir şekilde eklendi!',
-        message: 'Bu alan için tüm günlere vardiya tanımlaması tamamlandı.',
-        duration: 4000
+    try {
+      const response = await fetch('/.netlify/functions/api-proxy', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          path: '/api/v1/data/table/72',
+          method: 'GET',
+          // 3-Layer Authentication
+          apiKey: API_CONFIG.apiKey,
+          userEmail: API_CONFIG.userEmail,
+          projectPassword: API_CONFIG.projectPassword
+        })
       });
-      setHasShownCompletionToast(true);
+
+      if (!response.ok) {
+        console.warn('Duplicate check failed:', response.status);
+        return false;
+      }
+
+      const data = await response.json();
+      
+      if (data.success && data.data && Array.isArray(data.data.rows)) {
+        const existingAlanlar = data.data.rows.filter((alan: any) => 
+          alan.kurum_id === user.kurum_id &&
+          alan.departman_id === user.departman_id &&
+          alan.birim_id === user.birim_id
+        );
+
+        // Case-insensitive and Turkish character normalized comparison
+        const normalizedNewName = normalizeTurkishText(alanAdi);
+        
+        return existingAlanlar.some((alan: any) => 
+          normalizeTurkishText(alan.alan_adi) === normalizedNewName
+        );
+      }
+
+      return false;
+    } catch (error) {
+      console.error('Duplicate check error:', error);
+      return false;
     }
-  }, [showShiftAddition, allDaysCompleted, hasShownCompletionToast, showToast]);
+  };
 
-  if (showShiftSettings) {
+  // Generate hierarchical ID for the new area
+  const generateAlanId = async (): Promise<string> => {
+    if (!user || !user.kurum_id || !user.departman_id || !user.birim_id) {
+      console.error('User information incomplete for ID generation');
+      return `${Date.now()}_1`; // Fallback
+    }
+
+    try {
+      const response = await fetch('/.netlify/functions/api-proxy', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          path: '/api/v1/data/table/72',
+          method: 'GET',
+          // 3-Layer Authentication
+          apiKey: API_CONFIG.apiKey,
+          userEmail: API_CONFIG.userEmail,
+          projectPassword: API_CONFIG.projectPassword
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch existing areas');
+      }
+
+      const data = await response.json();
+      
+      if (data.success && data.data && Array.isArray(data.data.rows)) {
+        const existingAlanlar = data.data.rows.filter((alan: any) => 
+          alan.kurum_id === user.kurum_id &&
+          alan.departman_id === user.departman_id &&
+          alan.birim_id === user.birim_id
+        );
+
+        // Find the highest sequence number for this institution/department/unit
+        let maxSira = 0;
+        const kurumId = user.kurum_id;
+        
+        // Extract department and unit codes from IDs
+        let departmanKodu = 'D1'; // Default
+        let birimKodu = 'B1'; // Default
+        
+        // Parse departman_id: "6_D1" -> "D1"
+        if (user.departman_id && user.departman_id.includes('_')) {
+          const parts = user.departman_id.split('_');
+          if (parts.length >= 2 && parts[1]) {
+            departmanKodu = parts[1];
+          }
+        }
+        
+        // Parse birim_id: "6_B1" -> "B1"  
+        if (user.birim_id && user.birim_id.includes('_')) {
+          const parts = user.birim_id.split('_');
+          if (parts.length >= 2 && parts[1]) {
+            birimKodu = parts[1];
+          }
+        }
+
+        // Find existing areas with the same hierarchical pattern
+        const prefix = `${kurumId}_${departmanKodu}_${birimKodu}_`;
+        
+        existingAlanlar.forEach((alan: any) => {
+          if (alan.alan_id && alan.alan_id.startsWith(prefix)) {
+            const parts = alan.alan_id.split('_');
+            if (parts.length >= 4) {
+              const sira = parseInt(parts[3]) || 0;
+              if (sira > maxSira) {
+                maxSira = sira;
+              }
+            }
+          }
+        });
+
+        const nextSira = maxSira + 1;
+        const alanId = `${kurumId}_${departmanKodu}_${birimKodu}_${nextSira}`;
+        
+        console.log(`🆔 Generated alan_id: ${alanId}`, {
+          kurumId,
+          departmanKodu,
+          birimKodu,
+          nextSira,
+          existingCount: existingAlanlar.length
+        });
+        
+        return alanId;
+      }
+
+      // Fallback if no existing data
+      const kurumId = user.kurum_id;
+      const departmanKodu = user.departman_id?.split('_')[1] || 'D1';
+      const birimKodu = user.birim_id?.split('_')[1] || 'B1';
+      return `${kurumId}_${departmanKodu}_${birimKodu}_1`;
+      
+    } catch (error) {
+      console.error('ID generation error:', error);
+      // Fallback ID generation
+      const timestamp = Date.now();
+      return `${user.kurum_id || 'UNK'}_D1_B1_${timestamp}`;
+    }
+  };
+
+  // Handle form submission
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+
+    if (!user) {
+      setError('Kullanıcı bilgileri yüklenemedi. Lütfen sayfayı yenileyin.');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      // Check for duplicate names
+      const isDuplicate = await checkDuplicateAlan(formData.alan_adi);
+      if (isDuplicate) {
+        setError(`"${formData.alan_adi}" adında bir alan zaten mevcut. Lütfen farklı bir ad seçin.`);
+        setLoading(false);
+        return;
+      }
+
+      // Generate hierarchical ID
+      const alanId = await generateAlanId();
+
+      // Prepare the data to be sent
+      const requestData = {
+        alan_id: alanId,
+        alan_adi: formData.alan_adi.trim(),
+        aciklama: formData.aciklama.trim(),
+        kurum_id: user.kurum_id,
+        departman_id: user.departman_id,
+        birim_id: user.birim_id,
+        aktif_mi: formData.aktif_mi,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
+      console.log('🚀 Sending alan data:', requestData);
+
+      // Send to API
+      const response = await fetch('/.netlify/functions/api-proxy', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          path: '/api/v1/data/table/72/rows',
+          method: 'POST',
+          body: requestData,
+          // 3-Layer Authentication
+          apiKey: API_CONFIG.apiKey,
+          userEmail: API_CONFIG.userEmail,
+          projectPassword: API_CONFIG.projectPassword
+        })
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        setSuccess('Alan başarıyla eklendi!');
+        console.log('✅ Alan eklendi:', result);
+        
+        // Reset form
+        setFormData({
+          alan_adi: '',
+          aciklama: '',
+          aktif_mi: true
+        });
+
+        // Redirect after a short delay
+        setTimeout(() => {
+          navigate('/admin/vardiyali-nobet/tanimlamalar/tanimli-alanlar');
+        }, 1500);
+      } else {
+        console.error('❌ API Error:', result);
+        setError(result.message || 'Alan eklenirken bir hata oluştu');
+      }
+    } catch (error) {
+      console.error('❌ Submit error:', error);
+      setError('Alan eklenirken bir hata oluştu. Lütfen tekrar deneyin.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle input changes
+  const handleInputChange = (field: keyof FormData, value: string | boolean) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+    
+    // Clear errors when user starts typing
+    if (error) {
+      setError('');
+    }
+  };
+
+  if (!user) {
     return (
-      <div className="max-w-7xl mx-auto p-4 sm:p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-xl sm:text-2xl font-bold">Vardiya ve Mesai Ayarları</h1>
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="text-gray-500">Kullanıcı bilgileri yükleniyor...</div>
         </div>
-
-        {/* Alan Bilgileri */}
-        <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm mb-6">
-          <h2 className="text-lg font-semibold mb-4">Tanımlı Alanlar</h2>
-          <div className="space-y-3">
-            {areas.map((area) => (
-              <div 
-                key={area.id}
-                className="border rounded-lg overflow-hidden"
-                style={{ borderLeftColor: area.color, borderLeftWidth: '4px' }}
-              >
-                {/* Alan Bilgileri */}
-                <div className="flex items-center justify-between p-3 bg-gray-50">
-                  <div className="flex items-center gap-3">
-                    <div 
-                      className="w-4 h-4 rounded-full"
-                      style={{ backgroundColor: area.color }}
-                    ></div>
-                    <div>
-                      <h3 className="font-semibold">{area.name}</h3>
-                      <p className="text-sm text-gray-600">{area.description}</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm text-gray-600">Haftalık: {getWeeklyTotalHours()} saat</p>
-                    <p className="text-xs text-gray-500">{area.activeDays.length} gün aktif</p>
-                  </div>
-                </div>
-
-                {/* Günlük Mesai Bilgileri - Sadece vardiya ekleme aşamasında görünür */}
-                {showShiftAddition && area.dayHours && Object.keys(area.dayHours).length > 0 && (
-                  <div className="p-3 border-t">
-                    <h4 className="text-sm font-medium text-gray-700 mb-2">Günlük Toplam Mesailer</h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-4">
-                      {weekDays.map((day) => {
-                        const dayHour = area.dayHours[day.value] || 0;
-                        const isActive = area.activeDays.includes(day.value);
-                        const addedHours = getAddedHoursForDay(day.value);
-                        const remainingHours = getRemainingHoursForDay(day.value);
-                        const dayShifts = getShiftsForDay(day.value);
-                        
-                        return (
-                          <div 
-                            key={day.value}
-                            className={`p-4 rounded-lg border-2 min-h-[180px] ${
-                              isActive 
-                                ? 'border-blue-500 bg-blue-50'
-                                : 'border-gray-200 bg-gray-50'
-                            }`}
-                          >
-                            <div className="text-center space-y-2">
-                              <div className="font-semibold text-lg">{day.name}</div>
-                              <div className="grid grid-cols-3 gap-2 text-xs">
-                                <div className="text-center">
-                                  <div className="font-medium text-gray-600">T</div>
-                                  <div className="text-blue-600 font-semibold">{dayHour}</div>
-                                </div>
-                                <div className="text-center">
-                                  <div className="font-medium text-gray-600">Ek Mes</div>
-                                  <div className="text-green-600 font-semibold">{addedHours}</div>
-                                </div>
-                                <div className="text-center">
-                                  <div className="font-medium text-gray-600">Kalan Mes</div>
-                                  <div className="text-red-600 font-semibold">{remainingHours}</div>
-                                </div>
-                              </div>
-                              
-                              {/* Vardiya bilgileri - Tek sıra halinde */}
-                              {dayShifts.length > 0 && (
-                                <div className="mt-3">
-                                  <div className="space-y-1">
-                                    {dayShifts.map((shift, index) => (
-                                      <div key={index} className="text-xs bg-white p-2 rounded border">
-                                        <div className="font-medium text-gray-700">
-                                          {index + 1} Vardiya: {shift.name} ({shift.hours})
-                                        </div>
-                                        <div className="text-gray-600">{shift.duration} saat</div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Vardiya Ayarları */}
-        {!showShiftAddition && (
-          <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm">
-            <div className="flex items-center gap-2 sm:gap-3 mb-4">
-              <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
-              <h2 className="text-base sm:text-lg font-semibold">Günlük Mesai Belirleme</h2>
-            </div>
-
-            <div className="space-y-6">
-              <div className="flex items-center gap-4">
-                <div className="flex-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Günlük Toplam Mesai Saati
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      value={dailyWorkHours}
-                      onChange={(e) => setDailyWorkHours(Number(e.target.value))}
-                      disabled={isProcessing}
-                      className={`w-32 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 ${
-                        isProcessing ? 'bg-gray-100 cursor-not-allowed' : ''
-                      }`}
-                    />
-                    <button
-                      onClick={updateAllDaysHours}
-                      disabled={isProcessing}
-                      className={`px-3 py-1 rounded-lg transition-colors text-sm ${
-                        isProcessing
-                          ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
-                          : 'bg-blue-600 text-white hover:bg-blue-700'
-                      }`}
-                    >
-                      {isProcessing ? 'İşleniyor...' : 'Tüm Günlere Uygula'}
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold">Günler</h3>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={toggleAllDays}
-                      disabled={isProcessing}
-                      className={`flex items-center gap-2 px-3 py-1 rounded-lg transition-colors text-sm ${
-                        selectedDays.length === weekDays.length
-                          ? 'bg-blue-100 text-blue-800'
-                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                      } ${isProcessing ? 'cursor-not-allowed opacity-50' : ''}`}
-                    >
-                      <div className={`w-4 h-4 border-2 rounded flex items-center justify-center ${
-                        selectedDays.length === weekDays.length
-                          ? 'bg-blue-600 border-blue-600'
-                          : 'border-gray-400'
-                      }`}>
-                        {selectedDays.length === weekDays.length && (
-                          <Check className="w-3 h-3 text-white" />
-                        )}
-                      </div>
-                      Tümünü Seç
-                    </button>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {weekDays.map((day) => {
-                    const isSelected = selectedDays.includes(day.value);
-                    const dayHour = dayHours[day.value] || 0;
-                    
-                    return (
-                      <div 
-                        key={day.value}
-                        className={`p-4 rounded-lg border-2 transition-all min-h-[120px] ${
-                          isSelected
-                            ? 'border-blue-500 bg-blue-50'
-                            : 'border-gray-200 bg-gray-50'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between mb-3">
-                                              <button
-                      onClick={() => toggleDay(day.value)}
-                      disabled={isProcessing}
-                      className={`flex items-center gap-2 w-full text-left ${
-                        isSelected ? 'text-blue-800' : 'text-gray-600'
-                      } ${isProcessing ? 'cursor-not-allowed opacity-50' : ''}`}
-                    >
-                            <div className={`w-5 h-5 border-2 rounded flex items-center justify-center ${
-                              isSelected
-                                ? 'bg-blue-600 border-blue-600'
-                                : 'border-gray-400'
-                            }`}>
-                              {isSelected && (
-                                <Check className="w-3 h-3 text-white" />
-                              )}
-                            </div>
-                            <span className="font-semibold">{day.name}</span>
-                          </button>
-                        </div>
-                        
-                        {isSelected && (
-                          <div className="space-y-2">
-                            <label className="block text-xs font-medium text-gray-600">
-                              Günlük Toplam Mesai
-                            </label>
-                            <input
-                              type="number"
-                              value={dayHour}
-                              onChange={(e) => updateDayHour(day.value, Number(e.target.value))}
-                              disabled={isProcessing}
-                              className={`w-full px-3 py-2 text-sm rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 ${
-                                isProcessing ? 'bg-gray-100 cursor-not-allowed' : ''
-                              }`}
-                              placeholder="40"
-                            />
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-6">
-              <button
-                onClick={handleAddShiftSettings}
-                disabled={selectedDays.length === 0 || isProcessing}
-                className={`w-full py-3 rounded-lg transition-colors ${
-                  selectedDays.length > 0 && !isProcessing
-                    ? 'bg-green-600 hover:bg-green-700 text-white'
-                    : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                }`}
-              >
-                {isProcessing ? 'İşleniyor...' : 'Ekle'}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Vardiya Ekleme Bölümü */}
-        {showShiftAddition && !allDaysCompleted && (
-          <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm mt-6">
-            <div className="flex items-center gap-2 sm:gap-3 mb-4">
-              <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
-              <h2 className="text-base sm:text-lg font-semibold">Vardiya Eklenecek Günler</h2>
-            </div>
-
-            <div className="space-y-4">
-              <div className="flex items-center gap-4">
-                <div className="flex-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Vardiya Türü
-                  </label>
-                  <select
-                    value={selectedShift}
-                    onChange={(e) => setSelectedShift(e.target.value)}
-                    disabled={isProcessing}
-                    className={`w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 ${
-                      isProcessing ? 'bg-gray-100 cursor-not-allowed' : ''
-                    }`}
-                  >
-                    {vardiyalar.map((shift) => (
-                      <option key={shift.name} value={shift.name}>
-                        {shift.name} ({shift.hours}) = {shift.duration} Saat
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Vardiya Eklenecek Günler ({selectedDays.filter(day => getRemainingHoursForDay(day) > 0).length} gün kaldı)
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {weekDays.map((day) => {
-                    const isActive = selectedDays.includes(day.value);
-                    const isUnadded = unaddedDays.includes(day.value);
-                    const isSelected = selectedShiftDays.includes(day.value);
-                    const remainingHours = getRemainingHoursForDay(day.value);
-                    
-                    return (
-                      <button
-                        key={day.value}
-                        onClick={() => isActive && remainingHours > 0 && toggleShiftDay(day.value)}
-                        disabled={!isActive || remainingHours === 0 || isProcessing}
-                        className={`px-3 py-2 rounded-lg transition-colors text-sm font-medium ${
-                          !isActive
-                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                            : remainingHours === 0
-                            ? 'bg-green-100 text-green-800 cursor-not-allowed'
-                            : isSelected
-                            ? 'bg-blue-100 text-blue-800 hover:bg-blue-200'
-                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                        } ${isProcessing ? 'opacity-50' : ''}`}
-                        title={
-                          !isActive 
-                            ? 'Bu gün aktif değil'
-                            : remainingHours === 0 
-                            ? 'Bu günün mesai saati doldu'
-                            : isProcessing
-                            ? 'İşlem devam ediyor'
-                            : 'Bu güne vardiya ekle'
-                        }
-                      >
-                        {day.name}
-                        {remainingHours === 0 && isActive && (
-                          <span className="ml-1 text-xs">✓</span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="pt-4 space-y-3">
-                <button
-                  onClick={handleAddShift}
-                  disabled={selectedShiftDays.length === 0 || allDaysCompleted || isProcessing}
-                  className={`w-full py-3 rounded-lg transition-colors ${
-                    selectedShiftDays.length > 0 && !allDaysCompleted && !isProcessing
-                      ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                      : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                  }`}
-                >
-                  {isProcessing ? 'İşleniyor...' : allDaysCompleted ? 'Tüm Günler Tamamlandı' : 'Vardiya Ekle'}
-                </button>
-                
-                {/* Kaydet Butonu - Vardiya ekleme bölümünde de göster */}
-                {areas.length > 0 && (
-                  <button
-                    onClick={handleSaveToDatabase}
-                    disabled={isSaving || isProcessing}
-                    className={`w-full py-3 rounded-lg transition-colors flex items-center justify-center gap-2 ${
-                      isSaving || isProcessing
-                        ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
-                        : 'bg-red-600 hover:bg-red-700 text-white'
-                    }`}
-                  >
-                    <Save className="w-4 h-4" />
-                    {isSaving ? 'Kaydediliyor...' : isProcessing ? 'İşleniyor...' : 'Kaydet'}
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Kaydet Butonu - Tüm günler tamamlandığında göster */}
-        {showShiftAddition && allDaysCompleted && (
-          <div className="mt-6">
-            <button
-              onClick={handleSaveToDatabase}
-              disabled={isSaving || isProcessing}
-              className={`w-full py-3 rounded-lg transition-colors flex items-center justify-center gap-2 ${
-                isSaving || isProcessing
-                  ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
-                  : 'bg-green-600 hover:bg-green-700 text-white'
-              }`}
-            >
-              <Save className="w-4 h-4" />
-              {isSaving ? 'Kaydediliyor...' : isProcessing ? 'İşleniyor...' : 'Kaydet'}
-            </button>
-          </div>
-        )}
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-4 sm:p-6">
+    <div className="max-w-2xl mx-auto p-6">
+      {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl sm:text-2xl font-bold">Alan Tanımla</h1>
-      </div>
-      
-      <div className="space-y-4 sm:space-y-6">
-        <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm">
-          <div className="space-y-4">
-            <div>
-              <label className="block text-gray-700 mb-2 text-sm sm:text-base">Alan Adı</label>
-                                <input
-                    type="text"
-                    value={name}
-                    onChange={handleNameChange}
-                    placeholder="ÖRN: KIRMIZI ALAN, GÖZLEM ODASI"
-                    disabled={isProcessing}
-                    className={`w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 ${
-                      isProcessing ? 'bg-gray-100 cursor-not-allowed' : ''
-                    }`}
-                  />
-            </div>
-
-            <div>
-              <label className="text-gray-700 mb-2 flex items-center gap-2 text-sm sm:text-base">
-                Temsili Renk
-                {selectedColor && (
-                  <span className="font-bold" style={{ color: selectedColor }}>
-                    ({colorMap[selectedColor as keyof typeof colorMap]})
-                  </span>
-                )}
-              </label>
-              <div className="grid grid-cols-6 sm:grid-cols-8 lg:grid-cols-12 gap-2 sm:gap-3">
-                {Object.entries(colorMap).map(([color, name]) => {
-                  const isUsed = usedColors.includes(color);
-                  const isSelected = selectedColor === color;
-                  
-                  return (
-                    <button
-                      key={color}
-                      type="button"
-                      onClick={() => !isUsed && !isProcessing && setSelectedColor(color)}
-                      className={`relative group ${isUsed || isProcessing ? 'cursor-not-allowed' : 'cursor-pointer'}`}
-                      title={isUsed ? `${name} (Kullanımda)` : isProcessing ? 'İşlem devam ediyor' : name}
-                      disabled={isUsed || isProcessing}
-                    >
-                      <div
-                        className={`w-6 h-6 sm:w-8 sm:h-8 rounded-lg transition-all ${
-                          isSelected 
-                            ? 'ring-2 ring-blue-500 scale-110' 
-                            : isUsed || isProcessing
-                            ? 'opacity-50'
-                            : 'hover:scale-110'
-                        }`}
-                        style={{ backgroundColor: color }}
-                      >
-                        {isSelected && (
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <Check className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
-                          </div>
-                        )}
-                        {isUsed && (
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <X className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
-                          </div>
-                        )}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-gray-700 mb-2 text-sm sm:text-base">Açıklama</label>
-              <textarea
-                value={description}
-                onChange={handleDescriptionTextareaChange}
-                placeholder="ALAN HAKKINDA KISA BİR AÇIKLAMA"
-                rows={4}
-                disabled={isProcessing}
-                className={`w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 ${
-                  isProcessing ? 'bg-gray-100 cursor-not-allowed' : ''
-                }`}
-              />
-            </div>
-
-            <div className="pt-4">
-              <button
-                onClick={handleAddArea}
-                disabled={!name.trim() || !selectedColor || isProcessing}
-                className={`w-full py-3 rounded-lg transition-colors ${
-                  name.trim() && selectedColor && !isProcessing
-                    ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                    : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                }`}
-              >
-                {isProcessing ? 'İşleniyor...' : 'Ekle'}
-              </button>
-            </div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate('/admin/vardiyali-nobet/tanimlamalar/tanimli-alanlar')}
+            className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Geri
+          </button>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Yeni Alan Ekle</h1>
+            <p className="text-gray-600">{user.kurum_adi} - {user.departman_adi} - {user.birim_adi}</p>
           </div>
         </div>
+      </div>
+
+      {/* Form */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Alan Adı */}
+          <div>
+            <label htmlFor="alan_adi" className="block text-sm font-medium text-gray-700 mb-2">
+              Alan Adı <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              id="alan_adi"
+              value={formData.alan_adi}
+              onChange={(e) => handleInputChange('alan_adi', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Örn: Acil Servis, Ameliyathane, Yoğun Bakım"
+              required
+              maxLength={100}
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              En az 2, en fazla 100 karakter. Aynı kurum/departman/birim içinde benzersiz olmalı.
+            </p>
+          </div>
+
+          {/* Açıklama */}
+          <div>
+            <label htmlFor="aciklama" className="block text-sm font-medium text-gray-700 mb-2">
+              Açıklama
+            </label>
+            <textarea
+              id="aciklama"
+              value={formData.aciklama}
+              onChange={(e) => handleInputChange('aciklama', e.target.value)}
+              rows={4}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Alan hakkında detaylı bilgi..."
+              maxLength={500}
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              İsteğe bağlı. En fazla 500 karakter.
+            </p>
+          </div>
+
+          {/* Aktif/Pasif */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Durum
+            </label>
+            <div className="flex items-center gap-4">
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  name="aktif_mi"
+                  checked={formData.aktif_mi === true}
+                  onChange={() => handleInputChange('aktif_mi', true)}
+                  className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                />
+                <span className="ml-2 text-sm text-gray-700">Aktif</span>
+              </label>
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  name="aktif_mi"
+                  checked={formData.aktif_mi === false}
+                  onChange={() => handleInputChange('aktif_mi', false)}
+                  className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                />
+                <span className="ml-2 text-sm text-gray-700">Pasif</span>
+              </label>
+            </div>
+          </div>
+
+          {/* Error Message */}
+          {error && (
+            <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700">
+              <AlertCircle className="w-5 h-5 flex-shrink-0" />
+              <span className="text-sm">{error}</span>
+            </div>
+          )}
+
+          {/* Success Message */}
+          {success && (
+            <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700">
+              <div className="w-5 h-5 flex-shrink-0 rounded-full bg-green-500 flex items-center justify-center">
+                <div className="w-2 h-2 bg-white rounded-full"></div>
+              </div>
+              <span className="text-sm">{success}</span>
+            </div>
+          )}
+
+          {/* Submit Buttons */}
+          <div className="flex gap-3 pt-4">
+            <button
+              type="button"
+              onClick={() => navigate('/admin/vardiyali-nobet/tanimlamalar/tanimli-alanlar')}
+              className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              disabled={loading}
+            >
+              İptal
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {loading ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Ekleniyor...
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4" />
+                  Alan Ekle
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
+
+      {/* Info Box */}
+      <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <h3 className="text-sm font-medium text-blue-900 mb-2">Bilgi</h3>
+        <ul className="text-sm text-blue-700 space-y-1">
+          <li>• Alan adları aynı kurum/departman/birim içinde benzersiz olmalıdır</li>
+          <li>• Türkçe karakterler ve büyük/küçük harf farkı gözetilmez</li>
+          <li>• Eklenen alan otomatik olarak hiyerarşik ID alacaktır</li>
+          <li>• Pasif alanlar sistemde görünür ancak kullanılamaz</li>
+        </ul>
       </div>
     </div>
   );

@@ -1,202 +1,248 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, ArrowLeft } from 'lucide-react';
+import { Clock, Calendar, User, FileText, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import { useAuthContext } from '../../contexts/AuthContext';
 
-interface PersonelBilgisi {
-  id: number;
-  ad: string;
-  soyad: string;
-  unvan: string;
+// 3-Layer API Key Configuration
+const API_CONFIG = {
+  apiKey: import.meta.env.VITE_HZM_API_KEY || 'hzm_1ce98c92189d4a109cd604b22bfd86b7',
+  userEmail: import.meta.env.VITE_HZM_USER_EMAIL || 'ozgurhzm@gmail.com',
+  projectPassword: import.meta.env.VITE_HZM_PROJECT_PASSWORD || 'hzmsoft123456',
+  baseURL: import.meta.env.VITE_HZM_BASE_URL || 'https://hzmbackandveritabani-production-c660.up.railway.app'
+};
+
+interface IstekTalep {
+  id: string;
+  talep_turu: string;
+  baslangic_tarihi: string;
+  bitis_tarihi: string;
+  aciklama: string;
+  durum: 'beklemede' | 'onaylandi' | 'reddedildi';
+  olusturma_tarihi: string;
+  yanit_tarihi?: string;
+  yanit_notu?: string;
 }
 
 const IstekTaleplerim: React.FC = () => {
   const { user } = useAuthContext();
-  const [personelListesi, setPersonelListesi] = useState<PersonelBilgisi[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [selectedMonth, setSelectedMonth] = useState<string>('2025-07');
-  const [startDate, setStartDate] = useState<string>('2025-07-01');
-  const [endDate, setEndDate] = useState<string>('2025-07-31');
+  const [talepler, setTalepler] = useState<IstekTalep[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  // Aydan tarihleri oluştur
-  const generateDatesFromMonth = (monthStr: string) => {
-    const [year, month] = monthStr.split('-');
-    const firstDay = new Date(parseInt(year), parseInt(month) - 1, 1);
-    const lastDay = new Date(parseInt(year), parseInt(month), 0);
-    
-    setStartDate(firstDay.toISOString().split('T')[0]);
-    setEndDate(lastDay.toISOString().split('T')[0]);
-  };
-
-  // Ay değiştiğinde tarihleri güncelle
   useEffect(() => {
-    generateDatesFromMonth(selectedMonth);
-  }, [selectedMonth]);
-
-  // Personel listesini çek
-  useEffect(() => {
-    const fetchPersonelListesi = async () => {
-      if (!user) return;
-      
-      setLoading(true);
-      try {
-        const response = await fetch('https://hzmbackandveritabani-production-c660.up.railway.app/api/verileri-cek', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            api_key: 'hzm_1ce98c92189d4a109cd604b22bfd86b7',
-            tablo_id: 21,
-            filtreler: {
-              kurum_id: user.kurum_id,
-              departman_id: user.departman_id,
-              birim_id: user.birim_id,
-              aktif_mi: "1"
-            }
-          })
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success && data.data) {
-            setPersonelListesi(data.data);
-          }
-        }
-      } catch (error) {
-        console.error('Personel listesi yüklenirken hata:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPersonelListesi();
+    loadTalepler();
   }, [user]);
 
-  // Ay adını Türkçe göster
-  const getMonthName = (monthStr: string) => {
-    const [year, month] = monthStr.split('-');
-    const monthNames = [
-      'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
-      'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'
-    ];
-    return `${monthNames[parseInt(month) - 1]} ${year}`;
+  const loadTalepler = async () => {
+    if (!user) return;
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch('/.netlify/functions/api-proxy', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          path: '/api/v1/data/table/70',
+          method: 'GET',
+          // 3-Layer Authentication
+          apiKey: API_CONFIG.apiKey,
+          userEmail: API_CONFIG.userEmail,
+          projectPassword: API_CONFIG.projectPassword
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.success && data.data && Array.isArray(data.data.rows)) {
+        // Kullanıcının taleplerine filtrele
+        const userTalepler = data.data.rows.filter((talep: any) => 
+          talep.kullanici_id === user.id
+        );
+        setTalepler(userTalepler);
+      } else {
+        console.warn('Beklenmeyen API response formatı:', data);
+        setTalepler([]);
+      }
+    } catch (error) {
+      console.error('Talepler yüklenirken hata:', error);
+      setError('İstek ve talepleriniz yüklenirken bir hata oluştu');
+      setTalepler([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Tarihi formatla
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('tr-TR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
+  const getDurumIcon = (durum: string) => {
+    switch (durum) {
+      case 'onaylandi':
+        return <CheckCircle className="w-5 h-5 text-green-600" />;
+      case 'reddedildi':
+        return <XCircle className="w-5 h-5 text-red-600" />;
+      default:
+        return <AlertCircle className="w-5 h-5 text-yellow-600" />;
+    }
   };
 
-  return (
-    <div className="p-6 bg-gray-50 min-h-screen">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-6">
-          <button className="flex items-center gap-2 text-gray-600 hover:text-gray-800">
-            <ArrowLeft className="w-5 h-5" />
-            Geri
-          </button>
-        </div>
+  const getDurumText = (durum: string) => {
+    switch (durum) {
+      case 'onaylandi':
+        return 'Onaylandı';
+      case 'reddedildi':
+        return 'Reddedildi';
+      default:
+        return 'Beklemede';
+    }
+  };
 
-        {/* Başlık ve Tarih Seçici */}
-        <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Calendar className="w-6 h-6 text-blue-600" />
-              <h1 className="text-2xl font-bold text-gray-900">
-                {getMonthName(selectedMonth)} Dönemi
-              </h1>
-            </div>
-            
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600">Başlangıç</span>
-                <span className="font-semibold">{formatDate(startDate)}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600">Bitiş</span>
-                <span className="font-semibold">{formatDate(endDate)}</span>
-              </div>
-            </div>
-          </div>
+  const getDurumColor = (durum: string) => {
+    switch (durum) {
+      case 'onaylandi':
+        return 'bg-green-100 text-green-800';
+      case 'reddedildi':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-yellow-100 text-yellow-800';
+    }
+  };
 
-          <div className="mt-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Ay Seçin
-            </label>
-            <input
-              type="month"
-              value={selectedMonth}
-              onChange={(e) => setSelectedMonth(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-        </div>
-
-        {/* Personel Tablosu */}
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Personel
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Ad Soyad
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Ünvan
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {loading ? (
-                  <tr>
-                    <td colSpan={3} className="px-6 py-8 text-center text-gray-500">
-                      Yükleniyor...
-                    </td>
-                  </tr>
-                ) : personelListesi.length > 0 ? (
-                  personelListesi.map((personel, index) => (
-                    <tr key={personel.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                            <span className="text-blue-600 font-medium">
-                              {personel.ad.charAt(0)}{personel.soyad.charAt(0)}
-                            </span>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
-                          {personel.ad} {personel.soyad}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          {personel.unvan}
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={3} className="px-6 py-8 text-center text-gray-500">
-                      Personel bulunamadı
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="text-gray-500">Kullanıcı bilgileri yükleniyor...</div>
         </div>
       </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">İstek ve Taleplerim</h2>
+          <p className="text-gray-600 mt-1">
+            Gönderdiğiniz izin ve vardiya talepleri
+          </p>
+        </div>
+      </div>
+
+      {/* Loading */}
+      {loading && (
+        <div className="flex items-center justify-center h-32">
+          <div className="flex items-center gap-2 text-gray-600">
+            <div className="w-5 h-5 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
+            Talepler yükleniyor...
+          </div>
+        </div>
+      )}
+
+      {/* Error */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+          {error}
+        </div>
+      )}
+
+      {/* Talepler Listesi */}
+      {!loading && !error && (
+        <div className="space-y-4">
+          {talepler.length === 0 ? (
+            <div className="bg-white rounded-lg shadow p-8 text-center">
+              <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Henüz talep bulunmuyor
+              </h3>
+              <p className="text-gray-600">
+                İzin veya vardiya değişikliği talepleriniz burada görünecek.
+              </p>
+            </div>
+          ) : (
+            talepler.map((talep) => (
+              <div key={talep.id} className="bg-white rounded-lg shadow hover:shadow-md transition-shadow">
+                <div className="p-6">
+                  {/* Header */}
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-blue-100 rounded-lg">
+                        <FileText className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-gray-900">
+                          {talep.talep_turu}
+                        </h3>
+                        <p className="text-sm text-gray-600">
+                          {new Date(talep.olusturma_tarihi).toLocaleDateString('tr-TR')} tarihinde gönderildi
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      {getDurumIcon(talep.durum)}
+                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getDurumColor(talep.durum)}`}>
+                        {getDurumText(talep.durum)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Tarih Bilgileri */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <Calendar className="w-4 h-4" />
+                      <span>
+                        Başlangıç: {new Date(talep.baslangic_tarihi).toLocaleDateString('tr-TR')}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <Calendar className="w-4 h-4" />
+                      <span>
+                        Bitiş: {new Date(talep.bitis_tarihi).toLocaleDateString('tr-TR')}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Açıklama */}
+                  {talep.aciklama && (
+                    <div className="mb-4">
+                      <h4 className="text-sm font-medium text-gray-700 mb-1">Açıklama:</h4>
+                      <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
+                        {talep.aciklama}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Yanıt Bilgisi */}
+                  {talep.yanit_tarihi && (
+                    <div className="border-t pt-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Clock className="w-4 h-4 text-gray-500" />
+                        <span className="text-sm text-gray-600">
+                          {new Date(talep.yanit_tarihi).toLocaleDateString('tr-TR')} tarihinde yanıtlandı
+                        </span>
+                      </div>
+                      {talep.yanit_notu && (
+                        <div>
+                          <h4 className="text-sm font-medium text-gray-700 mb-1">Yönetici Notu:</h4>
+                          <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
+                            {talep.yanit_notu}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      )}
     </div>
   );
 };
