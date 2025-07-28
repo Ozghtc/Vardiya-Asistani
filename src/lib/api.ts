@@ -93,15 +93,22 @@ const logError = (message: string, error?: any) => {
   console.error(`❌ ${message}`, error || '');
 };
 
-// JWT Token management
+// JWT Token yönetimi - GÜVENLİ YÖNTEM
 let jwtToken: string | null = null;
 let tokenExpiry: number | null = null;
 
-// Token'i zorla temizle
+// JWT Token'ı güvenli şekilde kaydet (sadece login sonrası)
+export const setJWTToken = (token: string) => {
+  jwtToken = token;
+  tokenExpiry = Date.now() + (6 * 60 * 60 * 1000); // 6 saat
+  console.log('✅ JWT TOKEN GÜVENLİ ŞEKİLDE KAYDEDILDI');
+};
+
+// JWT Token'ı temizle (logout)
 export const clearJWTToken = () => {
   jwtToken = null;
   tokenExpiry = null;
-  console.log('🧹 JWT TOKEN CACHE TEMİZLENDİ');
+  console.log('🧹 JWT TOKEN TEMİZLENDİ');
 };
 
 const getJWTToken = async (): Promise<string> => {
@@ -111,39 +118,20 @@ const getJWTToken = async (): Promise<string> => {
   }
   
   try {
-    console.log('🔄 YENİ JWT TOKEN ALIYOR...');
+    console.log('🔄 JWT TOKEN GEREKLİ...');
     
-    // NETLIFY PROXY İLE LOGIN
-    const response = await fetch('/.netlify/functions/api-proxy', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        path: '/api/v1/auth/login',
-        method: 'POST',
-        body: {
-          email: 'ozgurhzm@gmail.com',
-          password: '135427'
-        },
-        apiKey: API_CONFIG.apiKey
-      })
-    });
-    
-    if (response.ok) {
-      const data = await response.json();
-      if (data.success && data.data && data.data.token) {
-        jwtToken = data.data.token;
-        tokenExpiry = Date.now() + (6 * 60 * 60 * 1000); // 6 saat
-        console.log('✅ YENİ JWT TOKEN ALINDI');
-        return data.data.token;
-      }
+    // 🚨 GÜVENLİK: Hardcoded credentials kaldırıldı!
+    // Token artık sadece kullanıcı giriş yaptığında alınacak
+    if (!jwtToken) {
+      throw new Error('JWT Token bulunamadı - Lütfen tekrar giriş yapın');
     }
     
-    console.log('❌ JWT TOKEN ALINAMADI - API KEY KULLANILIYOR');
-    return API_CONFIG.apiKey;
+    return jwtToken;
+    
   } catch (error) {
-    logError('JWT Token alma hatası', error);
-    console.log('❌ JWT TOKEN HATASI - API KEY KULLANILIYOR');
-    return API_CONFIG.apiKey;
+    console.error('🚨 JWT Token alınamadı:', error);
+    // Fallback: API Key ile sınırlı işlemler
+    throw error;
   }
 };
 

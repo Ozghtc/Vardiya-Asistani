@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { addUser, addKurum, getUsers, getKurumlar } from '../../lib/api';
+import { addUser, addKurum, getUsers, getKurumlar, setJWTToken } from '../../lib/api';
 import { LoginData, RegisterData, User, EnrichedUser, AuthResponse } from '../types/auth.types';
 import { useAuthContext } from '../../contexts/AuthContext';
 
@@ -130,7 +130,40 @@ export const useAuth = () => {
 
       console.log('🔐 Güvenli login başlatılıyor...');
       
-      // HZM API'den kullanıcıları getir
+      // 1. ÖNCE JWT TOKEN AL (GÜVENLİ ŞEKİLDE)
+      try {
+        const response = await fetch('/.netlify/functions/api-proxy', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            path: '/api/v1/auth/login',
+            method: 'POST',
+            body: { email, password },
+            apiKey: 'hzm_1ce98c92189d4a109cd604b22bfd86b7'
+          })
+        });
+
+        if (response.ok) {
+          const authData = await response.json();
+          if (authData.success && authData.data && authData.data.token) {
+            // JWT Token'ı güvenli şekilde kaydet
+            setJWTToken(authData.data.token);
+            console.log('✅ JWT Token güvenli şekilde alındı');
+          } else {
+            setLoginError('Geçersiz giriş bilgileri');
+            return { success: false };
+          }
+        } else {
+          setLoginError('Sunucu hatası - Lütfen tekrar deneyin');
+          return { success: false };
+        }
+      } catch (authError) {
+        console.error('JWT Auth hatası:', authError);
+        setLoginError('Kimlik doğrulama hatası');
+        return { success: false };
+      }
+      
+      // 2. ŞIMDI KULLANICILARI ÇEK (JWT token ile)
       const users = await getUsers(33);
       
       if (!users || users.length === 0) {
