@@ -694,24 +694,9 @@ const generateKullaniciId = async (kurum_id: string, departman_id: string, birim
     if (rol === 'admin') rolKodu = 'A';
     else if (rol === 'yonetici') rolKodu = 'Y';
 
-    // 🔥 SORUN ÇÖZÜLDİ: Parametreden gelen kurum_id YANLIŞ!
-    // Veritabanından mevcut kurumları çekip en yüksek ID'yi bulmalıyız
-    
-    // 1. Mevcut kurumları çek
-    const kurumlar = await getKurumlar(true);
-    console.log('🔍 Mevcut kurumlar:', kurumlar.map((k: any) => k.kurum_id));
-    
-    // 2. En yüksek kurum_id'yi bul
-    let maxKurumId = 0;
-    kurumlar.forEach((kurum: any) => {
-      const kurumIdNum = parseInt(kurum.kurum_id);
-      if (kurumIdNum > maxKurumId) maxKurumId = kurumIdNum;
-    });
-    
-    // 3. Yeni kurum_id oluştur (sadece format için, kullanıcı mevcut kuruma ekleniyor)
-    // UYARI: Kullanıcı mevcut bir kuruma ekleniyorsa, o kurumun ID'sini kullanmalıyız!
-    const actualKurumId = kurum_id; // Frontend'den seçilen mevcut kurum
-    console.log(`🔍 Kullanılacak kurum_id: ${actualKurumId} (frontend'den seçilen)`);
+    // Frontend'den gelen kurum_id'yi kullan
+    const actualKurumId = kurum_id;
+    console.log(`🔍 Kullanılacak kurum_id: ${actualKurumId}`);
 
     // Mevcut kullanıcıları al ve aynı birimde aynı rol tipindeki en yüksek numarayı bul
     const existingUsers = await getUsers(33); // kullanicilar_final tablosu
@@ -740,14 +725,44 @@ const generateKullaniciId = async (kurum_id: string, departman_id: string, birim
     // Yeni numara
     const newNumber = maxNumber + 1;
     
+    // GÜVENLİ DEPARTMAN VE BİRİM KODU ÇIKARMA
+    let departmanKodu = 'D1'; // Default
+    let birimKodu = 'B1'; // Default
+    
+    // Departman_id format kontrolü: "6_D1" -> "D1"
+    if (departman_id && departman_id.includes('_')) {
+      const parts = departman_id.split('_');
+      if (parts.length >= 2 && parts[1]) {
+        departmanKodu = parts[1];
+      }
+    } else {
+      // Eğer format uygun değilse, departman adından kod üret
+      console.warn(`⚠️ Departman ID formatı hatalı: ${departman_id}, default D1 kullanılıyor`);
+    }
+    
+    // Birim_id format kontrolü: "6_B1" -> "B1"  
+    if (birim_id && birim_id.includes('_')) {
+      const parts = birim_id.split('_');
+      if (parts.length >= 2 && parts[1]) {
+        birimKodu = parts[1];
+      }
+    } else {
+      // Eğer format uygun değilse, birim adından kod üret
+      console.warn(`⚠️ Birim ID formatı hatalı: ${birim_id}, default B1 kullanılıyor`);
+    }
+    
     // Hiyerarşik ID format: kurum_departman_birim_rolTipi+Numara
-    // YENİ YAPI: Departman ve Birim kuruma bağlı
-    // departman_id: "01_D1" -> "D1", birim_id: "01_B1" -> "B1"
-    const departmanKodu = departman_id.split('_')[1]; // "01_D1" -> "D1"
-    const birimKodu = birim_id.split('_')[1]; // "01_B1" -> "B1" (değişti!)
     const kullaniciId = `${actualKurumId}_${departmanKodu}_${birimKodu}_${rolKodu}${newNumber}`;
     
-    console.log(`🆔 KULLANICI_ID oluşturuldu: ${kullaniciId}`);
+    console.log(`🆔 KULLANICI_ID oluşturuldu: ${kullaniciId}`, {
+      kurum_id: actualKurumId,
+      departman_id: departman_id,
+      birim_id: birim_id,
+      departmanKodu: departmanKodu,
+      birimKodu: birimKodu,
+      rolKodu: rolKodu,
+      newNumber: newNumber
+    });
     return kullaniciId;
     
   } catch (error) {
