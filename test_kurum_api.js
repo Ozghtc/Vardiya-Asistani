@@ -1,7 +1,10 @@
 // TEST2 KURUM EKLEME TESTİ
+// Environment'tan API key al
 const API_CONFIG = {
-  baseURL: 'https://hzmbackandveritabani-production-c660.up.railway.app',
-  apiKey: 'hzm_1ce98c92189d4a109cd604b22bfd86b7'
+  baseURL: process.env.VITE_HZM_BASE_URL || 'https://hzmbackandveritabani-production-c660.up.railway.app',
+  apiKey: process.env.VITE_HZM_API_KEY || 'hzm_1ce98c92189d4a109cd604b22bfd86b7',
+  userEmail: process.env.VITE_HZM_USER_EMAIL || 'ozgurhzm@gmail.com',
+  projectPassword: process.env.VITE_HZM_PROJECT_PASSWORD || 'hzmsoft123456'
 };
 
 async function testKurumEkle() {

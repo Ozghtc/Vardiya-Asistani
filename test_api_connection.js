@@ -1,12 +1,19 @@
 // Test API Connection - Frontend gibi çağrı
 import https from 'https';
 
+// Environment'tan API key al
+const API_KEY = process.env.VITE_HZM_API_KEY || 'hzm_1ce98c92189d4a109cd604b22bfd86b7';
+const USER_EMAIL = process.env.VITE_HZM_USER_EMAIL || 'ozgurhzm@gmail.com';
+const PROJECT_PASSWORD = process.env.VITE_HZM_PROJECT_PASSWORD || 'hzmsoft123456';
+
 const makeAPICall = (path, method = 'GET', body = null) => {
   return new Promise((resolve, reject) => {
     const data = JSON.stringify({
       path: path,
       method: method,
-      apiKey: 'hzm_1ce98c92189d4a109cd604b22bfd86b7',
+      apiKey: API_KEY,
+      userEmail: USER_EMAIL,
+      projectPassword: PROJECT_PASSWORD,
       body: body
     });
 

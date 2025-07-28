@@ -224,8 +224,8 @@ const YeniAlan: React.FC = () => {
 
     if (!user) {
       setError('Kullanıcı bilgileri yüklenemedi. Lütfen sayfayı yenileyin.');
-      return;
-    }
+    return;
+  }
 
     setLoading(true);
     setError('');
@@ -259,21 +259,21 @@ const YeniAlan: React.FC = () => {
       console.log('🚀 Sending alan data:', requestData);
 
       // Send to API
-      const response = await fetch('/.netlify/functions/api-proxy', {
-        method: 'POST',
-        headers: {
+    const response = await fetch('/.netlify/functions/api-proxy', {
+      method: 'POST',
+      headers: {
           'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      },
+      body: JSON.stringify({
           path: '/api/v1/data/table/72/rows',
-          method: 'POST',
+        method: 'POST',
           body: requestData,
           // 3-Layer Authentication
           apiKey: API_CONFIG.apiKey,
           userEmail: API_CONFIG.userEmail,
           projectPassword: API_CONFIG.projectPassword
-        })
-      });
+      })
+    });
 
       const result = await response.json();
 
@@ -292,14 +292,14 @@ const YeniAlan: React.FC = () => {
         setTimeout(() => {
           navigate('/admin/vardiyali-nobet/tanimlamalar/tanimli-alanlar');
         }, 1500);
-      } else {
+    } else {
         console.error('❌ API Error:', result);
         setError(result.message || 'Alan eklenirken bir hata oluştu');
       }
     } catch (error) {
       console.error('❌ Submit error:', error);
       setError('Alan eklenirken bir hata oluştu. Lütfen tekrar deneyin.');
-    } finally {
+  } finally {
       setLoading(false);
     }
   };
@@ -323,11 +323,11 @@ const YeniAlan: React.FC = () => {
         <div className="text-center">
           <div className="text-gray-500">Kullanıcı bilgileri yükleniyor...</div>
         </div>
-      </div>
+                    </div>
     );
   }
-
-  return (
+                        
+                        return (
     <div className="max-w-2xl mx-auto p-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
@@ -344,7 +344,7 @@ const YeniAlan: React.FC = () => {
             <p className="text-gray-600">{user.kurum_adi} - {user.departman_adi} - {user.birim_adi}</p>
           </div>
         </div>
-      </div>
+            </div>
 
       {/* Form */}
       <div className="bg-white rounded-lg shadow p-6">
@@ -353,8 +353,8 @@ const YeniAlan: React.FC = () => {
           <div>
             <label htmlFor="alan_adi" className="block text-sm font-medium text-gray-700 mb-2">
               Alan Adı <span className="text-red-500">*</span>
-            </label>
-            <input
+                  </label>
+                    <input
               type="text"
               id="alan_adi"
               value={formData.alan_adi}
@@ -367,10 +367,10 @@ const YeniAlan: React.FC = () => {
             <p className="text-xs text-gray-500 mt-1">
               En az 2, en fazla 100 karakter. Aynı kurum/departman/birim içinde benzersiz olmalı.
             </p>
-          </div>
+              </div>
 
           {/* Açıklama */}
-          <div>
+              <div>
             <label htmlFor="aciklama" className="block text-sm font-medium text-gray-700 mb-2">
               Açıklama
             </label>
@@ -386,8 +386,8 @@ const YeniAlan: React.FC = () => {
             <p className="text-xs text-gray-500 mt-1">
               İsteğe bağlı. En fazla 500 karakter.
             </p>
-          </div>
-
+                </div>
+                
           {/* Aktif/Pasif */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -403,9 +403,9 @@ const YeniAlan: React.FC = () => {
                   className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
                 />
                 <span className="ml-2 text-sm text-gray-700">Aktif</span>
-              </label>
+                            </label>
               <label className="flex items-center">
-                <input
+                            <input
                   type="radio"
                   name="aktif_mi"
                   checked={formData.aktif_mi === false}
@@ -432,8 +432,8 @@ const YeniAlan: React.FC = () => {
                 <div className="w-2 h-2 bg-white rounded-full"></div>
               </div>
               <span className="text-sm">{success}</span>
-            </div>
-          )}
+          </div>
+        )}
 
           {/* Submit Buttons */}
           <div className="flex gap-3 pt-4">
@@ -457,7 +457,7 @@ const YeniAlan: React.FC = () => {
                 </>
               ) : (
                 <>
-                  <Save className="w-4 h-4" />
+              <Save className="w-4 h-4" />
                   Alan Ekle
                 </>
               )}
@@ -465,7 +465,7 @@ const YeniAlan: React.FC = () => {
           </div>
         </form>
       </div>
-
+      
       {/* Info Box */}
       <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
         <h3 className="text-sm font-medium text-blue-900 mb-2">Bilgi</h3>

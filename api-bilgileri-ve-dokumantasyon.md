@@ -11,9 +11,9 @@
 ### 🚀 GEREKLİ HEADER'LAR
 ```bash
 # Her API isteğinde bu 3 header zorunlu:
-X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7      # Proje API Key'i
-X-User-Email: user@example.com                        # Kullanıcı email'i  
-X-Project-Password: hzmsoft123456                     # Proje şifresi
+X-API-Key: ${VITE_HZM_API_KEY}                        # Proje API Key'i (environment variable)
+X-User-Email: ${VITE_HZM_USER_EMAIL}                  # Kullanıcı email'i (environment variable)
+X-Project-Password: ${VITE_HZM_PROJECT_PASSWORD}      # Proje şifresi (environment variable)
 ```
 
 ### 🔑 API KEY BİLGİSİ ALMA
@@ -328,7 +328,7 @@ curl -X GET \
   "data": {
     "rows": [
       {
-        "id": 1,
+      "id": 1,
         "kurum_id": "01",
         "kurum_adi": "Acıbadem Hastanesi",
         "adres": "İstanbul, Türkiye",

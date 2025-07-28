@@ -3,8 +3,11 @@
 # Vardiyali Nobet Asistani - Veritabanı Yapısı Düzenleme
 # Kurum, Departman ve Birim için ID sütunları ekleme
 
-API_KEY="hzm_1ce98c92189d4a109cd604b22bfd86b7"
-BASE_URL="https://hzmbackandveritabani-production-c660.up.railway.app"
+# Environment'tan API key al
+API_KEY="${VITE_HZM_API_KEY:-hzm_1ce98c92189d4a109cd604b22bfd86b7}"
+BASE_URL="${VITE_HZM_BASE_URL:-https://hzmbackandveritabani-production-c660.up.railway.app}"
+USER_EMAIL="${VITE_HZM_USER_EMAIL:-ozgurhzm@gmail.com}"
+PROJECT_PASSWORD="${VITE_HZM_PROJECT_PASSWORD:-hzmsoft123456}"
 PROJECT_ID="5"
 
 echo "🔧 Veritabanı yapısı düzenleniyor..."

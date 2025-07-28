@@ -41,25 +41,25 @@ const TanimliAlanlar: React.FC = () => {
     setError('');
     
     try {
-      const response = await fetch('/.netlify/functions/api-proxy', {
-        method: 'POST',
-        headers: {
+        const response = await fetch('/.netlify/functions/api-proxy', {
+          method: 'POST',
+          headers: {
           'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+          },
+          body: JSON.stringify({
           path: '/api/v1/data/table/72',
-          method: 'GET',
+            method: 'GET',
           // 3-Layer Authentication
           apiKey: API_CONFIG.apiKey,
           userEmail: API_CONFIG.userEmail,
           projectPassword: API_CONFIG.projectPassword
-        })
-      });
-
+          })
+        });
+        
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
+        }
+        
       const data = await response.json();
       console.log('🔍 Alanlar API Response:', data);
       
@@ -161,7 +161,7 @@ const TanimliAlanlar: React.FC = () => {
           projectPassword: API_CONFIG.projectPassword
         })
       });
-
+      
       if (response.ok) {
         console.log('✅ Alan güncellendi');
         setShowEditModal(false);
@@ -253,7 +253,7 @@ const TanimliAlanlar: React.FC = () => {
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
           {error}
-        </div>
+            </div>
       )}
 
       {/* Loading */}
@@ -263,7 +263,7 @@ const TanimliAlanlar: React.FC = () => {
             <RefreshCw className="w-5 h-5 animate-spin" />
             Alanlar yükleniyor...
           </div>
-        </div>
+                  </div>
       )}
 
       {/* Alanlar Tablosu */}
@@ -303,7 +303,7 @@ const TanimliAlanlar: React.FC = () => {
                       }
                     </td>
                   </tr>
-                ) : (
+                  ) : (
                   filteredAlanlar.map((alan) => (
                     <tr key={alan.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
@@ -329,30 +329,30 @@ const TanimliAlanlar: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex items-center justify-end gap-2">
-                          <button
+                  <button
                             onClick={() => handleEditAlan(alan)}
                             className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50"
                             title="Düzenle"
-                          >
+                  >
                             <Edit className="w-4 h-4" />
-                          </button>
-                          <button
+                  </button>
+                  <button
                             onClick={() => handleDeleteAlan(alan.id)}
                             className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50"
                             title="Sil"
-                          >
+                  >
                             <Trash2 className="w-4 h-4" />
-                          </button>
+                  </button>
                         </div>
                       </td>
                     </tr>
                   ))
-                )}
+                    )}
               </tbody>
             </table>
-          </div>
-        </div>
-      )}
+                  </div>
+                </div>
+              )}
 
       {/* Düzenleme Modal'ı */}
       {showEditModal && editingAlan && (
@@ -393,9 +393,9 @@ const TanimliAlanlar: React.FC = () => {
                     rows={3}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   />
-                </div>
+              </div>
                 
-                <div>
+              <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Durum
                   </label>
@@ -407,27 +407,27 @@ const TanimliAlanlar: React.FC = () => {
                     <option value="true">Aktif</option>
                     <option value="false">Pasif</option>
                   </select>
-                </div>
               </div>
-              
+            </div>
+            
               <div className="flex gap-3 mt-6">
-                <button
+              <button
                   type="button"
                   onClick={() => {
                     setShowEditModal(false);
                     setEditingAlan(null);
                   }}
                   className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
-                >
-                  İptal
-                </button>
-                <button
+              >
+                İptal
+              </button>
+              <button
                   type="submit"
                   className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                >
+              >
                   Güncelle
-                </button>
-              </div>
+              </button>
+            </div>
             </form>
           </div>
         </div>

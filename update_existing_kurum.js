@@ -1,11 +1,18 @@
 // Mevcut kurum kaydını güncelle - Frontend proxy üzerinden
 import https from 'https';
 
+// Environment'tan API key al
+const API_KEY = process.env.VITE_HZM_API_KEY || 'hzm_1ce98c92189d4a109cd604b22bfd86b7';
+const USER_EMAIL = process.env.VITE_HZM_USER_EMAIL || 'ozgurhzm@gmail.com';
+const PROJECT_PASSWORD = process.env.VITE_HZM_PROJECT_PASSWORD || 'hzmsoft123456';
+
 const updateKurum = async () => {
   const data = JSON.stringify({
     path: '/api/v1/data/table/10/rows/1',
     method: 'PUT',
-    apiKey: 'hzm_1ce98c92189d4a109cd604b22bfd86b7',
+    apiKey: API_KEY,
+    userEmail: USER_EMAIL,
+    projectPassword: PROJECT_PASSWORD,
     body: {
       kurum_adi: "1_ŞERİK DEVLET HASTANESİ",
       kurum_turu: "HASTANE", 
