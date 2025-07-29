@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuthContext } from '../../../contexts/AuthContext';
 import { apiRequest, getTableData, addTableData, deleteTableData, clearTableCache, updateTableData, clearAllCache } from '../../../lib/api';
+import API_CONFIG from '../../../lib/api';
 import { Trash2, Plus, Clock, CheckCircle, X } from 'lucide-react';
 
 interface Unvan {
@@ -40,23 +41,49 @@ const UnvanTanimlama: React.FC = () => {
   const [kaydedilenMesaiTurleri, setKaydedilenMesaiTurleri] = useState<KaydedilenMesai[]>([]);
   const [mesaiLoading, setMesaiLoading] = useState(false);
 
-  // Mesai türlerini fresh olarak yükle
+  // Mesai türlerini fresh olarak yükle - KURAL 17 GÜVENLİK DÜZELTMESİ
   const loadMesaiTurleri = async () => {
     if (!user?.kurum_id || !user?.departman_id || !user?.birim_id) return;
 
     setMesaiLoading(true);
     try {
-      // Cache'i zorla temizle
+      // KURAL 17: Tüm cache'leri zorla temizle - güvenlik önlemi
+      clearAllCache();
       clearTableCache('73');
       
-      // Fresh data çek - YENİ TABLO ID: 73
-      const filterParams = `kurum_id=${user.kurum_id}&departman_id=${user.departman_id}&birim_id=${user.birim_id}`;
-      const data = await getTableData('73', filterParams, true); // Force fresh
+      // KURAL 17: Direkt API çağrısı - cache bypass
+      const response = await fetch('/.netlify/functions/api-proxy', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          path: '/api/v1/data/table/73',
+          method: 'GET',
+          // 3-Layer Authentication
+          apiKey: API_CONFIG.apiKey,
+          userEmail: API_CONFIG.userEmail,
+          projectPassword: API_CONFIG.projectPassword
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('API request failed');
+      }
+
+      const data = await response.json();
       
-      console.log('📋 Fresh mesai türleri:', data);
-      // Veriyi array olarak garanti et
-      const mesaiArray = Array.isArray(data) ? data : [];
-      setKaydedilenMesaiTurleri(mesaiArray);
+      if (data.success && data.data && Array.isArray(data.data.rows)) {
+        // KURAL 17: Güvenli filtreleme - kullanıcı bilgilerine göre
+        const filteredMesai = data.data.rows.filter((mesai: any) => 
+          mesai.kurum_id === user.kurum_id &&
+          mesai.departman_id === user.departman_id &&
+          mesai.birim_id === user.birim_id
+        );
+        setKaydedilenMesaiTurleri(filteredMesai);
+      } else {
+        setKaydedilenMesaiTurleri([]);
+      }
     } catch (error) {
       console.error('Mesai türleri yüklenirken hata:', error);
       // Tablo yoksa boş array set et, hata verme
