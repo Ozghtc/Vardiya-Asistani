@@ -236,14 +236,7 @@ const KullaniciYonetimPaneli: React.FC = () => {
       return;
     }
     
-    console.log('📤 Kullanıcı ekleme isteği gönderiliyor:', { usersTableId, formData });
-    console.log('🔍 DEPARTMAN/BİRİM DEBUG:', {
-      kurum_id: formData.kurum_id,
-      departman_id: formData.departman_id,
-      birim_id: formData.birim_id,
-      allDepartmanlar: departmanlar,
-      allBirimler: birimler
-    });
+    // Process departman/birim data (debug removed for production security)
 
     try {
       const result = await addUser(usersTableId, formData);

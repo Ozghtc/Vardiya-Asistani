@@ -242,7 +242,7 @@ export const addKurum = async (kurumData: {
     
     const newKurumId = String(maxKurumId + 1).padStart(2, '0');
     
-    // Debug: Hangi ID üretildiğini logla
+    // Generate new kurum ID
     console.log(`🆔 Yeni Kurum ID: ${newKurumId} (Max ID: ${maxKurumId})`);
     
     const departmanlar = kurumData.departmanlar || '';
@@ -736,8 +736,7 @@ export const getUsers = async (usersTableId: number, forceRefresh: boolean = fal
     
     let users = response.data?.rows || [];
     
-    // 🔍 DEBUG: API Response analizi
-    // User data loaded (debug logs removed for production security)
+    // User data loaded successfully
     
     // Kurum adlarını ekle
     try {

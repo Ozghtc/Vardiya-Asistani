@@ -57,7 +57,7 @@ const TanimliAlanlar: React.FC = () => {
         });
         
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error('API request failed');
         }
         
       const data = await response.json();
