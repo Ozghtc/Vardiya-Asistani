@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { User, EnrichedUser } from '../landing/types/auth.types';
-import { getUsers, getKurumlar, clearAllCache, clearJWTToken } from '../lib/api';
+import { getUsers, getKurumlar, clearAllCache } from '../lib/api';
 
 interface AuthContextType {
   user: EnrichedUser | null;
@@ -35,8 +35,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = useCallback(() => {
     setUser(null);
-    clearJWTToken(); // JWT Token'ı güvenli şekilde temizle
-    console.log('🚪 Kullanıcı çıkış yaptı, JWT token temizlendi');
+    console.log('🚪 Kullanıcı çıkış yaptı');
   }, []);
 
   const enrichUserWithNames = useCallback(async (userData: User): Promise<EnrichedUser> => {

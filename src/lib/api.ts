@@ -104,53 +104,11 @@ const logError = (message: string, error?: any) => {
   console.error(`❌ ${message}`, error || '');
 };
 
-// JWT Token yönetimi - GÜVENLİ YÖNTEM (Backward compatibility için)
-let jwtToken: string | null = null;
-let tokenExpiry: number | null = null;
-
-// JWT Token'ı güvenli şekilde kaydet (sadece login sonrası)
-export const setJWTToken = (token: string) => {
-  jwtToken = token;
-  tokenExpiry = Date.now() + (6 * 60 * 60 * 1000); // 6 saat
-  console.log('✅ JWT TOKEN GÜVENLİ ŞEKİLDE KAYDEDILDI');
-};
-
-// JWT Token'ı temizle (logout)
-export const clearJWTToken = () => {
-  jwtToken = null;
-  tokenExpiry = null;
-  console.log('🧹 JWT TOKEN TEMİZLENDİ');
-};
-
-const getJWTToken = async (): Promise<string> => {
-  if (jwtToken && tokenExpiry && Date.now() < tokenExpiry) {
-    console.log('🎫 CACHED JWT TOKEN KULLANILIYOR');
-    return jwtToken;
-  }
-  
-  try {
-    console.log('🔄 JWT TOKEN GEREKLİ...');
-    
-    // 🚨 GÜVENLİK: Hardcoded credentials kaldırıldı!
-    // Token artık sadece kullanıcı giriş yaptığında alınacak
-    if (!jwtToken) {
-      console.warn('⚠️ JWT Token bulunamadı - 3-Layer API Key sistem kullanılacak');
-      return ''; // Boş string döndür, apiRequest'te handle edilecek
-    }
-    
-    return jwtToken;
-    
-  } catch (error) {
-    console.error('🚨 JWT Token alınamadı:', error);
-    // Fallback: 3-Layer API Key sistemi
-    return '';
-  }
-};
+// 3-Layer API Key System - Tek güvenlik sistemi (JWT token kaldırıldı)
 
 // API Request with 3-Layer Authentication - TÜM İSTEKLER PROXY ÜZERİNDEN
 const apiRequest = async (path: string, options: RequestInit = {}) => {
   try {
-    const token = await getJWTToken();
     
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 saniye timeout - API Key sistem için
@@ -174,8 +132,6 @@ const apiRequest = async (path: string, options: RequestInit = {}) => {
           apiKey: API_CONFIG.apiKey,
           userEmail: API_CONFIG.userEmail,
           projectPassword: API_CONFIG.projectPassword,
-          // JWT Token backward compatibility için
-          jwtToken: token || undefined,
         }),
         signal: controller.signal
       });
@@ -223,7 +179,6 @@ export const getKurumlar = async (forceRefresh: boolean = false) => {
       clearCachedData(cacheKey);
       clearTableCache('30');
       clearAllCache();
-      clearJWTToken(); // JWT token'i de temizle
       console.log('🧹 CACHE TEMİZLENDİ - FRESH DATA ÇEKILIYOR');
     }
     
@@ -793,7 +748,6 @@ export const getUsers = async (usersTableId: number, forceRefresh: boolean = fal
     if (forceRefresh) {
       clearAllCache();
       clearTableCache(String(usersTableId));
-      clearJWTToken();
       console.log('🧹 USERS CACHE TEMİZLENDİ - FRESH DATA ÇEKILIYOR');
     }
     

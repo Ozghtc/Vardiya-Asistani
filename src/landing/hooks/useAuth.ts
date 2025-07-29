@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { addUser, addKurum, getUsers, getKurumlar, setJWTToken } from '../../lib/api';
+import { addUser, addKurum, getUsers, getKurumlar } from '../../lib/api';
 import { LoginData, RegisterData, User, EnrichedUser, AuthResponse } from '../types/auth.types';
 import { useAuthContext } from '../../contexts/AuthContext';
 

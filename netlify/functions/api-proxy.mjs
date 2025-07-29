@@ -20,8 +20,7 @@ export const handler = async (event, context) => {
       body, 
       apiKey: bodyApiKey, 
       userEmail: bodyUserEmail,
-      projectPassword: bodyProjectPassword,
-      jwtToken // JWT token backward compatibility için
+      projectPassword: bodyProjectPassword
     } = JSON.parse(event.body);
     
     // Cache key oluştur
@@ -78,11 +77,9 @@ export const handler = async (event, context) => {
       apiUrl,
       method,
       hasBody: !!body,
-      hasJwtToken: !!jwtToken,
       apiKey: apiKey ? 'PRESENT' : 'MISSING',
       userEmail: userEmail ? 'PRESENT' : 'MISSING',
-      projectPassword: projectPassword ? 'PRESENT' : 'MISSING',
-      jwtTokenFirst10: jwtToken ? jwtToken.substring(0, 10) : 'NONE'
+      projectPassword: projectPassword ? 'PRESENT' : 'MISSING'
     });
 
     // Prepare request options - 3-Layer API Key System
@@ -98,19 +95,12 @@ export const handler = async (event, context) => {
       },
     };
     
-    // JWT token backward compatibility için
-    if (jwtToken && jwtToken !== apiKey) {
-      requestOptions.headers['Authorization'] = `Bearer ${jwtToken}`;
-      console.log('🔐 3-Layer API Key + JWT Token ile authentication');
-    } else {
-      console.log('🔑 3-Layer API Key ile authentication');
-    }
+    console.log('🔑 3-Layer API Key ile authentication');
     
     console.log('📤 Request Headers (3-Layer):', {
       'X-API-Key': apiKey ? 'PRESENT' : 'MISSING',
       'X-User-Email': userEmail ? 'PRESENT' : 'MISSING', 
-      'X-Project-Password': projectPassword ? 'PRESENT' : 'MISSING',
-      'Authorization': jwtToken ? 'PRESENT' : 'MISSING'
+      'X-Project-Password': projectPassword ? 'PRESENT' : 'MISSING'
     });
 
     if (body && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
