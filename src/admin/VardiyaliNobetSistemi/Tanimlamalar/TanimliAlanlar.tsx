@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Trash2, Edit, Plus, Search, Filter, RefreshCw } from 'lucide-react';
 import { useAuthContext } from '../../../contexts/AuthContext';
+import { clearAllCache, clearTableCache } from '../../../lib/api';
 
 // 3-Layer API Key Configuration
 const API_CONFIG = {
@@ -33,7 +34,7 @@ const TanimliAlanlar: React.FC = () => {
   const [editingAlan, setEditingAlan] = useState<Alan | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
 
-  // Alanları yükle
+  // Alanları yükle - KURAL 17 GÜVENLİK DÜZELTMESİ
   const loadAlanlar = async () => {
     if (!user) return;
     
@@ -41,36 +42,39 @@ const TanimliAlanlar: React.FC = () => {
     setError('');
     
     try {
-        const response = await fetch('/.netlify/functions/api-proxy', {
-          method: 'POST',
-          headers: {
+      // KURAL 17: Tüm cache'leri zorla temizle - güvenlik önlemi
+      clearAllCache();
+      clearTableCache('72');
+      
+      // KURAL 17: Direkt API çağrısı - cache bypass
+      const response = await fetch('/.netlify/functions/api-proxy', {
+        method: 'POST',
+        headers: {
           'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
+        },
+        body: JSON.stringify({
           path: '/api/v1/data/table/72',
-            method: 'GET',
+          method: 'GET',
           // 3-Layer Authentication
           apiKey: API_CONFIG.apiKey,
           userEmail: API_CONFIG.userEmail,
           projectPassword: API_CONFIG.projectPassword
-          })
-        });
+        })
+      });
         
       if (!response.ok) {
         throw new Error('API request failed');
-        }
+      }
         
       const data = await response.json();
-      console.log('🔍 Alanlar API Response:', data);
       
       if (data.success && data.data && Array.isArray(data.data.rows)) {
-        const rows = data.data.rows.filter((alan: any) => 
+        // KURAL 17: Güvenli filtreleme - kullanıcı bilgilerine göre
+        const filteredAlanlar = data.data.rows.filter((alan: any) => 
           alan.kurum_id === user.kurum_id
         );
-        setAlanlar(rows);
-        console.log(`✅ ${rows.length} alan yüklendi`);
+        setAlanlar(filteredAlanlar);
       } else {
-        console.warn('⚠️ Beklenmeyen API response formatı:', data);
         setAlanlar([]);
       }
     } catch (error) {

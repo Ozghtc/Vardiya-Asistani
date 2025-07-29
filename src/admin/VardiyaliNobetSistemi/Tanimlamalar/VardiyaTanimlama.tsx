@@ -54,24 +54,55 @@ const VardiyaTanimlama: React.FC = () => {
         return;
       }
 
-      // YENİ TABLO ID: 71
-      const filterParams = `kurum_id=${currentUser.kurum_id}&departman_id=${currentUser.departman_id}&birim_id=${currentUser.birim_id}`;
-      const data = await getTableData('71', filterParams);
+      // KURAL 17: Tüm cache'leri zorla temizle - güvenlik önlemi
+      clearAllCache();
+      clearTableCache('71');
       
-      // Veriyi array olarak garanti et
-      const dataArray = Array.isArray(data) ? data : [];
-      const shiftData = dataArray.map((row: any) => ({
-        id: row.id,
-        vardiya_adi: row.vardiya_adi,
-        baslangic_saati: row.baslangic_saati,
-        bitis_saati: row.bitis_saati,
-        calisma_saati: row.calisma_saati || 8,
-        aktif_mi: row.aktif_mi,
-        kurum_id: row.kurum_id,
-        departman_id: row.departman_id,
-        birim_id: row.birim_id
-      }));
-      setShifts(shiftData);
+      // KURAL 17: Direkt API çağrısı - cache bypass
+      const response = await fetch('/.netlify/functions/api-proxy', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          path: '/api/v1/data/table/71',
+          method: 'GET',
+          // 3-Layer Authentication
+          apiKey: import.meta.env.VITE_HZM_API_KEY,
+          userEmail: import.meta.env.VITE_HZM_USER_EMAIL,
+          projectPassword: import.meta.env.VITE_HZM_PROJECT_PASSWORD
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('API request failed');
+      }
+
+      const data = await response.json();
+      
+      if (data.success && data.data && Array.isArray(data.data.rows)) {
+        // KURAL 17: Güvenli filtreleme - kullanıcı bilgilerine göre
+        const filteredShifts = data.data.rows.filter((row: any) => 
+          row.kurum_id === currentUser.kurum_id &&
+          row.departman_id === currentUser.departman_id &&
+          row.birim_id === currentUser.birim_id
+        );
+        
+        const shiftData = filteredShifts.map((row: any) => ({
+          id: row.id,
+          vardiya_adi: row.vardiya_adi,
+          baslangic_saati: row.baslangic_saati,
+          bitis_saati: row.bitis_saati,
+          calisma_saati: row.calisma_saati || 8,
+          aktif_mi: row.aktif_mi,
+          kurum_id: row.kurum_id,
+          departman_id: row.departman_id,
+          birim_id: row.birim_id
+        }));
+        setShifts(shiftData);
+      } else {
+        setShifts([]);
+      }
     } catch (error) {
       console.error('Vardiya yükleme hatası:', error);
       // Tablo yoksa boş array set et ve bilgilendirici mesaj göster

@@ -50,16 +50,47 @@ const IzinTanimlama: React.FC = () => {
   }, [izinAdi]);
 
   useEffect(() => {
-    // Load izin istekleri from HZM API
+    // Load izin istekleri from HZM API - KURAL 17 GÜVENLİK DÜZELTMESİ
     const loadIzinIstekleri = async () => {
       if (kurum_id && departman_id && birim_id) {
         try {
-          // YENİ TABLO ID: 70
-          const filterParams = `kurum_id=${kurum_id}&departman_id=${departman_id}&birim_id=${birim_id}`;
-          const data = await getTableData('70', filterParams);
-          // Veriyi array olarak garanti et
-          const izinArray = Array.isArray(data) ? data : [];
-          setPersonnelRequests(izinArray);
+          // KURAL 17: Tüm cache'leri zorla temizle - güvenlik önlemi
+          clearAllCache();
+          clearTableCache('70');
+          
+          // KURAL 17: Direkt API çağrısı - cache bypass
+          const response = await fetch('/.netlify/functions/api-proxy', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              path: '/api/v1/data/table/70',
+              method: 'GET',
+              // 3-Layer Authentication
+              apiKey: import.meta.env.VITE_HZM_API_KEY,
+              userEmail: import.meta.env.VITE_HZM_USER_EMAIL,
+              projectPassword: import.meta.env.VITE_HZM_PROJECT_PASSWORD
+            })
+          });
+
+          if (!response.ok) {
+            throw new Error('API request failed');
+          }
+
+          const data = await response.json();
+          
+          if (data.success && data.data && Array.isArray(data.data.rows)) {
+            // KURAL 17: Güvenli filtreleme - kullanıcı bilgilerine göre
+            const filteredIzinler = data.data.rows.filter((izin: any) => 
+              izin.kurum_id === kurum_id &&
+              izin.departman_id === departman_id &&
+              izin.birim_id === birim_id
+            );
+            setPersonnelRequests(filteredIzinler);
+          } else {
+            setPersonnelRequests([]);
+          }
         } catch (error) {
           console.error('İzin istekleri yüklenemedi:', error);
           // Tablo yoksa boş array set et, sayfa erişimini engelleme
