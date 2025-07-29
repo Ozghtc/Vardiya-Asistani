@@ -599,3 +599,413 @@ Bu kural başarılı sayılır eğer:
 6. **Improve** → Güvenlik önlemlerini geliştir
 
 Bu kural, sistemin kendini koruması ve sürekli güvenli kalması için **yaşayan bir dokümandır** ve sürekli güncellenmelidir.
+
+---
+
+## 18. Backend-First Geliştirme ve Frontend Kod Yığını Önleme Kuralı (API-First Development)
+
+**Amaç:** Cursor, frontend'de gereksiz kod yığını oluşturmak yerine, backend API'nin düzeltilmesini beklemeli ve API hatalarını net şekilde raporlamalı. Frontend, sadece API'yi çağıran ince bir katman olmalı, iş mantığı backend'de tutulmalıdır.
+
+### 🎯 A. Temel Prensip: "Backend Hatası = Backend Çözümü"
+
+#### 1. API Hata Tespiti ve Raporlama:
+* Cursor bir API hatası tespit ettiğinde **frontend'de workaround yazmaz**
+* Hatayı detaylı şekilde raporlar ve backend düzeltmesini bekler
+* Frontend'de geçici çözümler, mock data, fallback mekanizmaları **yasaklanır**
+
+```javascript
+// ❌ YASAK - Frontend'de workaround
+try {
+  const data = await api.getData();
+} catch (error) {
+  // Geçici mock data kullanma
+  const mockData = generateMockData();
+  return mockData;
+}
+
+// ✅ DOĞRU - Hatayı raporla, backend'in düzeltmesini bekle
+try {
+  const data = await api.getData();
+} catch (error) {
+  console.error('API Error - Backend düzeltmesi gerekli:', error);
+  throw new Error('API service unavailable');
+}
+```
+
+#### 2. Hata Raporlama Formatı:
+```markdown
+🚨 KRİTİK API HATASI: [Hata Başlığı]
+
+❌ SORUN:
+- [Detaylı hata açıklaması]
+- [Beklenen davranış vs gerçek davranış]
+
+🔍 MEVCUT DURUM:
+- [API response örneği]
+- [Hata kodu ve mesajı]
+
+✅ BACKEND'DE DÜZELTİLMESİ GEREKEN:
+- [SQL sorgusu düzeltmesi]
+- [Endpoint yapılandırması]
+- [Veri modeli değişikliği]
+
+🧪 TEST SENARYOSU:
+- [Nasıl test edilebileceği]
+```
+
+### 🔗 B. Veritabanı İlişkileri ve Cascade Operations
+
+#### 1. Foreign Key Constraint Zorunluluğu:
+* Cursor, veritabanı ilişkilerinin backend'de **CASCADE DELETE/UPDATE** ile kurulmasını talep etmeli
+* Frontend'de manuel silme operasyonları **yasaklanır**
+
+```sql
+-- ✅ BACKEND'DE OLMASI GEREKEN
+ALTER TABLE departmanlar 
+ADD CONSTRAINT fk_departman_kurum 
+FOREIGN KEY (kurum_id) REFERENCES kurumlar(kurum_id) 
+ON DELETE CASCADE ON UPDATE CASCADE;
+```
+
+```javascript
+// ❌ YASAK - Frontend'de manuel cascade silme
+const deleteKurum = async (kurumId) => {
+  // Önce departmanları sil
+  await deleteDepartmanlar(kurumId);
+  // Sonra birimleri sil  
+  await deleteBirimler(kurumId);
+  // Son olarak kurumu sil
+  await deleteKurum(kurumId);
+};
+
+// ✅ DOĞRU - Tek API çağrısı, backend cascade yapar
+const deleteKurum = async (kurumId) => {
+  await api.delete(`/kurumlar/${kurumId}`);
+  // Backend otomatik olarak ilişkili kayıtları siler
+};
+```
+
+#### 2. Orphan Data Kontrolü:
+* Cursor, orphan (sahipsiz) kayıtları tespit ettiğinde backend düzeltmesi talep etmeli
+* Frontend'de orphan data filtrelemesi **yapılmaz**
+
+### 🚫 C. Frontend'de Yasaklanan Kod Kalıpları
+
+#### 1. İş Mantığı Yasakları:
+```javascript
+// ❌ YASAK - Frontend'de iş mantığı
+const calculateSalary = (employee) => {
+  let salary = employee.baseSalary;
+  if (employee.department === 'IT') salary *= 1.2;
+  if (employee.experience > 5) salary *= 1.1;
+  return salary;
+};
+
+// ✅ DOĞRU - Backend'den hesaplanmış veri al
+const getSalary = async (employeeId) => {
+  return await api.get(`/employees/${employeeId}/salary`);
+};
+```
+
+#### 2. Veri Manipülasyon Yasakları:
+```javascript
+// ❌ YASAK - Frontend'de veri manipülasyonu
+const processUserData = (users) => {
+  return users
+    .filter(u => u.active)
+    .map(u => ({
+      ...u,
+      fullName: `${u.firstName} ${u.lastName}`,
+      departmentName: getDepartmentName(u.departmentId)
+    }))
+    .sort((a, b) => a.fullName.localeCompare(b.fullName));
+};
+
+// ✅ DOĞRU - Backend'den işlenmiş veri al
+const getProcessedUsers = async () => {
+  return await api.get('/users/processed');
+};
+```
+
+#### 3. Veri Validation Yasakları:
+```javascript
+// ❌ YASAK - Frontend'de server-side validation
+const validateUser = (userData) => {
+  if (!userData.email) throw new Error('Email required');
+  if (userData.email.indexOf('@') === -1) throw new Error('Invalid email');
+  if (userData.age < 18) throw new Error('Must be 18+');
+  // ... 50 satır validation kodu
+};
+
+// ✅ DOĞRU - Backend validation'a güven
+const createUser = async (userData) => {
+  try {
+    return await api.post('/users', userData);
+  } catch (error) {
+    // Backend validation hatalarını göster
+    throw error;
+  }
+};
+```
+
+### 🔍 D. API Endpoint Standardizasyon Talepleri
+
+#### 1. RESTful API Zorunluluğu:
+* Cursor, API endpoint'lerinin RESTful standartlara uymasını talep etmeli
+
+```bash
+# ✅ DOĞRU RESTful yapı
+GET    /api/v1/kurumlar           # Tüm kurumları listele
+GET    /api/v1/kurumlar/123       # Belirli kurumu getir
+POST   /api/v1/kurumlar           # Yeni kurum oluştur
+PUT    /api/v1/kurumlar/123       # Kurumu güncelle
+DELETE /api/v1/kurumlar/123       # Kurumu sil (cascade ile)
+
+# ❌ YANLIŞ yapı
+GET    /api/v1/data/table/30      # Tablo odaklı, RESTful değil
+POST   /api/v1/data/table/30/rows # Tutarsız
+```
+
+#### 2. Response Format Standardı:
+```javascript
+// ✅ BACKEND'DE OLMASI GEREKEN STANDARD
+{
+  "success": true,
+  "data": {
+    "kurumlar": [...],
+    "pagination": {...},
+    "meta": {...}
+  },
+  "message": "Success"
+}
+
+// Hata durumunda:
+{
+  "success": false,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Email already exists",
+    "details": {...}
+  }
+}
+```
+
+### 🛡️ E. Veri Güvenliği ve Authorization
+
+#### 1. Backend Authorization Zorunluluğu:
+* Tüm yetkilendirme kontrolleri backend'de olmalı
+* Frontend sadece UI gösterim için kullanmalı
+
+```javascript
+// ❌ YASAK - Frontend'de yetki kontrolü
+const canDeleteUser = (user, currentUser) => {
+  return currentUser.role === 'admin' || 
+         currentUser.department === user.department;
+};
+
+// ✅ DOĞRU - Backend'den yetki bilgisi al
+const getUserPermissions = async (userId) => {
+  return await api.get(`/users/${userId}/permissions`);
+};
+```
+
+#### 2. Data Filtering Backend Zorunluluğu:
+```javascript
+// ❌ YASAK - Frontend'de veri filtreleme
+const getMyDepartmentUsers = (allUsers, currentUser) => {
+  return allUsers.filter(u => 
+    u.departmentId === currentUser.departmentId
+  );
+};
+
+// ✅ DOĞRU - Backend'den filtrelenmiş veri al
+const getMyDepartmentUsers = async () => {
+  return await api.get('/users/my-department');
+};
+```
+
+### 📊 F. Performance ve Caching Stratejisi
+
+#### 1. Server-Side Caching Zorunluluğu:
+* Caching mantığı backend'de olmalı
+* Frontend sadece HTTP cache header'larına uymalı
+
+```javascript
+// ❌ YASAK - Frontend'de manuel cache yönetimi
+const userCache = new Map();
+const getUser = async (id) => {
+  if (userCache.has(id)) return userCache.get(id);
+  const user = await api.get(`/users/${id}`);
+  userCache.set(id, user);
+  return user;
+};
+
+// ✅ DOĞRU - Backend cache'ine güven
+const getUser = async (id) => {
+  return await api.get(`/users/${id}`);
+  // Backend kendi cache mekanizmasını yönetir
+};
+```
+
+#### 2. Pagination Backend Zorunluluğu:
+```javascript
+// ❌ YASAK - Frontend'de pagination
+const paginateData = (data, page, limit) => {
+  const start = (page - 1) * limit;
+  return data.slice(start, start + limit);
+};
+
+// ✅ DOĞRU - Backend pagination
+const getUsers = async (page = 1, limit = 10) => {
+  return await api.get(`/users?page=${page}&limit=${limit}`);
+};
+```
+
+### 🔧 G. API Hata Kategorileri ve Çözüm Talepleri
+
+#### 1. Veri Bütünlüğü Hataları:
+```markdown
+🚨 VERİ BÜTÜNLÜĞÜ HATASI
+
+Tespit: Orphan kayıtlar mevcut
+Çözüm: Foreign key constraints ekle
+Backend Görevi: CASCADE DELETE/UPDATE
+```
+
+#### 2. Performance Hataları:
+```markdown
+🚨 PERFORMANCE HATASI
+
+Tespit: N+1 query problemi
+Çözüm: JOIN sorguları kullan
+Backend Görevi: Query optimization
+```
+
+#### 3. Security Hataları:
+```markdown
+🚨 GÜVENLİK HATASI
+
+Tespit: Authorization bypass mümkün
+Çözüm: Middleware authorization
+Backend Görevi: Permission system
+```
+
+### 🎯 H. Frontend'in Sorumluluğu (Minimal Kod)
+
+#### 1. Sadece UI/UX:
+```javascript
+// ✅ FRONTEND'İN YAPACAĞI (Minimal)
+const UserList = () => {
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api.getUsers().then(setUsers).finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <Loading />;
+  
+  return (
+    <div>
+      {users.map(user => (
+        <UserCard key={user.id} user={user} />
+      ))}
+    </div>
+  );
+};
+```
+
+#### 2. Form Handling (Minimal):
+```javascript
+// ✅ FRONTEND'İN YAPACAĞI (Minimal)
+const UserForm = () => {
+  const [formData, setFormData] = useState({});
+  
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await api.createUser(formData);
+      // Success handling
+    } catch (error) {
+      // Error display (backend'den gelen mesaj)
+      setError(error.message);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      {/* Form fields */}
+    </form>
+  );
+};
+```
+
+### 🚫 I. Kesinlikle Yasaklanan Frontend Davranışları
+
+#### 1. Workaround Çözümleri:
+* API hatası varsa geçici çözüm yazma
+* Mock data ile API'yi bypass etme
+* Client-side'da server mantığını tekrarlama
+
+#### 2. Veri İşleme:
+* Karmaşık veri transformasyonları
+* İş kuralları implementasyonu
+* Validation logic (UI validation hariç)
+
+#### 3. State Management Karmaşıklığı:
+* Global state'de server data tutma
+* Manuel cache invalidation
+* Optimistic updates (backend confirmation olmadan)
+
+### ✅ J. Başarı Kriterleri
+
+Bu kural başarılı sayılır eğer:
+
+1. **Frontend kod satırı sayısı minimal** kalırsa (her component <100 satır)
+2. **API hataları net raporlanır** ve backend düzeltmesi beklenir
+3. **İş mantığı %0 frontend'de** bulunursa
+4. **Veri manipülasyonu %0 frontend'de** yapılırsa
+5. **Backend API'si RESTful** standartlara uyarsa
+
+### 🔄 K. Backend-First Development Cycle
+
+1. **API Design** → Backend'de endpoint tasarla
+2. **Data Model** → Veritabanı ilişkilerini kur
+3. **Business Logic** → Server-side implementasyon
+4. **Frontend Integration** → Minimal UI katmanı
+5. **Testing** → API-first test stratejisi
+6. **Optimization** → Backend performance tuning
+
+### 📋 L. Hata Raporlama Template'i
+
+```markdown
+## 🚨 BACKEND DÜZELTMESİ GEREKLİ
+
+### Hata Kategorisi: [VERİ/PERFORMANCE/GÜVENLİK]
+
+#### ❌ Tespit Edilen Sorun:
+- [Detaylı açıklama]
+
+#### 🔍 Reproduksiyon:
+- [Adım adım nasıl tekrarlanır]
+
+#### ✅ Backend'de Yapılması Gerekenler:
+- [ ] SQL Schema değişikliği
+- [ ] API Endpoint düzeltmesi  
+- [ ] Business logic implementasyonu
+- [ ] Performance optimizasyonu
+
+#### 🧪 Doğrulama Kriterleri:
+- [Nasıl test edilecek]
+
+#### ⏰ Öncelik: [YÜKSEK/ORTA/DÜŞÜK]
+```
+
+### 🎯 M. Uygulama Zorunluluğu
+
+* Bu kural **otomatik olarak** uygulanmalı
+* Frontend'de kod karmaşıklığı tespit edildiğinde **backend çözümü** talep edilmeli
+* API hataları **anında raporlanmalı**, workaround **yazılmamalı**
+* Backend düzeltmesi **beklenmelidir**, frontend geçici çözüm **yapmamalıdır**
+
+Bu kural, temiz, maintainable ve scalable bir codebase için **yaşayan bir dokümandır** ve sürekli güncellenmelidir.
