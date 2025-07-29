@@ -128,12 +128,27 @@ const UnvanTanimlama: React.FC = () => {
           const data = await response.json();
           
           if (data.success && data.data && Array.isArray(data.data.rows)) {
+            // KURAL 17: DEBUG - Kullanıcı bilgileri ve API verisi karşılaştırması
+            console.log('🔍 KULLANICI BİLGİLERİ:', {
+              kurum_id: user.kurum_id,
+              departman_id: user.departman_id,
+              birim_id: user.birim_id
+            });
+            console.log('📦 API VERİSİ:', data.data.rows);
+            
             // KURAL 17: Güvenli filtreleme - kullanıcı bilgilerine göre
-            const filteredUnvanlar = data.data.rows.filter((unvan: any) => 
-              unvan.kurum_id === user.kurum_id &&
-              unvan.departman_id === user.departman_id &&
-              unvan.birim_id === user.birim_id
-            );
+            const filteredUnvanlar = data.data.rows.filter((unvan: any) => {
+              const match = unvan.kurum_id === user.kurum_id &&
+                           unvan.departman_id === user.departman_id &&
+                           unvan.birim_id === user.birim_id;
+              console.log(`🔍 FILTRELEME: ${unvan.unvan_adi} - Match: ${match}`, {
+                api: { kurum_id: unvan.kurum_id, departman_id: unvan.departman_id, birim_id: unvan.birim_id },
+                user: { kurum_id: user.kurum_id, departman_id: user.departman_id, birim_id: user.birim_id }
+              });
+              return match;
+            });
+            
+            console.log('✅ FİLTRELENMİŞ ÜNVANLAR:', filteredUnvanlar);
             setUnvanlar(filteredUnvanlar);
           } else {
             setUnvanlar([]);
