@@ -4,7 +4,7 @@
 
 **Proje Adı:** Vardiya Asistanı  
 **Frontend:** https://vardiyaasistani.netlify.app  
-**Backend:** https://hzmbackandveritabani-production-c660.up.railway.app  
+**Backend:** https://hzmbackendveritabani-production.up.railway.app  
 **Tarih:** 22 Temmuz 2025  
 
 ---
@@ -20,7 +20,7 @@
 
 **Hata Mesajı:**
 ```
-Access to fetch at 'https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/data/table/30' 
+Access to fetch at 'https://hzmbackendveritabani-production.up.railway.app/api/v1/data/table/30' 
 from origin 'https://vardiyaasistani.netlify.app' has been blocked by CORS policy
 ```
 

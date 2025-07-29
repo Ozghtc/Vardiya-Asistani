@@ -45,7 +45,7 @@
 # Environment Variables (Production)
 # These values should be set in Netlify dashboard for security
 [context.production.environment]
-  VITE_HZM_BASE_URL = "https://hzmbackandveritabani-production-c660.up.railway.app"
+  VITE_HZM_BASE_URL = "https://hzmbackendveritabani-production.up.railway.app"
   VITE_HZM_PROJECT_ID = "5"
   VITE_NETLIFY_SITE_URL = "https://vardiyaasistani.netlify.app"
   VITE_DEV_MODE = "false"
@@ -54,7 +54,7 @@
 # Environment Variables (Deploy Previews)
 # These values should be set in Netlify dashboard for security
 [context.deploy-preview.environment]
-  VITE_HZM_BASE_URL = "https://hzmbackandveritabani-production-c660.up.railway.app"
+  VITE_HZM_BASE_URL = "https://hzmbackendveritabani-production.up.railway.app"
   VITE_HZM_PROJECT_ID = "5"
   VITE_DEV_MODE = "true"
   VITE_DEBUG_API = "true"

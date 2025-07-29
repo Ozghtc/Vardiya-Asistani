@@ -2,10 +2,10 @@
 
 # Environment'tan API key al
 API_KEY="${VITE_HZM_API_KEY:-hzm_1ce98c92189d4a109cd604b22bfd86b7}"
-BASE_URL="${VITE_HZM_BASE_URL:-https://hzmbackandveritabani-production-c660.up.railway.app}"
+BASE_URL="${VITE_HZM_BASE_URL:-https://hzmbackendveritabani-production.up.railway.app}"
 USER_EMAIL="${VITE_HZM_USER_EMAIL:-ozgurhzm@gmail.com}"
 PROJECT_PASSWORD="${VITE_HZM_PROJECT_PASSWORD:-hzmsoft123456}"
-BASE_URL="https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/data/table/21/rows"
+BASE_URL="https://hzmbackendveritabani-production.up.railway.app/api/v1/data/table/21/rows"
 
 # Kurum bilgileri
 KURUM_ID="18"

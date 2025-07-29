@@ -67,7 +67,7 @@ export const handler = async (event, context) => {
     }
     
     // Build API URL with correct Railway backend
-    const apiUrl = `https://hzmbackandveritabani-production-c660.up.railway.app${path}`;
+    const apiUrl = `https://hzmbackendveritabani-production.up.railway.app${path}`;
     
     // 3-Layer Authentication System
     const apiKey = bodyApiKey || event.headers['x-api-key'] || process.env.VITE_HZM_API_KEY;

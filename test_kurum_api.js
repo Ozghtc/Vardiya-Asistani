@@ -1,7 +1,7 @@
 // TEST2 KURUM EKLEME TESTİ
 // Environment'tan API key al
 const API_CONFIG = {
-  baseURL: process.env.VITE_HZM_BASE_URL || 'https://hzmbackandveritabani-production-c660.up.railway.app',
+  baseURL: process.env.VITE_HZM_BASE_URL || 'https://hzmbackendveritabani-production.up.railway.app',
   apiKey: process.env.VITE_HZM_API_KEY,
   userEmail: process.env.VITE_HZM_USER_EMAIL,
   projectPassword: process.env.VITE_HZM_PROJECT_PASSWORD

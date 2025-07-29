@@ -1,7 +1,7 @@
 #!/bin/bash
 # Environment'tan API key al
 API_KEY="${VITE_HZM_API_KEY}"
-BASE_URL="${VITE_HZM_BASE_URL:-https://hzmbackandveritabani-production-c660.up.railway.app}"
+BASE_URL="${VITE_HZM_BASE_URL:-https://hzmbackendveritabani-production.up.railway.app}"
 USER_EMAIL="${VITE_HZM_USER_EMAIL}"
 PROJECT_PASSWORD="${VITE_HZM_PROJECT_PASSWORD}"
 

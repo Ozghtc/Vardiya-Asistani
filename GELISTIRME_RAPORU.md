@@ -11,7 +11,7 @@ Vardiya Asistanı projesi temel işlevselliğe sahip ancak production kalitesind
 
 ### 🎯 **Proje Bilgileri**
 - **Frontend**: https://vardiyaasistani.netlify.app
-- **Backend**: https://hzmbackandveritabani-production-c660.up.railway.app
+- **Backend**: https://hzmbackendveritabani-production.up.railway.app
 - **API Key**: ${VITE_HZM_API_KEY}
 - **Proje ID**: 5
 

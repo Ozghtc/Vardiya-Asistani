@@ -7,7 +7,7 @@ const API_CONFIG = {
   apiKey: import.meta.env.VITE_HZM_API_KEY,
   userEmail: import.meta.env.VITE_HZM_USER_EMAIL,
   projectPassword: import.meta.env.VITE_HZM_PROJECT_PASSWORD,
-  baseURL: import.meta.env.VITE_HZM_BASE_URL || 'https://hzmbackandveritabani-production-c660.up.railway.app'
+  baseURL: import.meta.env.VITE_HZM_BASE_URL || 'https://hzmbackendveritabani-production.up.railway.app'
 };
 
 interface IzinIstegi {
