@@ -175,7 +175,7 @@ export const useAuth = () => {
       }
       
       // 2. ŞIMDI KULLANICILARI ÇEK (3-Layer API Key System ile)
-      const users = await getUsers(33);
+      const users = await getUsers(33, true); // kullanicilar_final tablosu
       
       if (!users || users.length === 0) {
         setLoginError('Sistem hatası: Kullanıcı veritabanına erişilemiyor');
