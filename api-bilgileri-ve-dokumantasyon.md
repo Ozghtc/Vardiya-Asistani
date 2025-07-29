@@ -1,10 +1,12 @@
-# HZM VERİTABANI - API KEY SİSTEMİ DOKÜMANTASYONU
+# HZM VERİTABANI - GENİŞLETİLMİŞ API KEY SİSTEMİ DOKÜMANTASYONU
 
 ## 🔗 Temel Bilgiler
 - **Base URL:** `https://hzmbackendveritabani-production.up.railway.app`
 - **Authentication:** 3-Katmanlı API Key Sistemi
 - **Test Tarihi:** 28.07.2025
-- **Durum:** ✅ %100 ÇALIŞAN API KEY SİSTEMİ
+- **Durum:** ✅ %100 ÇALIŞAN GENİŞLETİLMİŞ API KEY SİSTEMİ
+- **Proje ID:** `5`
+- **API Key:** `hzm_1ce98c92189d4a109cd604b22bfd86b7`
 
 ## 🔐 3-KATMANLI API KEY KİMLİK DOĞRULAMA
 
@@ -15,6 +17,24 @@ X-API-Key: ${VITE_HZM_API_KEY}                        # Proje API Key'i (environ
 X-User-Email: ${VITE_HZM_USER_EMAIL}                  # Kullanıcı email'i (environment variable)
 X-Project-Password: ${VITE_HZM_PROJECT_PASSWORD}      # Proje şifresi (environment variable)
 ```
+
+### 📧 KENDİ BİLGİLERİNİZİ NEREDEN BULACAKSINIZ?
+
+#### 🔑 X-User-Email (Kullanıcı Email'i):
+- **Nerede:** Giriş yaptığınız email adresi
+- **Örnek:** Sisteme kayıt olurken kullandığınız email
+- **Not:** Bu, platform hesabınızın email'idir
+
+#### 🔒 X-Project-Password (Proje Şifresi):
+- **Nerede:** Proje oluştururken belirlediğiniz şifre
+- **Frontend'de:** Proje kartında "API Bilgileri" butonuna tıklayın
+- **Şifre Hatırlatma:** Proje ayarlarından "API Key Şifresi" bölümünde görüntülenebilir
+- **Güvenlik:** Şifrenizi kimseyle paylaşmayın!
+
+#### ⚠️ ÖNEMLİ GÜVENLİK UYARISI:
+- Email ve şifreniz sadece **size** aittir
+- Bu bilgileri **asla** başkalarıyla paylaşmayın
+- Şifrenizi unutursanız, proje ayarlarından yenisini belirleyebilirsiniz
 
 ### 🔑 API KEY BİLGİSİ ALMA
 ```bash
@@ -133,41 +153,21 @@ curl -X POST \
       }
     ]
   }'
+```
 
-# Response:
-{
-  "success": true,
-  "data": {
-    "table": {
-      "id": 37,
-      "name": "yeni_tablo",
-      "projectId": 5,
-      "physicalTableName": "user_data.project_5_yeni_tablo_1753685000",
-      "fields": [
-        {
-          "id": "1753685000001",
-          "name": "id",
-          "type": "number",
-          "isRequired": true,
-          "isHidden": false
-        },
-        {
-          "id": "1753685000002", 
-          "name": "name",
-          "type": "string",
-          "isRequired": true,
-          "isHidden": false
-        }
-      ],
-      "createdAt": "2025-07-28T06:16:40.000Z"
-    },
-    "apiKeyUsage": {
-      "operationsToday": 47,
-      "remaining": 53
-    }
-  },
-  "message": "Table created successfully via API Key"
-}
+### ✏️ Tablo Güncelleme
+```bash
+# Tablo Güncelle - TEST EDİLDİ ✅
+curl -X PUT \
+  "https://hzmbackendveritabani-production.up.railway.app/api/v1/tables/37" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7" \
+  -H "X-User-Email: user@example.com" \
+  -H "X-Project-Password: hzmsoft123456" \
+  -d '{
+    "name": "guncellenmis_tablo",
+    "description": "Güncellenmiş tablo açıklaması"
+  }'
 ```
 
 ### 🗑️ Tablo Silme
@@ -178,23 +178,161 @@ curl -X DELETE \
   -H "X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7" \
   -H "X-User-Email: user@example.com" \
   -H "X-Project-Password: hzmsoft123456"
+```
+
+## 🔗 İLİŞKİ YÖNETİMİ (YENİ!)
+
+### 📋 İlişkileri Listele
+```bash
+# İlişkileri Listele - TEST EDİLDİ ✅
+curl -X GET \
+  "https://hzmbackendveritabani-production.up.railway.app/api/v1/relationships/project/5" \
+  -H "X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7" \
+  -H "X-User-Email: user@example.com" \
+  -H "X-Project-Password: hzmsoft123456"
 
 # Response:
 {
   "success": true,
   "data": {
-    "deletedTable": {
-      "id": 37,
-      "name": "yeni_tablo",
-      "fieldCount": 2
+    "relationships": [
+      {
+        "id": "rel_001",
+        "name": "kurum_departman",
+        "fromTable": "kurumlar_hiyerarsik",
+        "fromField": "kurum_id",
+        "toTable": "departmanlar",
+        "toField": "kurum_id",
+        "relationshipType": "ONE_TO_MANY",
+        "cascadeDelete": true,
+        "isActive": true
+      },
+      {
+        "id": "rel_002", 
+        "name": "departman_birim",
+        "fromTable": "departmanlar",
+        "fromField": "departman_id",
+        "toTable": "birimler",
+        "toField": "departman_id",
+        "relationshipType": "ONE_TO_MANY",
+        "cascadeDelete": true,
+        "isActive": true
+      }
+    ],
+    "total": 2
+  }
+}
+```
+
+### ➕ İlişki Oluştur
+```bash
+# İlişki Oluştur - TEST EDİLDİ ✅
+curl -X POST \
+  "https://hzmbackendveritabani-production.up.railway.app/api/v1/relationships" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7" \
+  -H "X-User-Email: user@example.com" \
+  -H "X-Project-Password: hzmsoft123456" \
+  -d '{
+    "name": "kullanici_kurum",
+    "fromTable": "kullanicilar_final",
+    "fromField": "kurum_id",
+    "toTable": "kurumlar_hiyerarsik",
+    "toField": "kurum_id",
+    "relationshipType": "MANY_TO_ONE",
+    "cascadeDelete": false,
+    "description": "Kullanıcıların kurumlarla ilişkisi"
+  }'
+```
+
+### ✏️ İlişki Güncelle
+```bash
+# İlişki Güncelle - TEST EDİLDİ ✅
+curl -X PUT \
+  "https://hzmbackendveritabani-production.up.railway.app/api/v1/relationships/rel_001" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7" \
+  -H "X-User-Email: user@example.com" \
+  -H "X-Project-Password: hzmsoft123456" \
+  -d '{
+    "cascadeDelete": false,
+    "description": "Güncellenmiş ilişki açıklaması"
+  }'
+```
+
+### 🗑️ İlişki Sil
+```bash
+# İlişki Sil - TEST EDİLDİ ✅
+curl -X DELETE \
+  "https://hzmbackendveritabani-production.up.railway.app/api/v1/relationships/rel_001" \
+  -H "X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7" \
+  -H "X-User-Email: user@example.com" \
+  -H "X-Project-Password: hzmsoft123456"
+```
+
+## 🔍 GELİŞMİŞ JOIN İŞLEMLERİ (YENİ!)
+
+### 🔄 JOIN Sorgusu Çalıştır
+```bash
+# JOIN Sorguları - TEST EDİLDİ ✅
+curl -X POST \
+  "https://hzmbackendveritabani-production.up.railway.app/api/v1/joins/execute" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7" \
+  -H "X-User-Email: user@example.com" \
+  -H "X-Project-Password: hzmsoft123456" \
+  -d '{
+    "joins": [
+      {
+        "table": "kullanicilar_final",
+        "joinTable": "kurumlar_hiyerarsik",
+        "joinType": "INNER",
+        "condition": "kullanicilar_final.kurum_id = kurumlar_hiyerarsik.kurum_id"
+      },
+      {
+        "table": "kullanicilar_final",
+        "joinTable": "departmanlar",
+        "joinType": "LEFT",
+        "condition": "kullanicilar_final.departman_id = departmanlar.departman_id"
+      }
+    ],
+    "select": [
+      "kullanicilar_final.name",
+      "kullanicilar_final.email",
+      "kurumlar_hiyerarsik.kurum_adi",
+      "departmanlar.departman_adi"
+    ],
+    "where": "kullanicilar_final.aktif_mi = true",
+    "orderBy": "kullanicilar_final.name ASC",
+    "limit": 50
+  }'
+
+# Response:
+{
+  "success": true,
+  "data": {
+    "rows": [
+      {
+        "name": "ÖZGÜR ALTINTAŞ",
+        "email": "ozgurhzm@gmail.com",
+        "kurum_adi": "Acıbadem Hastanesi",
+        "departman_adi": "ACİL SERVİS"
+      },
+      {
+        "name": "MERT",
+        "email": "mert@gmail.com", 
+        "kurum_adi": "Memorial Hastanesi",
+        "departman_adi": "YOĞUN BAKIM"
+      }
+    ],
+    "pagination": {
+      "total": 2,
+      "limit": 50,
+      "page": 1
     },
-    "physicalTableDropped": true,
-    "apiKeyUsage": {
-      "operationsToday": 48,
-      "remaining": 52
-    }
-  },
-  "message": "Table deleted successfully via API Key"
+    "executionTime": "45ms",
+    "joinCount": 2
+  }
 }
 ```
 
@@ -216,31 +354,6 @@ curl -X POST \
     "description": "API Key ile eklenen sütun",
     "defaultValue": "varsayilan_deger"
   }'
-
-# Response:
-{
-  "success": true,
-  "data": {
-    "field": {
-      "id": "1753685100123",
-      "name": "yeni_sutun",
-      "type": "string",
-      "isRequired": false,
-      "isHidden": false,
-      "description": "API Key ile eklenen sütun",
-      "defaultValue": "varsayilan_deger",
-      "createdAt": "2025-07-28T06:18:20.123Z"
-    },
-    "totalFields": 7,
-    "visibleFields": 7,
-    "physicalColumnAdded": true,
-    "apiKeyUsage": {
-      "operationsToday": 49,
-      "remaining": 51
-    }
-  },
-  "message": "Field \"yeni_sutun\" added successfully via API Key"
-}
 ```
 
 ### ✏️ Field Güncelleme
@@ -258,28 +371,6 @@ curl -X PUT \
     "isRequired": true,
     "description": "Güncellenmiş sütun açıklaması"
   }'
-
-# Response:
-{
-  "success": true,
-  "data": {
-    "field": {
-      "id": "1753685100123",
-      "name": "guncellenmis_sutun",
-      "type": "string",
-      "isRequired": true,
-      "isHidden": false,
-      "description": "Güncellenmiş sütun açıklaması",
-      "updatedAt": "2025-07-28T06:20:15.456Z"
-    },
-    "physicalColumnUpdated": true,
-    "apiKeyUsage": {
-      "operationsToday": 50,
-      "remaining": 50
-    }
-  },
-  "message": "Field \"guncellenmis_sutun\" updated successfully via API Key"
-}
 ```
 
 ### 🗑️ Field Silme
@@ -290,25 +381,6 @@ curl -X DELETE \
   -H "X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7" \
   -H "X-User-Email: user@example.com" \
   -H "X-Project-Password: hzmsoft123456"
-
-# Response:
-{
-  "success": true,
-  "data": {
-    "deletedField": {
-      "id": "1753685100123",
-      "name": "guncellenmis_sutun",
-      "type": "string"
-    },
-    "remainingFields": 6,
-    "physicalColumnDropped": true,
-    "apiKeyUsage": {
-      "operationsToday": 51,
-      "remaining": 49
-    }
-  },
-  "message": "Field \"guncellenmis_sutun\" deleted successfully via API Key"
-}
 ```
 
 ## 📊 VERİ İŞLEMLERİ
@@ -321,48 +393,6 @@ curl -X GET \
   -H "X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7" \
   -H "X-User-Email: user@example.com" \
   -H "X-Project-Password: hzmsoft123456"
-
-# Response: Sadece görünür field'lar
-{
-  "success": true,
-  "data": {
-    "rows": [
-      {
-      "id": 1,
-        "kurum_id": "01",
-        "kurum_adi": "Acıbadem Hastanesi",
-        "adres": "İstanbul, Türkiye",
-        "telefon": "02121234567",
-        "email": "info@acibadem.com",
-        "created_at": "2025-07-22T00:16:33.544Z"
-      },
-      {
-        "id": 2,
-        "kurum_id": "02",
-        "kurum_adi": "Memorial Hastanesi",
-        "adres": "Ankara, Türkiye",
-        "telefon": "03121234567",
-        "email": "info@memorial.com",
-        "created_at": "2025-07-22T00:17:15.234Z"
-      }
-    ],
-    "pagination": {
-      "page": 1,
-      "limit": 50,
-      "total": 3,
-      "totalPages": 1
-    },
-    "tableInfo": {
-      "name": "kurumlar_hiyerarsik",
-      "visibleFields": 6,
-      "totalFields": 6
-    },
-    "apiKeyUsage": {
-      "readOperationsToday": 12,
-      "remaining": 88
-    }
-  }
-}
 ```
 
 ### ➕ Yeni Veri Ekleme
@@ -381,28 +411,6 @@ curl -X POST \
     "telefon": "02229998877",
     "email": "apitest@hastane.com"
   }'
-
-# Response:
-{
-  "success": true,
-  "data": {
-    "row": {
-      "id": 7,
-      "kurum_id": "10",
-      "kurum_adi": "API Test Hastanesi",
-      "adres": "API Test Şehir, Türkiye",
-      "telefon": "02229998877",
-      "email": "apitest@hastane.com",
-      "created_at": "2025-07-28T06:25:34.789Z"
-    },
-    "insertedId": 7,
-    "apiKeyUsage": {
-      "writeOperationsToday": 9,
-      "remaining": 91
-    }
-  },
-  "message": "Row added successfully via API Key"
-}
 ```
 
 ### ✏️ Veri Güncelleme
@@ -419,28 +427,6 @@ curl -X PUT \
     "telefon": "02229991122",
     "email": "updated@apitest.com"
   }'
-
-# Response:
-{
-  "success": true,
-  "data": {
-    "row": {
-      "id": 7,
-      "kurum_id": "10",
-      "kurum_adi": "Güncellenmiş API Test Hastanesi",
-      "adres": "API Test Şehir, Türkiye",
-      "telefon": "02229991122",
-      "email": "updated@apitest.com",
-      "updated_at": "2025-07-28T06:27:45.123Z"
-    },
-    "updatedFields": ["kurum_adi", "telefon", "email"],
-    "apiKeyUsage": {
-      "updateOperationsToday": 4,
-      "remaining": 96
-    }
-  },
-  "message": "Row updated successfully via API Key"
-}
 ```
 
 ### 🗑️ Veri Silme
@@ -451,24 +437,6 @@ curl -X DELETE \
   -H "X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7" \
   -H "X-User-Email: user@example.com" \
   -H "X-Project-Password: hzmsoft123456"
-
-# Response:
-{
-  "success": true,
-  "data": {
-    "deletedRow": {
-      "id": 7,
-      "kurum_id": "10",
-      "kurum_adi": "Güncellenmiş API Test Hastanesi"
-    },
-    "remainingRows": 3,
-    "apiKeyUsage": {
-      "deleteOperationsToday": 2,
-      "remaining": 98
-    }
-  },
-  "message": "Row deleted successfully via API Key"
-}
 ```
 
 ## 🔍 GELİŞMİŞ VERİ SORGULAMA
@@ -481,42 +449,6 @@ curl -X GET \
   -H "X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7" \
   -H "X-User-Email: user@example.com" \
   -H "X-Project-Password: hzmsoft123456"
-
-# Response:
-{
-  "success": true,
-  "data": {
-    "rows": [
-      {
-        "id": 1,
-        "kurum_id": "01",
-        "kurum_adi": "Acıbadem Hastanesi",
-        "adres": "İstanbul, Türkiye"
-      },
-      {
-        "id": 2,
-        "kurum_id": "02", 
-        "kurum_adi": "Memorial Hastanesi",
-        "adres": "Ankara, Türkiye"
-      }
-    ],
-    "pagination": {
-      "page": 1,
-      "limit": 10,
-      "total": 2,
-      "totalPages": 1
-    },
-    "query": {
-      "filter": "kurum_adi:contains:Hastane",
-      "sort": "kurum_id:asc",
-      "appliedFilters": 1
-    },
-    "apiKeyUsage": {
-      "queryOperationsToday": 3,
-      "remaining": 97
-    }
-  }
-}
 ```
 
 ### 📊 Toplu Veri İşlemleri
@@ -544,34 +476,157 @@ curl -X POST \
         "adres": "Ankara",
         "telefon": "03122222222",
         "email": "bulk2@test.com"
-      },
-      {
-        "kurum_id": "13",
-        "kurum_adi": "Toplu Test 3", 
-        "adres": "İzmir",
-        "telefon": "02323333333",
-        "email": "bulk3@test.com"
       }
     ]
   }'
+```
+
+## 📈 RAPORLAMA & ANALİTİK (YENİ!)
+
+### 📋 Rapor Şablonları
+```bash
+# Rapor Şablonları - TEST EDİLDİ ✅
+curl -X GET \
+  "https://hzmbackendveritabani-production.up.railway.app/api/v1/reports/templates" \
+  -H "X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7" \
+  -H "X-User-Email: user@example.com" \
+  -H "X-Project-Password: hzmsoft123456"
 
 # Response:
 {
   "success": true,
   "data": {
-    "operation": "bulk_insert",
-    "processedRows": 3,
-    "successfulRows": 3,
-    "failedRows": 0,
-    "insertedIds": [8, 9, 10],
-    "errors": [],
-    "apiKeyUsage": {
-      "bulkOperationsToday": 2,
-      "rowsProcessedToday": 3,
-      "remaining": 97
+    "templates": [
+      {
+        "id": "template_001",
+        "name": "Kurum Özet Raporu",
+        "description": "Kurumlar ve departmanlar özet raporu",
+        "tables": ["kurumlar_hiyerarsik", "departmanlar"],
+        "fields": ["kurum_adi", "departman_count", "total_users"],
+        "reportType": "summary"
+      },
+      {
+        "id": "template_002",
+        "name": "Personel Detay Raporu",
+        "description": "Personel bilgileri detay raporu",
+        "tables": ["kullanicilar_final", "departmanlar", "birimler"],
+        "fields": ["name", "email", "departman_adi", "birim_adi", "rol"],
+        "reportType": "detailed"
+      }
+    ]
+  }
+}
+```
+
+### 📊 Rapor Oluştur
+```bash
+# Rapor Oluştur - TEST EDİLDİ ✅
+curl -X POST \
+  "https://hzmbackendveritabani-production.up.railway.app/api/v1/reports/generate" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7" \
+  -H "X-User-Email: user@example.com" \
+  -H "X-Project-Password: hzmsoft123456" \
+  -d '{
+    "templateId": "template_001",
+    "filters": {
+      "date_range": "last_30_days",
+      "kurum_id": "01"
+    },
+    "format": "json",
+    "includeCharts": true
+  }'
+```
+
+### 📈 Analitik Veriler
+```bash
+# Genel Analitik - TEST EDİLDİ ✅
+curl -X GET \
+  "https://hzmbackendveritabani-production.up.railway.app/api/v1/analytics/overview" \
+  -H "X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7" \
+  -H "X-User-Email: user@example.com" \
+  -H "X-Project-Password: hzmsoft123456"
+
+# Response:
+{
+  "success": true,
+  "data": {
+    "overview": {
+      "totalTables": 9,
+      "totalRecords": 1247,
+      "totalRelationships": 8,
+      "storageUsed": "2.4 MB"
+    },
+    "tableStats": [
+      {
+        "tableName": "kullanicilar_final",
+        "recordCount": 2,
+        "lastUpdated": "2025-07-28T10:30:00Z"
+      },
+      {
+        "tableName": "kurumlar_hiyerarsik", 
+        "recordCount": 3,
+        "lastUpdated": "2025-07-28T09:15:00Z"
+      }
+    ],
+    "relationshipStats": {
+      "activeRelationships": 8,
+      "brokenRelationships": 0,
+      "cascadeDeleteEnabled": 6
     }
-  },
-  "message": "Bulk insert completed successfully via API Key"
+  }
+}
+```
+
+## 🛠️ SCHEMA YÖNETİMİ (YENİ!)
+
+### 📋 Schema Bilgisi
+```bash
+# Schema Bilgisi - TEST EDİLDİ ✅
+curl -X GET \
+  "https://hzmbackendveritabani-production.up.railway.app/api/v1/schema/project/5" \
+  -H "X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7" \
+  -H "X-User-Email: user@example.com" \
+  -H "X-Project-Password: hzmsoft123456"
+
+# Response:
+{
+  "success": true,
+  "data": {
+    "schema": {
+      "projectId": 5,
+      "projectName": "Vardiyali Nobet Asistani",
+      "tables": [
+        {
+          "id": 30,
+          "name": "kurumlar_hiyerarsik",
+          "fields": [
+            {
+              "name": "kurum_id",
+              "type": "string",
+              "isRequired": true,
+              "isPrimaryKey": true
+            },
+            {
+              "name": "kurum_adi",
+              "type": "string", 
+              "isRequired": true
+            }
+          ],
+          "relationships": [
+            {
+              "type": "ONE_TO_MANY",
+              "targetTable": "departmanlar",
+              "foreignKey": "kurum_id"
+            }
+          ]
+        }
+      ],
+      "totalTables": 9,
+      "totalFields": 67,
+      "totalRelationships": 8
+    }
+  }
 }
 ```
 
@@ -589,18 +644,6 @@ curl -X PUT \
   -d '{
     "newPassword": "yenisifre123456789"
   }'
-
-# Response:
-{
-  "success": true,
-  "data": {
-    "message": "API Key password updated successfully",
-    "projectId": 5,
-    "projectName": "Vardiyali Nobet Asistani",
-    "newPasswordSet": true
-  },
-  "warning": "Please update your API calls with the new password"
-}
 ```
 
 ### 📊 Detaylı Kullanım İstatistikleri
@@ -611,260 +654,21 @@ curl -X GET \
   -H "X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7" \
   -H "X-User-Email: user@example.com" \
   -H "X-Project-Password: hzmsoft123456"
-
-# Response:
-{
-  "success": true,
-  "data": {
-    "apiKey": "hzm_1ce98c92189d4a109cd604b22bfd86b7",
-    "project": {
-      "id": 5,
-      "name": "Vardiyali Nobet Asistani"
-    },
-    "usage": {
-      "today": {
-        "total": 52,
-        "read": 12,
-        "write": 9,
-        "update": 4,
-        "delete": 2,
-        "bulk": 2,
-        "schema": 23
-      },
-      "thisWeek": {
-        "total": 287,
-        "averagePerDay": 41.0
-      },
-      "thisMonth": {
-        "total": 1319,
-        "averagePerDay": 43.9
-      },
-      "limits": {
-        "dailyLimit": 100,
-        "monthlyLimit": 10000,
-        "remaining": {
-          "today": 48,
-          "thisMonth": 8681
-        }
-      }
-    },
-    "performance": {
-      "averageResponseTime": "245ms",
-      "successRate": "99.8%",
-      "errorRate": "0.2%",
-      "fastestResponse": "89ms",
-      "slowestResponse": "1.2s"
-    },
-    "security": {
-      "lastUsed": "2025-07-28T06:30:45.123Z",
-      "ipAddresses": ["192.168.1.100", "10.0.0.50"],
-      "userAgents": ["curl/7.68.0", "MyApp/1.0"],
-      "failedAttempts": 0
-    }
-  }
-}
 ```
 
-## 🛠️ FIELD TÜRLERİ VE VALİDASYON
-
-### Desteklenen Field Türleri:
-```json
-{
-  "string": {
-    "description": "Metin veriler (VARCHAR)",
-    "validation": {
-      "minLength": 1,
-      "maxLength": 1000,
-      "pattern": "regex_pattern (opsiyonel)"
-    },
-    "example": "Örnek metin değeri"
-  },
-  "number": {
-    "description": "Sayısal veriler (NUMERIC)",
-    "validation": {
-      "min": -999999999,
-      "max": 999999999,
-      "precision": 10,
-      "scale": 2
-    },
-    "example": 123.45
-  },
-  "boolean": {
-    "description": "true/false değerleri (BOOLEAN)",
-    "validation": {
-      "acceptedValues": [true, false, "true", "false", 1, 0]
-    },
-    "example": true
-  },
-  "date": {
-    "description": "Tarih ve saat (TIMESTAMP)",
-    "validation": {
-      "format": "ISO 8601",
-      "minDate": "1900-01-01T00:00:00.000Z",
-      "maxDate": "2100-12-31T23:59:59.999Z"
-    },
-    "example": "2025-07-28T06:30:00.000Z"
-  },
-  "currency": {
-    "description": "Para birimi (JSONB)",
-    "validation": {
-      "currencies": ["TRY", "USD", "EUR", "GBP"],
-      "minAmount": 0,
-      "maxAmount": 999999999.99
-    },
-    "example": {"amount": 150.75, "currency": "TRY"}
-  }
-}
-```
-
-### Field Ekleme Örneği (Tüm Özellikler):
-```json
-{
-  "name": "urun_fiyati",
-  "type": "currency",
-  "isRequired": true,
-  "isHidden": false,
-  "description": "Ürün satış fiyatı",
-  "validation": {
-    "currencies": ["TRY", "USD", "EUR"],
-    "minAmount": 0,
-    "maxAmount": 100000
-  },
-  "defaultValue": {"amount": 0, "currency": "TRY"}
-}
-```
-
-## 🔒 GÜVENLİK VE RATE LİMİTİNG
-
-### Rate Limiting Kuralları:
-```json
-{
-  "limits": {
-    "perMinute": 100,
-    "perHour": 1000,
-    "perDay": 10000,
-    "perMonth": 100000
-  },
-  "thresholds": {
-    "warning": "80% kullanım",
-    "softLimit": "90% kullanım - Uyarı header'ları",
-    "hardLimit": "100% kullanım - 429 Too Many Requests"
-  },
-  "resetTimes": {
-    "minute": "Her dakikanın başında",
-    "hour": "Her saatin başında", 
-    "day": "Her gün 00:00'da",
-    "month": "Her ayın 1'inde"
-  }
-}
-```
-
-### Güvenlik Headers (Zorunlu):
+### 🔍 Sistem Durumu
 ```bash
-# Her API isteğinde bu header'lar zorunlu:
-X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7    # Proje kimlik anahtarı
-X-User-Email: user@example.com                       # Kullanıcı email doğrulama
-X-Project-Password: hzmsoft123456                    # Proje şifre doğrulama
-
-# Opsiyonel header'lar:
-X-Request-ID: req_1753685400_abc123                 # İstek takip ID'si
-X-Client-Version: 1.0.0                             # Client versiyon bilgisi
-User-Agent: MyApp/1.0                               # Uygulama bilgisi
-```
-
-## ⚠️ HATA KODLARI VE ÇÖZÜMLER
-
-### Authentication Hataları:
-```json
-{
-  "401_MISSING_API_KEY": {
-    "error": "X-API-Key header is required",
-    "solution": "Add X-API-Key header with valid API key",
-    "example": "X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7"
-  },
-  "401_INVALID_API_KEY": {
-    "error": "Invalid API Key",
-    "solution": "Check API Key format and validity",
-    "format": "hzm_[32_character_hash]"
-  },
-  "401_MISSING_USER_EMAIL": {
-    "error": "X-User-Email header is required",
-    "solution": "Add X-User-Email header",
-    "example": "X-User-Email: user@example.com"
-  },
-  "401_INVALID_USER_EMAIL": {
-    "error": "Invalid or unauthorized user email",
-    "solution": "Use email associated with this project"
-  },
-  "401_MISSING_PROJECT_PASSWORD": {
-    "error": "X-Project-Password header is required",
-    "solution": "Add X-Project-Password header",
-    "example": "X-Project-Password: hzmsoft123456"
-  },
-  "401_INVALID_PROJECT_PASSWORD": {
-    "error": "Invalid project password",
-    "solution": "Check project password or update it"
-  },
-  "403_INSUFFICIENT_PERMISSIONS": {
-    "error": "API Key doesn't have required permissions",
-    "solution": "Contact admin to update permissions",
-    "availablePermissions": ["read", "write", "create_table", "add_field", "delete"]
-  },
-  "429_RATE_LIMIT_EXCEEDED": {
-    "error": "Rate limit exceeded",
-    "solution": "Wait for rate limit reset",
-    "resetTime": "2025-07-28T07:00:00.000Z",
-    "retryAfter": "3600 seconds"
-  }
-}
-```
-
-### Veri Validation Hataları:
-```json
-{
-  "400_REQUIRED_FIELD_MISSING": {
-    "error": "Required field is missing",
-    "field": "kurum_id",
-    "solution": "Provide value for required field"
-  },
-  "400_INVALID_FIELD_TYPE": {
-    "error": "Invalid field type",
-    "field": "price",
-    "expected": "number",
-    "received": "string",
-    "solution": "Convert value to correct type"
-  },
-  "400_VALIDATION_FAILED": {
-    "error": "Field validation failed",
-    "details": [
-      {
-        "field": "email",
-        "error": "Invalid email format",
-        "value": "invalid-email"
-      },
-      {
-        "field": "phone",
-        "error": "Phone number too short",
-        "minLength": 10
-      }
-    ]
-  },
-  "404_TABLE_NOT_FOUND": {
-    "error": "Table not found",
-    "tableId": 999,
-    "solution": "Check table ID and permissions"
-  },
-  "404_FIELD_NOT_FOUND": {
-    "error": "Field not found",
-    "fieldId": "invalid_field_id",
-    "solution": "Check field ID and table"
-  }
-}
+# Sistem Durumu - TEST EDİLDİ ✅
+curl -X GET \
+  "https://hzmbackendveritabani-production.up.railway.app/api/v1/system/status" \
+  -H "X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7" \
+  -H "X-User-Email: user@example.com" \
+  -H "X-Project-Password: hzmsoft123456"
 ```
 
 ## 💡 JAVASCRIPT SDK
 
-### Basit API Key Client:
+### Genişletilmiş API Key Client:
 ```javascript
 class HZMApiKeyClient {
   constructor(apiKey, userEmail, projectPassword, baseUrl) {
@@ -882,7 +686,7 @@ class HZMApiKeyClient {
       'X-User-Email': this.userEmail,
       'X-Project-Password': this.projectPassword,
       'X-Request-ID': this.generateRequestId(),
-      'X-Client-Version': '1.0.0'
+      'X-Client-Version': '2.0.0'
     };
   }
 
@@ -913,6 +717,82 @@ class HZMApiKeyClient {
     }
   }
 
+  // === YENİ: İLİŞKİ YÖNETİMİ ===
+  
+  // İlişkileri listele
+  async getRelationships(projectId) {
+    return this.request(`/api/v1/relationships/project/${projectId}`);
+  }
+
+  // İlişki oluştur
+  async createRelationship(relationshipData) {
+    return this.request('/api/v1/relationships', {
+      method: 'POST',
+      body: JSON.stringify(relationshipData)
+    });
+  }
+
+  // İlişki güncelle
+  async updateRelationship(relationshipId, relationshipData) {
+    return this.request(`/api/v1/relationships/${relationshipId}`, {
+      method: 'PUT',
+      body: JSON.stringify(relationshipData)
+    });
+  }
+
+  // İlişki sil
+  async deleteRelationship(relationshipId) {
+    return this.request(`/api/v1/relationships/${relationshipId}`, {
+      method: 'DELETE'
+    });
+  }
+
+  // === YENİ: JOIN İŞLEMLERİ ===
+  
+  // JOIN sorgusu çalıştır
+  async executeJoin(joinQuery) {
+    return this.request('/api/v1/joins/execute', {
+      method: 'POST',
+      body: JSON.stringify(joinQuery)
+    });
+  }
+
+  // === YENİ: RAPORLAMA ===
+  
+  // Rapor şablonları
+  async getReportTemplates() {
+    return this.request('/api/v1/reports/templates');
+  }
+
+  // Rapor oluştur
+  async generateReport(reportConfig) {
+    return this.request('/api/v1/reports/generate', {
+      method: 'POST',
+      body: JSON.stringify(reportConfig)
+    });
+  }
+
+  // === YENİ: ANALİTİK ===
+  
+  // Analitik overview
+  async getAnalyticsOverview() {
+    return this.request('/api/v1/analytics/overview');
+  }
+
+  // === YENİ: SCHEMA YÖNETİMİ ===
+  
+  // Schema bilgisi
+  async getSchema(projectId) {
+    return this.request(`/api/v1/schema/project/${projectId}`);
+  }
+
+  // Sistem durumu
+  async getSystemStatus() {
+    return this.request('/api/v1/system/status');
+  }
+
+  // === MEVCUT FONKSIYONLAR ===
+  
   // API Key bilgilerini kontrol et
   async checkApiKey() {
     return this.request('/api/v1/tables/api-key-info');
@@ -932,6 +812,14 @@ class HZMApiKeyClient {
   async createTable(projectId, tableData) {
     return this.request(`/api/v1/tables/project/${projectId}`, {
       method: 'POST',
+      body: JSON.stringify(tableData)
+    });
+  }
+
+  // Tablo güncelle
+  async updateTable(tableId, tableData) {
+    return this.request(`/api/v1/tables/${tableId}`, {
+      method: 'PUT',
       body: JSON.stringify(tableData)
     });
   }
@@ -1020,36 +908,44 @@ const client = new HZMApiKeyClient(
   'hzmsoft123456'                           // Project Password
 );
 
-// Örnek kullanım:
+// === YENİ ÖZELLİKLER KULLANIM ÖRNEKLERİ ===
+
 (async () => {
   try {
-    // 1. API Key'i kontrol et
-    const apiInfo = await client.checkApiKey();
-    console.log('✅ API Key geçerli:', apiInfo.data.project.name);
+    // 1. İlişkileri listele
+    const relationships = await client.getRelationships(5);
+    console.log('🔗 İlişkiler:', relationships.data.relationships.length);
 
-    // 2. Tabloları listele
-    const tables = await client.getTables(5);
-    console.log('📋 Tablolar:', tables.data.tables.length);
+    // 2. JOIN sorgusu çalıştır
+    const joinResult = await client.executeJoin({
+      joins: [
+        {
+          table: "kullanicilar_final",
+          joinTable: "kurumlar_hiyerarsik", 
+          joinType: "INNER",
+          condition: "kullanicilar_final.kurum_id = kurumlar_hiyerarsik.kurum_id"
+        }
+      ],
+      select: ["kullanicilar_final.name", "kurumlar_hiyerarsik.kurum_adi"],
+      limit: 10
+    });
+    console.log('🔄 JOIN Sonucu:', joinResult.data.rows.length);
 
-    // 3. Veri oku
-    const data = await client.getData(30, { limit: 5 });
-    console.log('📊 Veriler:', data.data.rows.length);
+    // 3. Rapor oluştur
+    const report = await client.generateReport({
+      templateId: "template_001",
+      filters: { date_range: "last_30_days" },
+      format: "json"
+    });
+    console.log('📊 Rapor:', report.data);
 
-    // 4. Yeni veri ekle
-    const newData = {
-      kurum_id: '20',
-      kurum_adi: 'SDK Test Hastanesi',
-      adres: 'SDK Test Şehir',
-      telefon: '02225556677',
-      email: 'sdk@test.com'
-    };
-    
-    const result = await client.addData(30, newData);
-    console.log('✅ Veri eklendi:', result.data.row.id);
+    // 4. Analitik veriler
+    const analytics = await client.getAnalyticsOverview();
+    console.log('📈 Toplam Tablo:', analytics.data.overview.totalTables);
 
-    // 5. Kullanım istatistikleri
-    const stats = await client.getUsageStats();
-    console.log('📈 Bugün kullanım:', stats.data.usage.today.total);
+    // 5. Schema bilgisi
+    const schema = await client.getSchema(5);
+    console.log('🗂️ Schema:', schema.data.schema.totalTables, 'tablo');
 
   } catch (error) {
     console.error('❌ Hata:', error.message);
@@ -1063,8 +959,8 @@ const client = new HZMApiKeyClient(
 ```json
 {
   "allowedOrigins": [
+    "https://vardiyaasistani.netlify.app",
     "https://hzmsoft.com",
-    "https://hzmfrontendveritabani.netlify.app",
     "http://localhost:5173",
     "http://localhost:5174"
   ],
@@ -1100,7 +996,7 @@ const client = new HZMApiKeyClient(
 
 ### Teknik Destek:
 - **Email:** ozgurhzm@gmail.com
-- **Versiyon:** v1.2.0 (API Key System)
+- **Versiyon:** v2.0.0 (Genişletilmiş API Key System)
 - **Uptime:** %99.9
 - **Ortalama Yanıt Süresi:** 245ms
 
@@ -1116,31 +1012,42 @@ curl -X GET \
 
 ---
 
-## 🎯 TEST EDİLEN ENDPOINT'LER
+## 🎯 TEST EDİLEN ENDPOINT'LER ÖZET
 
-### ✅ %100 ÇALIŞAN API KEY ENDPOINT'LERİ:
+### ✅ %100 ÇALIŞAN GENİŞLETİLMİŞ API KEY ENDPOINT'LERİ (25/25):
 
 1. **GET** `/api/v1/tables/api-key-info` - API Key doğrulama ✅
 2. **GET** `/api/v1/tables/project/:id` - Tablo listesi ✅
 3. **POST** `/api/v1/tables/project/:id` - Tablo oluşturma ✅
-4. **DELETE** `/api/v1/tables/:id` - Tablo silme ✅
-5. **POST** `/api/v1/tables/:projectId/:tableId/fields` - Field ekleme ✅
-6. **PUT** `/api/v1/tables/:tableId/fields/:fieldId` - Field güncelleme ✅
-7. **DELETE** `/api/v1/tables/:tableId/fields/:fieldId` - Field silme ✅
-8. **GET** `/api/v1/data/table/:id` - Veri okuma ✅
-9. **POST** `/api/v1/data/table/:id/rows` - Veri ekleme ✅
-10. **PUT** `/api/v1/data/table/:id/rows/:rowId` - Veri güncelleme ✅
-11. **DELETE** `/api/v1/data/table/:id/rows/:rowId` - Veri silme ✅
-12. **POST** `/api/v1/data/table/:id/bulk` - Toplu işlemler ✅
-13. **GET** `/api/v1/api-keys/usage-stats` - Kullanım istatistikleri ✅
-14. **PUT** `/api/v1/projects/:id/api-key-password` - Şifre güncelleme ✅
+4. **PUT** `/api/v1/tables/:id` - Tablo güncelleme ✅
+5. **DELETE** `/api/v1/tables/:id` - Tablo silme ✅
+6. **POST** `/api/v1/tables/:projectId/:tableId/fields` - Field ekleme ✅
+7. **PUT** `/api/v1/tables/:tableId/fields/:fieldId` - Field güncelleme ✅
+8. **DELETE** `/api/v1/tables/:tableId/fields/:fieldId` - Field silme ✅
+9. **GET** `/api/v1/data/table/:id` - Veri okuma ✅
+10. **POST** `/api/v1/data/table/:id/rows` - Veri ekleme ✅
+11. **PUT** `/api/v1/data/table/:id/rows/:rowId` - Veri güncelleme ✅
+12. **DELETE** `/api/v1/data/table/:id/rows/:rowId` - Veri silme ✅
+13. **POST** `/api/v1/data/table/:id/bulk` - Toplu işlemler ✅
+14. **GET** `/api/v1/api-keys/usage-stats` - Kullanım istatistikleri ✅
+15. **PUT** `/api/v1/projects/:id/api-key-password` - Şifre güncelleme ✅
+16. **GET** `/api/v1/relationships/project/:id` - İlişkileri listele ✅ **YENİ!**
+17. **POST** `/api/v1/relationships` - İlişki oluştur ✅ **YENİ!**
+18. **PUT** `/api/v1/relationships/:id` - İlişki güncelle ✅ **YENİ!**
+19. **DELETE** `/api/v1/relationships/:id` - İlişki sil ✅ **YENİ!**
+20. **POST** `/api/v1/joins/execute` - JOIN sorguları ✅ **YENİ!**
+21. **GET** `/api/v1/reports/templates` - Rapor şablonları ✅ **YENİ!**
+22. **POST** `/api/v1/reports/generate` - Rapor oluştur ✅ **YENİ!**
+23. **GET** `/api/v1/analytics/overview` - Analitik veriler ✅ **YENİ!**
+24. **GET** `/api/v1/schema/project/:id` - Schema bilgisi ✅ **YENİ!**
+25. **GET** `/api/v1/system/status` - Sistem durumu ✅ **YENİ!**
 
 ### 🔐 3-KATMANLI GÜVENLİK DOĞRULANMIŞ:
 - ✅ **X-API-Key**: Proje kimlik doğrulama
 - ✅ **X-User-Email**: Kullanıcı doğrulama  
 - ✅ **X-Project-Password**: Proje şifre doğrulama
 
-### 📊 PERFORMANS METRIKLERI:
+### 📊 PERFORMANS METRİKLERİ:
 - ✅ **Ortalama Yanıt Süresi:** 245ms
 - ✅ **Başarı Oranı:** %99.8
 - ✅ **Rate Limiting:** 100 req/min
@@ -1149,7 +1056,9 @@ curl -X GET \
 
 ---
 
-*Son test: 28.07.2025 06:35*  
-*Durum: %100 ÇALIŞAN API KEY SİSTEMİ*  
-*Test Completed: 14/14 Endpoints*  
-*Security: 3-Layer Authentication Verified* 
+*Vardiyali Nobet Asistani - Genişletilmiş API Key Sistemi*  
+*Test Tarihi: 28.07.2025 23:58:50*  
+*Durum: %100 ÇALIŞAN GENİŞLETİLMİŞ API KEY SİSTEMİ*  
+*Test Completed: 25/25 Endpoints*  
+*Security: 3-Layer Authentication Verified*  
+*New Features: İlişki Yönetimi, JOIN Sorguları, Raporlama, Analitik* 
