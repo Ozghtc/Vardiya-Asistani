@@ -129,25 +129,25 @@ CREATE TABLE personeller (
 
 ```bash
 # 1. Kurumlar tablosu oluştur
-curl -X POST "https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/tables/project/5" \
+curl -X POST "https://hzmbackendveritabani-production.up.railway.app/api/v1/tables/project/5" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -d '{"name": "kurumlar", "description": "Kurum bilgileri tablosu"}'
 
 # 2. Departmanlar tablosu oluştur  
-curl -X POST "https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/tables/project/5" \
+curl -X POST "https://hzmbackendveritabani-production.up.railway.app/api/v1/tables/project/5" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -d '{"name": "departmanlar", "description": "Departman bilgileri tablosu"}'
 
 # 3. Birimler tablosu oluştur
-curl -X POST "https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/tables/project/5" \
+curl -X POST "https://hzmbackendveritabani-production.up.railway.app/api/v1/tables/project/5" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -d '{"name": "birimler", "description": "Birim bilgileri tablosu"}'
 
 # 4. Personeller tablosu oluştur
-curl -X POST "https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/tables/project/5" \
+curl -X POST "https://hzmbackendveritabani-production.up.railway.app/api/v1/tables/project/5" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -d '{"name": "personeller", "description": "Personel bilgileri tablosu"}'
@@ -158,19 +158,19 @@ curl -X POST "https://hzmbackandveritabani-production-c660.up.railway.app/api/v1
 ### Kurumlar Tablosu Field'ları:
 ```bash
 # kurum_id field
-curl -X POST "https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/tables/5/TABLE_ID/fields" \
+curl -X POST "https://hzmbackendveritabani-production.up.railway.app/api/v1/tables/5/TABLE_ID/fields" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -d '{"name": "kurum_id", "type": "string", "isRequired": true}'
 
 # kurum_adi field
-curl -X POST "https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/tables/5/TABLE_ID/fields" \
+curl -X POST "https://hzmbackendveritabani-production.up.railway.app/api/v1/tables/5/TABLE_ID/fields" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -d '{"name": "kurum_adi", "type": "string", "isRequired": true}'
 
 # telefon field
-curl -X POST "https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/tables/5/TABLE_ID/fields" \
+curl -X POST "https://hzmbackendveritabani-production.up.railway.app/api/v1/tables/5/TABLE_ID/fields" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -d '{"name": "telefon", "type": "string", "isRequired": false}'

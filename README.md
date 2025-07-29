@@ -12,7 +12,7 @@ Uygulamaya şu adresten erişebilirsiniz:
 
 Bu uygulama tamamen production ortamında çalışmaktadır:
 - **Frontend**: https://vardiyaasistani.netlify.app
-- **Backend**: https://hzmbackandveritabani-production-c660.up.railway.app
+- **Backend**: https://hzmbackendveritabani-production.up.railway.app
 
 ## Kurulum
 

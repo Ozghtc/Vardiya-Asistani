@@ -1,7 +1,7 @@
 # HZM VERİTABANI - API KEY SİSTEMİ DOKÜMANTASYONU
 
 ## 🔗 Temel Bilgiler
-- **Base URL:** `https://hzmbackandveritabani-production-c660.up.railway.app`
+- **Base URL:** `https://hzmbackendveritabani-production.up.railway.app`
 - **Authentication:** 3-Katmanlı API Key Sistemi
 - **Test Tarihi:** 28.07.2025
 - **Durum:** ✅ %100 ÇALIŞAN API KEY SİSTEMİ
@@ -20,7 +20,7 @@ X-Project-Password: ${VITE_HZM_PROJECT_PASSWORD}      # Proje şifresi (environm
 ```bash
 # API Key Doğrulama ve Bilgi Alma - TEST EDİLDİ ✅
 curl -X GET \
-  "https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/tables/api-key-info" \
+  "https://hzmbackendveritabani-production.up.railway.app/api/v1/tables/api-key-info" \
   -H "X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7" \
   -H "X-User-Email: user@example.com" \
   -H "X-Project-Password: hzmsoft123456"
@@ -59,7 +59,7 @@ curl -X GET \
 ```bash
 # Proje Tablolarını Listele - TEST EDİLDİ ✅
 curl -X GET \
-  "https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/tables/project/5" \
+  "https://hzmbackendveritabani-production.up.railway.app/api/v1/tables/project/5" \
   -H "X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7" \
   -H "X-User-Email: user@example.com" \
   -H "X-Project-Password: hzmsoft123456"
@@ -110,7 +110,7 @@ curl -X GET \
 ```bash
 # Yeni Tablo Oluştur - TEST EDİLDİ ✅
 curl -X POST \
-  "https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/tables/project/5" \
+  "https://hzmbackendveritabani-production.up.railway.app/api/v1/tables/project/5" \
   -H "Content-Type: application/json" \
   -H "X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7" \
   -H "X-User-Email: user@example.com" \
@@ -174,7 +174,7 @@ curl -X POST \
 ```bash
 # Tablo Sil - TEST EDİLDİ ✅
 curl -X DELETE \
-  "https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/tables/37" \
+  "https://hzmbackendveritabani-production.up.railway.app/api/v1/tables/37" \
   -H "X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7" \
   -H "X-User-Email: user@example.com" \
   -H "X-Project-Password: hzmsoft123456"
@@ -204,7 +204,7 @@ curl -X DELETE \
 ```bash
 # Tabloya Yeni Sütun Ekle - TEST EDİLDİ ✅
 curl -X POST \
-  "https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/tables/5/30/fields" \
+  "https://hzmbackendveritabani-production.up.railway.app/api/v1/tables/5/30/fields" \
   -H "Content-Type: application/json" \
   -H "X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7" \
   -H "X-User-Email: user@example.com" \
@@ -247,7 +247,7 @@ curl -X POST \
 ```bash
 # Sütun Bilgilerini Güncelle - TEST EDİLDİ ✅
 curl -X PUT \
-  "https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/tables/30/fields/1753685100123" \
+  "https://hzmbackendveritabani-production.up.railway.app/api/v1/tables/30/fields/1753685100123" \
   -H "Content-Type: application/json" \
   -H "X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7" \
   -H "X-User-Email: user@example.com" \
@@ -286,7 +286,7 @@ curl -X PUT \
 ```bash
 # Sütun Sil - TEST EDİLDİ ✅
 curl -X DELETE \
-  "https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/tables/30/fields/1753685100123" \
+  "https://hzmbackendveritabani-production.up.railway.app/api/v1/tables/30/fields/1753685100123" \
   -H "X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7" \
   -H "X-User-Email: user@example.com" \
   -H "X-Project-Password: hzmsoft123456"
@@ -317,7 +317,7 @@ curl -X DELETE \
 ```bash
 # Tablo Verilerini Oku - TEST EDİLDİ ✅
 curl -X GET \
-  "https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/data/table/30" \
+  "https://hzmbackendveritabani-production.up.railway.app/api/v1/data/table/30" \
   -H "X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7" \
   -H "X-User-Email: user@example.com" \
   -H "X-Project-Password: hzmsoft123456"
@@ -369,7 +369,7 @@ curl -X GET \
 ```bash
 # Tabloya Yeni Kayıt Ekle - TEST EDİLDİ ✅
 curl -X POST \
-  "https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/data/table/30/rows" \
+  "https://hzmbackendveritabani-production.up.railway.app/api/v1/data/table/30/rows" \
   -H "Content-Type: application/json" \
   -H "X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7" \
   -H "X-User-Email: user@example.com" \
@@ -409,7 +409,7 @@ curl -X POST \
 ```bash
 # Mevcut Kaydı Güncelle - TEST EDİLDİ ✅
 curl -X PUT \
-  "https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/data/table/30/rows/7" \
+  "https://hzmbackendveritabani-production.up.railway.app/api/v1/data/table/30/rows/7" \
   -H "Content-Type: application/json" \
   -H "X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7" \
   -H "X-User-Email: user@example.com" \
@@ -447,7 +447,7 @@ curl -X PUT \
 ```bash
 # Kaydı Sil - TEST EDİLDİ ✅
 curl -X DELETE \
-  "https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/data/table/30/rows/7" \
+  "https://hzmbackendveritabani-production.up.railway.app/api/v1/data/table/30/rows/7" \
   -H "X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7" \
   -H "X-User-Email: user@example.com" \
   -H "X-Project-Password: hzmsoft123456"
@@ -477,7 +477,7 @@ curl -X DELETE \
 ```bash
 # Gelişmiş Veri Sorgulama - TEST EDİLDİ ✅
 curl -X GET \
-  "https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/data/table/30?filter=kurum_adi:contains:Hastane&sort=kurum_id:asc&limit=10&page=1" \
+  "https://hzmbackendveritabani-production.up.railway.app/api/v1/data/table/30?filter=kurum_adi:contains:Hastane&sort=kurum_id:asc&limit=10&page=1" \
   -H "X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7" \
   -H "X-User-Email: user@example.com" \
   -H "X-Project-Password: hzmsoft123456"
@@ -523,7 +523,7 @@ curl -X GET \
 ```bash
 # Toplu Veri Ekleme - TEST EDİLDİ ✅
 curl -X POST \
-  "https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/data/table/30/bulk" \
+  "https://hzmbackendveritabani-production.up.railway.app/api/v1/data/table/30/bulk" \
   -H "Content-Type: application/json" \
   -H "X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7" \
   -H "X-User-Email: user@example.com" \
@@ -581,7 +581,7 @@ curl -X POST \
 ```bash
 # Proje API Key Şifresini Güncelle - TEST EDİLDİ ✅
 curl -X PUT \
-  "https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/projects/5/api-key-password" \
+  "https://hzmbackendveritabani-production.up.railway.app/api/v1/projects/5/api-key-password" \
   -H "Content-Type: application/json" \
   -H "X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7" \
   -H "X-User-Email: user@example.com" \
@@ -607,7 +607,7 @@ curl -X PUT \
 ```bash
 # API Key Kullanım İstatistikleri - TEST EDİLDİ ✅
 curl -X GET \
-  "https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/api-keys/usage-stats" \
+  "https://hzmbackendveritabani-production.up.railway.app/api/v1/api-keys/usage-stats" \
   -H "X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7" \
   -H "X-User-Email: user@example.com" \
   -H "X-Project-Password: hzmsoft123456"
@@ -871,7 +871,7 @@ class HZMApiKeyClient {
     this.apiKey = apiKey;
     this.userEmail = userEmail;
     this.projectPassword = projectPassword;
-    this.baseUrl = baseUrl || 'https://hzmbackandveritabani-production-c660.up.railway.app';
+    this.baseUrl = baseUrl || 'https://hzmbackendveritabani-production.up.railway.app';
   }
 
   // Header'ları hazırla
@@ -1096,7 +1096,7 @@ const client = new HZMApiKeyClient(
 - **Proje ID:** 5
 - **API Key:** hzm_1ce98c92189d4a109cd604b22bfd86b7
 - **API Key Şifresi:** hzmsoft123456
-- **Base URL:** https://hzmbackandveritabani-production-c660.up.railway.app
+- **Base URL:** https://hzmbackendveritabani-production.up.railway.app
 
 ### Teknik Destek:
 - **Email:** ozgurhzm@gmail.com
@@ -1108,7 +1108,7 @@ const client = new HZMApiKeyClient(
 ```bash
 # API Key sistemini hızlı test et:
 curl -X GET \
-  "https://hzmbackandveritabani-production-c660.up.railway.app/api/v1/tables/api-key-info" \
+  "https://hzmbackendveritabani-production.up.railway.app/api/v1/tables/api-key-info" \
   -H "X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7" \
   -H "X-User-Email: user@example.com" \
   -H "X-Project-Password: hzmsoft123456"
