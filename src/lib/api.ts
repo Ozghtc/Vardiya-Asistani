@@ -8,14 +8,7 @@ const API_CONFIG = {
   proxyURL: '/.netlify/functions/api-proxy'
 };
 
-// Debug: Environment variables kontrolü
-console.log('🔧 API_CONFIG initialized:', {
-  baseURL: API_CONFIG.baseURL,
-  apiKey: API_CONFIG.apiKey ? 'PRESENT' : 'MISSING',
-  userEmail: API_CONFIG.userEmail ? 'PRESENT' : 'MISSING',
-  projectPassword: API_CONFIG.projectPassword ? 'PRESENT' : 'MISSING',
-  projectId: API_CONFIG.projectId
-});
+// API_CONFIG initialized (debug removed for production security)
 
 // 🚫 CACHE SİSTEMİ KALDIRILDI - KALICI ÇÖZÜM
 // Tüm API çağrıları direkt backend'e gidecek
@@ -143,12 +136,7 @@ const apiRequest = async (path: string, options: RequestInit = {}) => {
         throw new Error(data.message || 'API Error');
       }
       
-      console.log(`✅ API SUCCESS (3-Layer): ${options.method || 'GET'} ${path}`, data);
-      
-      // API Key usage bilgisini logla
-      if (data.data && data.data.apiKeyUsage) {
-        console.log('📊 API Key Usage:', data.data.apiKeyUsage);
-      }
+      // API request successful (debug logs removed for production security)
       
       return data;
     } catch (fetchError: any) {
@@ -719,15 +707,7 @@ const generateKullaniciId = async (kurum_id: string, departman_id: string, birim
     // Hiyerarşik ID format: kurum_departman_birim_rolTipi+Numara
     const kullaniciId = `${actualKurumId}_${departmanKodu}_${birimKodu}_${rolKodu}${newNumber}`;
     
-    console.log(`🆔 KULLANICI_ID oluşturuldu: ${kullaniciId}`, {
-      kurum_id: actualKurumId,
-      departman_id: departman_id,
-      birim_id: birim_id,
-      departmanKodu: departmanKodu,
-      birimKodu: birimKodu,
-      rolKodu: rolKodu,
-      newNumber: newNumber
-    });
+      // User ID generated (debug removed for production security)
     return kullaniciId;
     
   } catch (error) {
@@ -757,10 +737,7 @@ export const getUsers = async (usersTableId: number, forceRefresh: boolean = fal
     let users = response.data?.rows || [];
     
     // 🔍 DEBUG: API Response analizi
-    console.log('🔍 3-Layer API Response:', response);
-    console.log('🔍 Raw users:', users);
-    console.log('🔍 User count:', users.length);
-    console.log('🔍 Users data:', users);
+    // User data loaded (debug logs removed for production security)
     
     // Kurum adlarını ekle
     try {

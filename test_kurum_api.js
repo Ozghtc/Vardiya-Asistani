@@ -9,7 +9,6 @@ const API_CONFIG = {
 
 async function testKurumEkle() {
   try {
-    console.log('🔄 TEST2 HASTANESI ekleniyor...');
     
     // 1. Mevcut kurumları al
     const kurumlarResponse = await fetch(`${API_CONFIG.baseURL}/api/v1/data/table/30`, {
@@ -19,7 +18,6 @@ async function testKurumEkle() {
     });
     
     const kurumlarData = await kurumlarResponse.json();
-    console.log('📋 Mevcut kurumlar:', kurumlarData);
     
     const existingKurumlar = kurumlarData.data?.rows || [];
     let maxKurumId = 0;
@@ -32,7 +30,6 @@ async function testKurumEkle() {
     });
     
     const newKurumId = String(maxKurumId + 1).padStart(2, '0');
-    console.log(`🆔 Yeni Kurum ID: ${newKurumId}`);
     
     // 2. Departman ve birim ID'lerini oluştur
     const departmanlar = 'DAHILIYE, CERRAHI';
@@ -48,8 +45,6 @@ async function testKurumEkle() {
       .map((_, index) => `${newKurumId}_B${index + 1}`)
       .join(',');
     
-    console.log('🏷️ Departman ID\'leri:', departmanIdList);
-    console.log('🏷️ Birim ID\'leri:', birimIdList);
     
     // 3. Kurumu ekle
     const kurumData = {
@@ -64,7 +59,6 @@ async function testKurumEkle() {
       BIRIM: birimler
     };
     
-    console.log('📤 Kurum verisi:', kurumData);
     
     const response = await fetch(`${API_CONFIG.baseURL}/api/v1/data/table/30/rows`, {
       method: 'POST',
@@ -76,10 +70,8 @@ async function testKurumEkle() {
     });
     
     const result = await response.json();
-    console.log('✅ Kurum ekleme sonucu:', result);
     
     if (result.success) {
-      console.log('🎉 TEST2 HASTANESI başarıyla eklendi!');
       
       // 4. Departmanları ayrı tabloya kaydet
       const departmanList = departmanlar.split(',').filter(d => d.trim());
@@ -102,7 +94,6 @@ async function testKurumEkle() {
         });
         
         const deptResult = await deptResponse.json();
-        console.log(`📋 Departman eklendi: ${departmanId} → ${departmanAdi}`, deptResult);
       }
       
       // 5. Birimleri ayrı tabloya kaydet
@@ -126,7 +117,6 @@ async function testKurumEkle() {
         });
         
         const birimResult = await birimResponse.json();
-        console.log(`👥 Birim eklendi: ${birimId} → ${birimAdi}`, birimResult);
       }
       
     } else {

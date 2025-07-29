@@ -35,10 +35,13 @@ export const handler = async (event, context) => {
           statusCode: 200,
           headers: {
             'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Origin': 'https://vardiyaasistani.netlify.app',
             'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
             'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-API-Key, X-User-Email, X-Project-Password',
-            'X-Cache': 'HIT'
+            'X-Cache': 'HIT',
+            'X-Content-Type-Options': 'nosniff',
+            'X-Frame-Options': 'DENY',
+            'X-XSS-Protection': '1; mode=block'
           },
           body: JSON.stringify(cachedData.data),
         };
@@ -154,11 +157,15 @@ export const handler = async (event, context) => {
         statusCode: response.status,
         headers: {
           'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Origin': 'https://vardiyaasistani.netlify.app',
           'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
           'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-API-Key, X-User-Email, X-Project-Password, X-Request-ID, X-Client-Version',
           'X-Cache': 'MISS',
-          'X-API-System': '3-Layer-Authentication'
+          'X-API-System': '3-Layer-Authentication',
+          'X-Content-Type-Options': 'nosniff',
+          'X-Frame-Options': 'DENY',
+          'X-XSS-Protection': '1; mode=block',
+          'Strict-Transport-Security': 'max-age=31536000'
         },
         body: JSON.stringify(responseData),
       };
@@ -170,7 +177,7 @@ export const handler = async (event, context) => {
           statusCode: 408,
           headers: {
             'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Origin': 'https://vardiyaasistani.netlify.app',
           },
           body: JSON.stringify({
             error: 'Request Timeout',
@@ -187,7 +194,7 @@ export const handler = async (event, context) => {
       statusCode: 500,
       headers: {
         'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Origin': 'https://vardiyaasistani.netlify.app',
         'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-API-Key, X-User-Email, X-Project-Password',
       },
