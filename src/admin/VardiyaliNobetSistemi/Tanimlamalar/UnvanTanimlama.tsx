@@ -94,27 +94,50 @@ const UnvanTanimlama: React.FC = () => {
   };
 
   useEffect(() => {
-    // Load unvanlar from HZM API
+    // Load unvanlar from HZM API - KURAL 17 GÜVENLİK DÜZELTMESİ
     const loadUnvanlar = async () => {
       if (user?.kurum_id && user?.departman_id && user?.birim_id) {
         setLoading(true);
         setError(null);
         
         try {
-          console.log('🔍 Ünvanlar yükleniyor...', {
-            kurum_id: user.kurum_id,
-            departman_id: user.departman_id,
-            birim_id: user.birim_id
+          // KURAL 17: Tüm cache'leri zorla temizle - güvenlik önlemi
+          clearAllCache();
+          clearTableCache('69');
+          
+          // KURAL 17: Direkt API çağrısı - cache bypass
+          const response = await fetch('/.netlify/functions/api-proxy', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              path: '/api/v1/data/table/69',
+              method: 'GET',
+              // 3-Layer Authentication
+              apiKey: API_CONFIG.apiKey,
+              userEmail: API_CONFIG.userEmail,
+              projectPassword: API_CONFIG.projectPassword
+            })
           });
+
+          if (!response.ok) {
+            throw new Error('API request failed');
+          }
+
+          const data = await response.json();
           
-          // YENİ TABLO ID: 69
-          const filterParams = `kurum_id=${user.kurum_id}&departman_id=${user.departman_id}&birim_id=${user.birim_id}`;
-          const data = await getTableData('69', filterParams);
-          
-          console.log('📦 Ünvanlar yüklendi:', data);
-          // Veriyi array olarak garanti et
-          const unvanArray = Array.isArray(data) ? data : [];
-          setUnvanlar(unvanArray);
+          if (data.success && data.data && Array.isArray(data.data.rows)) {
+            // KURAL 17: Güvenli filtreleme - kullanıcı bilgilerine göre
+            const filteredUnvanlar = data.data.rows.filter((unvan: any) => 
+              unvan.kurum_id === user.kurum_id &&
+              unvan.departman_id === user.departman_id &&
+              unvan.birim_id === user.birim_id
+            );
+            setUnvanlar(filteredUnvanlar);
+          } else {
+            setUnvanlar([]);
+          }
         } catch (error) {
           console.error('🚨 Ünvanlar yüklenemedi:', error);
           // Tablo yoksa boş array set et ve bilgilendirici mesaj göster
@@ -149,9 +172,41 @@ const UnvanTanimlama: React.FC = () => {
     }
 
     try {
-      // Yeni ünvan ID'si oluştur
-      const existingUnvanlar = await getTableData('69', `kurum_id=${user.kurum_id}&departman_id=${user.departman_id}&birim_id=${user.birim_id}`);
-      const unvanArray = Array.isArray(existingUnvanlar) ? existingUnvanlar : [];
+      // KURAL 17: Fresh data ile duplicate ve ID kontrolü
+      clearAllCache();
+      clearTableCache('69');
+      
+      // KURAL 17: Direkt API çağrısı ile fresh data al
+      const response = await fetch('/.netlify/functions/api-proxy', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          path: '/api/v1/data/table/69',
+          method: 'GET',
+          // 3-Layer Authentication
+          apiKey: API_CONFIG.apiKey,
+          userEmail: API_CONFIG.userEmail,
+          projectPassword: API_CONFIG.projectPassword
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('API request failed');
+      }
+
+      const data = await response.json();
+      let unvanArray: any[] = [];
+      
+      if (data.success && data.data && Array.isArray(data.data.rows)) {
+        // KURAL 17: Güvenli filtreleme - aynı kullanıcı bilgileriyle
+        unvanArray = data.data.rows.filter((unvan: any) => 
+          unvan.kurum_id === user.kurum_id &&
+          unvan.departman_id === user.departman_id &&
+          unvan.birim_id === user.birim_id
+        );
+      }
       
       // ÇİFT KAYIT KONTROLÜ - Büyük/küçük harf duyarsız
       const normalizedNewUnvan = yeniUnvan.trim().toUpperCase().replace(/İ/g, 'I').replace(/Ğ/g, 'G').replace(/Ü/g, 'U').replace(/Ş/g, 'S').replace(/Ö/g, 'O').replace(/Ç/g, 'C');
@@ -165,12 +220,14 @@ const UnvanTanimlama: React.FC = () => {
         return;
       }
       
+      // KURAL 17: Benzersiz ID generation - timestamp ekleyerek
+      const timestamp = Date.now();
       const nextSira = unvanArray.length + 1;
       
-      // DOĞRU FORMAT: kurum_D#_B#_sira (HIYERARSIK_ID_SISTEMI.md uyumlu)
+      // DOĞRU FORMAT: kurum_D#_B#_sira_timestamp (BENZERSIZ)
       const departmanKodu = user.departman_id.split('_')[1] || 'D1'; // "6_D1" -> "D1"
       const birimKodu = user.birim_id.split('_')[1] || 'B1'; // "6_B1" -> "B1"
-      const unvanId = `${user.kurum_id}_${departmanKodu}_${birimKodu}_${nextSira}`;
+      const unvanId = `${user.kurum_id}_${departmanKodu}_${birimKodu}_${nextSira}_${timestamp}`;
 
       const newUnvan = {
         unvan_id: unvanId,
@@ -185,19 +242,41 @@ const UnvanTanimlama: React.FC = () => {
       const result = await addTableData('69', newUnvan);
 
       if (result.success) {
-        // Cache'i zorla temizle
+        // KURAL 17: Cache'i zorla temizle
         clearAllCache();
         clearTableCache('69');
         
-        // Fresh veriyi yeniden yükle
-        const filterParams = `kurum_id=${user.kurum_id}&departman_id=${user.departman_id}&birim_id=${user.birim_id}`;
-        const data = await getTableData('69', filterParams, true);
-        setUnvanlar(data);
+        // KURAL 17: Fresh veriyi direkt API ile yeniden yükle
+        const reloadResponse = await fetch('/.netlify/functions/api-proxy', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            path: '/api/v1/data/table/69',
+            method: 'GET',
+            // 3-Layer Authentication
+            apiKey: API_CONFIG.apiKey,
+            userEmail: API_CONFIG.userEmail,
+            projectPassword: API_CONFIG.projectPassword
+          })
+        });
+
+        if (reloadResponse.ok) {
+          const reloadData = await reloadResponse.json();
+          if (reloadData.success && reloadData.data && Array.isArray(reloadData.data.rows)) {
+            // KURAL 17: Güvenli filtreleme - kullanıcı bilgilerine göre
+            const filteredUnvanlar = reloadData.data.rows.filter((unvan: any) => 
+              unvan.kurum_id === user.kurum_id &&
+              unvan.departman_id === user.departman_id &&
+              unvan.birim_id === user.birim_id
+            );
+            setUnvanlar(filteredUnvanlar);
+          }
+        }
         
         setYeniUnvan('');
         setError(null);
-        
-        console.log('✅ Ünvan eklendi ve liste güncellendi:', data);
       } else {
         setError('Ünvan eklenemedi: ' + result.error);
       }
