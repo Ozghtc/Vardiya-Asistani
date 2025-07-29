@@ -136,45 +136,9 @@ export const useAuth = () => {
         return { success: false };
       }
 
-      console.log('🔐 Güvenli login başlatılıyor...');
+      console.log('🔐 3-Layer API güvenliği ile login başlatılıyor...');
       
-      // 1. ÖNCE JWT TOKEN AL (3-Layer API Key System ile)
-      try {
-        const response = await fetch(API_CONFIG.proxyURL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            path: '/api/v1/auth/login',
-            method: 'POST',
-            body: { email, password },
-            // 3-Layer Authentication
-            apiKey: API_CONFIG.apiKey,
-            userEmail: API_CONFIG.userEmail,
-            projectPassword: API_CONFIG.projectPassword
-          })
-        });
-
-        if (response.ok) {
-          const authData = await response.json();
-          if (authData.success && authData.data && authData.data.token) {
-            // JWT Token'ı güvenli şekilde kaydet
-            setJWTToken(authData.data.token);
-            console.log('✅ JWT Token güvenli şekilde alındı');
-          } else {
-            setLoginError('Geçersiz giriş bilgileri');
-            return { success: false };
-          }
-        } else {
-          setLoginError('Sunucu hatası - Lütfen tekrar deneyin');
-          return { success: false };
-        }
-      } catch (authError) {
-        console.error('JWT Auth hatası:', authError);
-        setLoginError('Kimlik doğrulama hatası');
-        return { success: false };
-      }
-      
-      // 2. ŞIMDI KULLANICILARI ÇEK (3-Layer API Key System ile)
+      // KULLANICILARI ÇEK (3-Layer API Key System ile)
       const users = await getUsers(33, true); // kullanicilar_final tablosu
       
       if (!users || users.length === 0) {
