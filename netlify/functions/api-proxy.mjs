@@ -70,9 +70,9 @@ export const handler = async (event, context) => {
     const apiUrl = `https://hzmbackandveritabani-production-c660.up.railway.app${path}`;
     
     // 3-Layer Authentication System
-    const apiKey = bodyApiKey || event.headers['x-api-key'] || process.env.VITE_HZM_API_KEY || 'hzm_1ce98c92189d4a109cd604b22bfd86b7';
-    const userEmail = bodyUserEmail || event.headers['x-user-email'] || process.env.VITE_HZM_USER_EMAIL || 'ozgurhzm@gmail.com';
-    const projectPassword = bodyProjectPassword || event.headers['x-project-password'] || process.env.VITE_HZM_PROJECT_PASSWORD || 'hzmsoft123456';
+    const apiKey = bodyApiKey || event.headers['x-api-key'] || process.env.VITE_HZM_API_KEY;
+    const userEmail = bodyUserEmail || event.headers['x-user-email'] || process.env.VITE_HZM_USER_EMAIL;
+    const projectPassword = bodyProjectPassword || event.headers['x-project-password'] || process.env.VITE_HZM_PROJECT_PASSWORD;
     
     console.log('🔄 Proxy Request Details (3-Layer):', {
       apiUrl,

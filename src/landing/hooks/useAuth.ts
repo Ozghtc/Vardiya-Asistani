@@ -6,9 +6,9 @@ import { useAuthContext } from '../../contexts/AuthContext';
 
 // 3-Layer API Key Configuration
 const API_CONFIG = {
-  apiKey: import.meta.env.VITE_HZM_API_KEY || 'hzm_1ce98c92189d4a109cd604b22bfd86b7',
-  userEmail: import.meta.env.VITE_HZM_USER_EMAIL || 'ozgurhzm@gmail.com',
-  projectPassword: import.meta.env.VITE_HZM_PROJECT_PASSWORD || 'hzmsoft123456',
+  apiKey: import.meta.env.VITE_HZM_API_KEY,
+  userEmail: import.meta.env.VITE_HZM_USER_EMAIL,
+  projectPassword: import.meta.env.VITE_HZM_PROJECT_PASSWORD,
   proxyURL: '/.netlify/functions/api-proxy'
 };
 

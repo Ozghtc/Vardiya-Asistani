@@ -2,9 +2,9 @@
 import https from 'https';
 
 // Environment'tan API key al
-const API_KEY = process.env.VITE_HZM_API_KEY || 'hzm_1ce98c92189d4a109cd604b22bfd86b7';
-const USER_EMAIL = process.env.VITE_HZM_USER_EMAIL || 'ozgurhzm@gmail.com';
-const PROJECT_PASSWORD = process.env.VITE_HZM_PROJECT_PASSWORD || 'hzmsoft123456';
+const API_KEY = process.env.VITE_HZM_API_KEY;
+const USER_EMAIL = process.env.VITE_HZM_USER_EMAIL;
+const PROJECT_PASSWORD = process.env.VITE_HZM_PROJECT_PASSWORD;
 
 const makeAPICall = (path, method = 'GET', body = null) => {
   return new Promise((resolve, reject) => {
