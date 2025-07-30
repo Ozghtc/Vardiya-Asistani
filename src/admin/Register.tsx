@@ -93,10 +93,6 @@ const Register: React.FC = () => {
   const validateForm = () => {
     // Backend'de validation yapılacak, frontend sadece UI
     return true; // Geçici: Tüm validationları backend'e bırak
-      setError('Admin olmayan kullanıcılar için kurum, departman ve birim seçimi zorunludur');
-      return false;
-    }
-    return true;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
