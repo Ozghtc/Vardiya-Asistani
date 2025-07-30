@@ -70,8 +70,6 @@ const Header: React.FC = () => {
     // KURAL 18: Rol kontrolü backend'de yapılmalı
     // Geçici: Varsayılan yönlendirme
     navigate('/admin'); // Backend Authorization API ile düzeltilecek
-      navigate('/personel/panel');
-    }
   };
 
   // Kullanıcı yoksa header'ı gösterme
