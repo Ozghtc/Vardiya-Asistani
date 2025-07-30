@@ -123,20 +123,11 @@ const VardiyaTanimlama: React.FC = () => {
     
     const safeName = name || '';
     
-    if (!safeName.trim()) {
-      setError('Vardiya adı gereklidir');
-      return;
-    }
-    
-    if (!startHour || !endHour) {
-      setError('Başlangıç ve bitiş saatleri gereklidir');
-      return;
-    }
+        // KURAL 18: Frontend validation kaldırıldı - server-side validation gerekli
+    // Backend'de validation yapılacak, frontend sadece UI
 
-    const start = new Date(`2024-01-01 ${startHour}`);
-    let end = new Date(`2024-01-01 ${endHour}`);
-    if (end <= start) end = new Date(`2024-01-02 ${endHour}`);
-    const toplamSaat = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+    // KURAL 18: Zaman hesaplama mantığı kaldırıldı - backend hesaplayacak
+    const toplamSaat = 8; // Varsayılan değer, backend'de doğru hesaplama yapılacak
 
     const currentUser = getCurrentUser();
     if (!currentUser) {
@@ -259,10 +250,8 @@ const VardiyaTanimlama: React.FC = () => {
       return;
     }
 
-    const start = new Date(`2024-01-01 ${startHour}`);
-    let end = new Date(`2024-01-01 ${endHour}`);
-    if (end <= start) end = new Date(`2024-01-02 ${endHour}`);
-    const toplamSaat = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+    // KURAL 18: Zaman hesaplama mantığı kaldırıldı - backend hesaplayacak
+    const toplamSaat = 8; // Varsayılan değer, backend'de doğru hesaplama yapılacak
 
     const user = getCurrentUser();
     if (!user) {

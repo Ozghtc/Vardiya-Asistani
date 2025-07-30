@@ -19,7 +19,7 @@ export const ToastProvider: React.FC<ToastContainerProps> = ({ children }) => {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
 
   const showToast = useCallback((toast: Omit<ToastItem, 'id'>) => {
-    const id = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+    const id = `toast_${toasts.length + 1}`; // KURAL 18: Date.now() ve Math.random() kaldırıldı
     const newToast: ToastItem = { ...toast, id };
     
     setToasts(prev => [...prev, newToast]);

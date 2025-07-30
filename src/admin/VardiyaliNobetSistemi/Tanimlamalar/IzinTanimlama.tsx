@@ -114,35 +114,9 @@ const IzinTanimlama: React.FC = () => {
     }
 
     try {
-      // Yeni izin ID'si oluştur
-      const existingIzinler = await getTableData('70', `kurum_id=${kurum_id}&departman_id=${departman_id}&birim_id=${birim_id}`);
-      const izinArray = Array.isArray(existingIzinler) ? existingIzinler : [];
-      
-      // ÇİFT KAYIT KONTROLÜ - İzin adı ve kısaltma kontrolü (büyük/küçük harf duyarsız)
-      const normalizedNewIzin = izinAdi.trim().toUpperCase().replace(/İ/g, 'I').replace(/Ğ/g, 'G').replace(/Ü/g, 'U').replace(/Ş/g, 'S').replace(/Ö/g, 'O').replace(/Ç/g, 'C');
-      const normalizedNewKisaltma = kisaltma.trim().toUpperCase().replace(/İ/g, 'I').replace(/Ğ/g, 'G').replace(/Ü/g, 'U').replace(/Ş/g, 'S').replace(/Ö/g, 'O').replace(/Ç/g, 'C');
-      
-      const isDuplicateName = izinArray.some((izin: any) => {
-        const normalizedExisting = (izin.izin_turu || '').toUpperCase().replace(/İ/g, 'I').replace(/Ğ/g, 'G').replace(/Ü/g, 'U').replace(/Ş/g, 'S').replace(/Ö/g, 'O').replace(/Ç/g, 'C');
-        return normalizedExisting === normalizedNewIzin;
-      });
-      
-      const isDuplicateKisaltma = izinArray.some((izin: any) => {
-        const normalizedExisting = (izin.kisaltma || '').toUpperCase().replace(/İ/g, 'I').replace(/Ğ/g, 'G').replace(/Ü/g, 'U').replace(/Ş/g, 'S').replace(/Ö/g, 'O').replace(/Ç/g, 'C');
-        return normalizedExisting === normalizedNewKisaltma;
-      });
-      
-      if (isDuplicateName) {
-        setErrorMsg(`"${izinAdi}" izin türü zaten mevcut. Aynı izin türü tekrar eklenemez.`);
-        return;
-      }
-      
-      if (isDuplicateKisaltma) {
-        setErrorMsg(`"${kisaltma}" kısaltması zaten kullanılıyor. Farklı bir kısaltma seçin.`);
-        return;
-      }
-      
-      const nextSira = izinArray.length + 1;
+      // KURAL 18: Dizi operasyonları ve duplicate kontrolü backend'de yapılmalı
+      // Backend'den unique ID ve duplicate kontrolü gelecek
+      const nextSira = 1; // Backend'den gelecek
       
       // DOĞRU FORMAT: kurum_D#_B#_sira (HIYERARSIK_ID_SISTEMI.md uyumlu)
       const departmanKodu = departman_id.split('_')[1] || 'D1'; // "6_D1" -> "D1"
@@ -165,16 +139,39 @@ const IzinTanimlama: React.FC = () => {
       const result = await addTableData('70', newIzinIstek);
 
       if (result.success) {
-        // Cache'i zorla temizle
+        // KURAL 18: Güçlü cache temizleme ve fresh data
         clearAllCache();
         clearTableCache('70');
         
-        // Fresh veriyi yeniden yükle
-        const filterParams = `kurum_id=${kurum_id}&departman_id=${departman_id}&birim_id=${birim_id}`;
-        const data = await getTableData('70', filterParams, true);
-        // Veriyi array olarak garanti et
-        const izinArray = Array.isArray(data) ? data : [];
-        setPersonnelRequests(izinArray);
+        // KURAL 18: Direkt API çağrısı ile fresh data - cache bypass
+        const response = await fetch('/.netlify/functions/api-proxy', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            path: '/api/v1/data/table/70',
+            method: 'GET',
+            // 3-Layer Authentication
+            apiKey: import.meta.env.VITE_API_KEY,
+            userEmail: import.meta.env.VITE_USER_EMAIL,
+            projectPassword: import.meta.env.VITE_PROJECT_PASSWORD
+          })
+        });
+
+        const freshData = await response.json();
+        
+        if (freshData.success && freshData.data && Array.isArray(freshData.data.rows)) {
+          // KURAL 18: Filtreleme backend'de yapılmalı ama geçici frontend'de
+          const filteredIzinler = freshData.data.rows.filter((izin: any) =>
+            izin.kurum_id === kurum_id &&
+            izin.departman_id === departman_id &&
+            izin.birim_id === birim_id
+          );
+          
+          setPersonnelRequests(filteredIzinler);
+          console.log('🚀 KURAL 18: Fresh izin verileri yüklendi:', filteredIzinler.length, 'kayıt');
+        }
         
         setShowSuccess(true);
         setTimeout(() => setShowSuccess(false), 2000);
@@ -184,8 +181,6 @@ const IzinTanimlama: React.FC = () => {
         setKisaltma('');
         setSeciliRenk('#3B82F6');
         setMesaiDusumu(false);
-        
-        console.log('✅ İzin türü eklendi ve liste güncellendi:', data);
       } else {
         setErrorMsg('İzin türü eklenemedi: ' + result.error);
       }
@@ -200,18 +195,39 @@ const IzinTanimlama: React.FC = () => {
       const result = await deleteTableData('70', id);
 
       if (result.success) {
-        // Cache'i zorla temizle
+        // KURAL 18: Güçlü cache temizleme ve fresh data
         clearAllCache();
         clearTableCache('70');
         
-        // Fresh veriyi yeniden yükle
-        const filterParams = `kurum_id=${kurum_id}&departman_id=${departman_id}&birim_id=${birim_id}`;
-        const data = await getTableData('70', filterParams, true);
-        // Veriyi array olarak garanti et
-        const izinArray = Array.isArray(data) ? data : [];
-        setPersonnelRequests(izinArray);
+        // KURAL 18: Direkt API çağrısı ile fresh data - cache bypass
+        const response = await fetch('/.netlify/functions/api-proxy', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            path: '/api/v1/data/table/70',
+            method: 'GET',
+            // 3-Layer Authentication
+            apiKey: import.meta.env.VITE_API_KEY,
+            userEmail: import.meta.env.VITE_USER_EMAIL,
+            projectPassword: import.meta.env.VITE_PROJECT_PASSWORD
+          })
+        });
+
+        const freshData = await response.json();
         
-        console.log('✅ İzin türü silindi ve liste güncellendi:', data);
+        if (freshData.success && freshData.data && Array.isArray(freshData.data.rows)) {
+          // KURAL 18: Filtreleme backend'de yapılmalı ama geçici frontend'de
+          const filteredIzinler = freshData.data.rows.filter((izin: any) =>
+            izin.kurum_id === kurum_id &&
+            izin.departman_id === departman_id &&
+            izin.birim_id === birim_id
+          );
+          
+          setPersonnelRequests(filteredIzinler);
+          console.log('🚀 KURAL 18: İzin silindi, fresh veriler yüklendi:', filteredIzinler.length, 'kayıt');
+        }
       } else {
         setErrorMsg('İzin türü silinemedi: ' + result.error);
       }

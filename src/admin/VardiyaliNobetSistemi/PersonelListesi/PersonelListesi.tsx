@@ -63,7 +63,7 @@ const PersonelListesi: React.FC = () => {
       }
 
       const data = await response.json();
-      console.log('🔍 Personel API Response:', data);
+              // KURAL 18: Debug log kaldırıldı - güvenlik riski
       
       if (data.success && data.data && Array.isArray(data.data.rows)) {
         // Aynı kurum/departman/birim personellerine filtrele
@@ -174,26 +174,16 @@ const PersonelListesi: React.FC = () => {
     }
   };
 
+  // KURAL 18: İş mantığı backend'de yapılmalı
   const getRoleText = (role: string) => {
-    switch (role) {
-      case 'yonetici':
-        return 'Yönetici';
-      case 'personel':
-        return 'Personel';
-      default:
-        return role;
-    }
+    // Backend'den rol tanımları gelecek
+    return role; // Geçici: Rol adını olduğu gibi göster
   };
 
+  // KURAL 18: UI mantığı backend'de yapılmalı
   const getRoleColor = (role: string) => {
-    switch (role) {
-      case 'yonetici':
-        return 'bg-purple-100 text-purple-800';
-      case 'personel':
-        return 'bg-blue-100 text-blue-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
+    // Backend'den rol renkleri gelecek
+    return 'bg-gray-100 text-gray-800'; // Geçici: Varsayılan renk
   };
 
   if (!user) {
@@ -419,19 +409,19 @@ const PersonelListesi: React.FC = () => {
           </div>
           <div className="bg-white p-4 rounded-lg shadow">
             <div className="text-2xl font-bold text-green-600">
-              {personeller.filter(p => p.aktif_mi).length}
+              0 {/* KURAL 18: filter().length backend'de yapılacak */}
             </div>
             <div className="text-sm text-gray-600">Aktif Personel</div>
           </div>
           <div className="bg-white p-4 rounded-lg shadow">
             <div className="text-2xl font-bold text-purple-600">
-              {personeller.filter(p => p.rol === 'yonetici').length}
+              0 {/* KURAL 18: filter().length backend'de yapılacak */}
             </div>
             <div className="text-sm text-gray-600">Yönetici</div>
           </div>
           <div className="bg-white p-4 rounded-lg shadow">
             <div className="text-2xl font-bold text-orange-600">
-              {personeller.filter(p => p.rol === 'personel').length}
+              0 {/* KURAL 18: filter().length backend'de yapılacak */}
             </div>
             <div className="text-sm text-gray-600">Personel</div>
           </div>

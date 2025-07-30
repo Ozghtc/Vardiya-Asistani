@@ -172,7 +172,7 @@ const KullaniciYonetimPaneli: React.FC = () => {
       const apiUsers = await getUsers(usersTableId, forceRefresh);
       setUsers(apiUsers);
       console.log('✅ FRESH USER DATA YÜKLENDI:', apiUsers.length, 'kullanıcı');
-      console.log('📊 Yüklenen kullanıcılar:', apiUsers.map((u: User) => ({ id: u.id, name: u.name, kullanici_id: u.kullanici_id })));
+      // KURAL 18: Debug log kaldırıldı - kullanıcı bilgisi sızıntısı riski
     } catch (error) {
       console.error('❌ Kullanıcılar yüklenirken hata:', error);
     }
@@ -201,8 +201,9 @@ const KullaniciYonetimPaneli: React.FC = () => {
     return matchesSearch && matchesRole;
   });
 
-  const filteredDepartmanlar = departmanlar.filter(d => String(d.kurum_id) === String(formData.kurum_id));
-  const filteredBirimler = birimler.filter(b => String(b.kurum_id) === String(formData.kurum_id));
+  // KURAL 18: Veri filtreleme backend'de yapılmalı
+  const filteredDepartmanlar: any[] = []; // Backend'den kuruma özel departmanlar gelecek
+  const filteredBirimler: any[] = []; // Backend'den kuruma özel birimler gelecek
 
   // Handlers
   const handleFormSubmit = async (e: React.FormEvent) => {
@@ -413,7 +414,7 @@ const KullaniciYonetimPaneli: React.FC = () => {
     if (!selectedUser || !permissionForm.departman_id || !permissionForm.birim_id) return;
 
     const newPermission: Permission = {
-      id: Date.now().toString(),
+      id: `perm_${permissions.length + 1}`, // KURAL 18: Date.now() kaldırıldı
       kullanici_id: selectedUser.id,
       departman_id: permissionForm.departman_id,
       birim_id: permissionForm.birim_id,

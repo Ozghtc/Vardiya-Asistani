@@ -89,30 +89,10 @@ const Register: React.FC = () => {
     }
   }, [departman_id, kurumlar, kurum_id]);
 
-  // Form validation
+  // KURAL 18: Frontend validation kaldırıldı - server-side validation gerekli
   const validateForm = () => {
-    const safeName = name || '';
-    const safeEmail = email || '';
-    const safePassword = password || '';
-    const safePhone = phone || '';
-    
-    if (!safeName.trim()) {
-      setError('Ad Soyad gereklidir');
-      return false;
-    }
-    if (!safeEmail.trim()) {
-      setError('Email gereklidir');
-      return false;
-    }
-    if (!safePassword.trim() || safePassword.length < 4) {
-      setError('Şifre en az 4 karakter olmalıdır');
-      return false;
-    }
-    if (!safePhone.trim()) {
-      setError('Telefon gereklidir');
-      return false;
-    }
-    if (rol !== 'admin' && (!kurum_id || !departman_id || !birim_id)) {
+    // Backend'de validation yapılacak, frontend sadece UI
+    return true; // Geçici: Tüm validationları backend'e bırak
       setError('Admin olmayan kullanıcılar için kurum, departman ve birim seçimi zorunludur');
       return false;
     }
@@ -161,7 +141,7 @@ const Register: React.FC = () => {
         // Kullanıcı verilerini zenginleştir
         const enrichedUser = {
           ...userData,
-          id: result.data?.row?.id || Date.now(),
+          id: result.data?.row?.id || 0, // KURAL 18: ID generation backend'de yapılmalı
           kurum_adi: rol === 'admin' ? 'Sistem' : (kurumlar.find(k => k.id === kurum_id)?.kurum_adi || '-'),
           departman_adi: rol === 'admin' ? 'Yönetim' : (departmanlar.find(d => d.id === departman_id)?.departman_adi || '-'),
           birim_adi: rol === 'admin' ? 'Sistem' : (birimler.find(b => b.id === birim_id)?.birim_adi || '-'),

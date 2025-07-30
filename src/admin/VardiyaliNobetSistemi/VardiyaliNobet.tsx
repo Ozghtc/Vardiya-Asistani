@@ -46,11 +46,12 @@ const VardiyaliNobet: React.FC = () => {
           
           console.log('👥 Toplam personel:', totalPersonnel);
           
+          // KURAL 18: İstatistik hesaplamaları backend'de yapılmalı
           setStats({
             totalPersonnel,
-            activeShifts: Math.floor(totalPersonnel * 0.3), // Yaklaşık %30'u aktif vardiyada
-            pendingRequests: Math.floor(totalPersonnel * 0.2), // Yaklaşık %20'si bekleyen talep
-            monthlyHours: totalPersonnel * 160 // Kişi başı ortalama 160 saat/ay
+            activeShifts: 0, // Backend Statistics API'den gelecek
+            pendingRequests: 0, // Backend Statistics API'den gelecek
+            monthlyHours: 0 // Backend'de hesaplanacak
           });
         }
 

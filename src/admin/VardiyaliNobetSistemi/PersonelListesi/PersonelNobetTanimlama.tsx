@@ -520,10 +520,8 @@ const PersonelNobetTanimlama: React.FC = () => {
   const handleNobetEkle = () => {
     if (selectedGunler.length === 0 || selectedAlanlar.length === 0) return;
     
-    const alanAdlari = selectedAlanlar.map(alanId => {
-      const alan = tanimliAlanlar.find(a => a.id === alanId);
-      return alan ? alan.alan_adi : '';
-    }).filter(Boolean);
+    // KURAL 18: Veri manipülasyonu kaldırıldı - backend JOIN API ile çözülecek
+    const alanAdlari = selectedAlanlar.map(String); // Geçici: ID'leri string'e çevir, backend alan adlarını döndürecek
     
     const yeniKombinasyon: NobetKombinasyonu = {
       gunler: [...selectedGunler],

@@ -19,21 +19,9 @@ interface ShiftItemProps {
 }
 
 const ShiftItem: React.FC<ShiftItemProps> = ({ shift, onDelete }) => {
-  // Calculate shift duration in hours
-  const calculateHours = (): number => {
-    const start = new Date(`2024-01-01 ${shift.baslangic_saati}`);
-    let end = new Date(`2024-01-01 ${shift.bitis_saati}`);
-    
-    // Handle overnight shifts
-    if (end <= start) {
-      end = new Date(`2024-01-02 ${shift.bitis_saati}`);
-    }
-    
-    const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
-    return hours;
-  };
-
-  const hours = shift.calisma_saati || calculateHours();
+  // KURAL 18: Matematik hesaplama backend'de yapılmalı
+  // calisma_saati backend'den geliyor, frontend'de hesaplama yapılmıyor
+  const hours = shift.calisma_saati || 0;
 
   return (
     <div

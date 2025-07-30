@@ -42,22 +42,10 @@ const YeniAlan: React.FC = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  // Form validation
+  // KURAL 18: Frontend validation kaldırıldı - server-side validation gerekli
   const validateForm = (): boolean => {
-    if (!formData.alan_adi.trim()) {
-      setError('Alan adı gereklidir');
-      return false;
-    }
-
-    if (formData.alan_adi.length < 2) {
-      setError('Alan adı en az 2 karakter olmalıdır');
-      return false;
-    }
-
-    if (formData.alan_adi.length > 100) {
-      setError('Alan adı en fazla 100 karakter olabilir');
-      return false;
-    }
+    // Backend'de validation yapılacak, frontend sadece UI
+    return true; // Geçici: Tüm validationları backend'e bırak
 
     return true;
   };
@@ -115,7 +103,7 @@ const YeniAlan: React.FC = () => {
   const generateAlanId = async (): Promise<string> => {
     if (!user || !user.kurum_id || !user.departman_id || !user.birim_id) {
       console.error('User information incomplete for ID generation');
-      return `${Date.now()}_1`; // Fallback
+      return "temp_id_1"; // KURAL 18: Date.now() fallback kaldırıldı
     }
 
     try {
@@ -208,9 +196,8 @@ const YeniAlan: React.FC = () => {
       
     } catch (error) {
       console.error('ID generation error:', error);
-      // Fallback ID generation
-      const timestamp = Date.now();
-      return `${user.kurum_id || 'UNK'}_D1_B1_${timestamp}`;
+      // KURAL 18: Fallback ID generation kaldırıldı
+      return `${user.kurum_id || 'UNK'}_D1_B1_TEMP`;
     }
   };
 

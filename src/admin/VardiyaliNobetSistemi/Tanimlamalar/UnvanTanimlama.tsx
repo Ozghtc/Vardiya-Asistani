@@ -235,14 +235,13 @@ const UnvanTanimlama: React.FC = () => {
         return;
       }
       
-      // KURAL 17: Benzersiz ID generation - timestamp ekleyerek
-      const timestamp = Date.now();
+      // KURAL 18: ID generation backend'de yapılmalı - timestamp kaldırıldı
       const nextSira = unvanArray.length + 1;
       
-      // DOĞRU FORMAT: kurum_D#_B#_sira_timestamp (BENZERSIZ)
+      // DOĞRU FORMAT: kurum_D#_B#_sira (backend unique ID oluşturacak)
       const departmanKodu = user.departman_id.split('_')[1] || 'D1'; // "6_D1" -> "D1"
       const birimKodu = user.birim_id.split('_')[1] || 'B1'; // "6_B1" -> "B1"
-      const unvanId = `${user.kurum_id}_${departmanKodu}_${birimKodu}_${nextSira}_${timestamp}`;
+      const unvanId = `${user.kurum_id}_${departmanKodu}_${birimKodu}_${nextSira}`;
 
       const newUnvan = {
         unvan_id: unvanId,
@@ -454,7 +453,7 @@ const UnvanTanimlama: React.FC = () => {
   const [toasts, setToasts] = useState<Array<{id: number, message: string, type: 'success' | 'error'}>>([]);
 
   const showSuccessToast = (message: string) => {
-    const id = Date.now();
+    const id = toasts.length + 1; // KURAL 18: Basit ID, matematik yok
     setToasts(prev => [...prev, { id, message, type: 'success' }]);
     setTimeout(() => {
       setToasts(prev => prev.filter(toast => toast.id !== id));
@@ -462,7 +461,7 @@ const UnvanTanimlama: React.FC = () => {
   };
 
   const showErrorToast = (message: string) => {
-    const id = Date.now();
+    const id = toasts.length + 1; // KURAL 18: Basit ID, matematik yok
     setToasts(prev => [...prev, { id, message, type: 'error' }]);
     setTimeout(() => {
       setToasts(prev => prev.filter(toast => toast.id !== id));

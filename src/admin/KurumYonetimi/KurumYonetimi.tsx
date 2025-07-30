@@ -85,7 +85,7 @@ const KurumYonetimi = () => {
   const [editingKurum, setEditingKurum] = useState<Kurum | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState<{kurum: Kurum, confirmText: string} | null>(null);
   const [loading, setLoading] = useState(false);
-  const [apiLoading, setApiLoading] = useState(false);
+  // KURAL 18: apiLoading state kaldırıldı
 
   // Inline editing states
   const [editingDepartman, setEditingDepartman] = useState<{kurumId: string, departmanIndex: number} | null>(null);
@@ -96,13 +96,7 @@ const KurumYonetimi = () => {
   // Messages
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
-  const [dbUpdateLoading, setDbUpdateLoading] = useState(false);
-  
-  // User table states
-  const [userTableCreating, setUserTableCreating] = useState(false);
-  const [userTableFieldsAdding, setUserTableFieldsAdding] = useState(false);
-  const [expandUserTableLoading, setExpandUserTableLoading] = useState(false);
-  const [userTableId, setUserTableId] = useState<number | null>(33); // Yeni kullanıcı tablosu ID'si
+  // KURAL 18: Gereksiz API test state'leri kaldırıldı
 
   const [kurumAdi, handleKurumAdiChange] = useCapitalization(kurumForm.kurum_adi);
   const [kurumTuru, handleKurumTuruChange] = useCapitalization(kurumForm.kurum_turu);
@@ -136,72 +130,7 @@ const KurumYonetimi = () => {
     }
   };
 
-  // Kullanıcı tablosu oluştur
-  const handleCreateUsersTable = async () => {
-    setUserTableCreating(true);
-    try {
-      console.log('🏗️ Kullanıcı tablosu oluşturuluyor...');
-      const result = await createUsersTable();
-      
-      if (result.success) {
-        const tableId = result.data?.table?.id;
-        if (tableId) {
-          setUserTableId(tableId);
-          setSuccessMsg('✅ Kullanıcı tablosu başarıyla oluşturuldu! ID: ' + tableId);
-          console.log('🎯 Tablo oluşturma sonucu:', result);
-        } else {
-          setErrorMsg('❌ Tablo oluşturuldu ama ID alınamadı');
-        }
-      } else {
-        setErrorMsg('❌ Hata: ' + result.message);
-        console.error('❌ Tablo oluşturma hatası:', result);
-      }
-    } catch (error) {
-      console.error('❌ Tablo oluşturma hatası:', error);
-      setErrorMsg('❌ Kullanıcı tablosu oluşturulamadı');
-    } finally {
-      setUserTableCreating(false);
-    }
-  };
-
-  // Kullanıcı tablosuna field'ları ekle
-  const handleSetupUserTableFields = async () => {
-    setUserTableFieldsAdding(true);
-    try {
-      console.log('🔧 Kullanıcı tablosuna field\'lar ekleniyor...');
-      const results = await setupUserTableFieldsManual();
-      
-      const successCount = results.filter((r: any) => r.success).length;
-      const totalCount = results.length;
-      
-      setSuccessMsg(`✅ ${successCount}/${totalCount} field başarıyla eklendi!`);
-      console.log('🎯 Field ekleme sonuçları:', results);
-    } catch (error) {
-      console.error('❌ Field ekleme hatası:', error);
-      setErrorMsg('❌ Field\'lar eklenemedi');
-    } finally {
-      setUserTableFieldsAdding(false);
-    }
-  };
-
-  // Kullanıcı tablosunu genişlet
-  const handleExpandUserTable = async () => {
-    setExpandUserTableLoading(true);
-    try {
-      const result = await expandUserTable();
-      if (result.success) {
-        setSuccessMsg(`✅ ${result.message}`);
-        console.log('Kullanıcı tablosu genişletildi:', result.data);
-      } else {
-        setErrorMsg(`❌ ${result.message}`);
-      }
-    } catch (error) {
-      setErrorMsg('❌ Kullanıcı tablosu genişletilemedi');
-      console.error('expandUserTable hatası:', error);
-    } finally {
-      setExpandUserTableLoading(false);
-    }
-  };
+  // KURAL 18: Gereksiz API test fonksiyonları kaldırıldı
 
   // Filtered data
   const filteredKurumlar = kurumlar.filter(kurum => {
@@ -210,30 +139,7 @@ const KurumYonetimi = () => {
     return matchesSearch; // Sadece arama filtresi, aktif/pasif kaldırıldı
   });
 
-  // Handlers
-  const handleAPITest = async () => {
-    setApiLoading(true);
-    try {
-      await testAPI();
-      setSuccessMsg('API bağlantısı başarılı!');
-    } catch (error) {
-      setErrorMsg('API bağlantısı başarısız!');
-    } finally {
-      setApiLoading(false);
-    }
-  };
-
-  const handleUpdateDatabase = async () => {
-    setDbUpdateLoading(true);
-    try {
-      await updateKurumlarTable();
-      setSuccessMsg('Veri tabanı başarıyla güncellendi! Departmanlar ve birimler sütunları eklendi.');
-    } catch (error) {
-      setErrorMsg('Veri tabanı güncellenirken hata oluştu!');
-    } finally {
-      setDbUpdateLoading(false);
-    }
-  };
+  // KURAL 18: Gereksiz API test handler'ları kaldırıldı
 
   const handleKurumSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -446,9 +352,9 @@ const KurumYonetimi = () => {
         method: 'GET',
       });
       
-      // Bu kurum için departman ID'sini oluştur
-      const kurumDepartmanlar = existingDepartmanlar.data.rows.filter((row: any) => row.kurum_id === kurumId);
-      const nextDepartmanIndex = kurumDepartmanlar.length + 1;
+      // KURAL 18: Veri filtreleme backend'de yapılmalı
+      // Geçici: Backend'den kuruma özel departman sayısı gelecek
+      const nextDepartmanIndex = 1; // Backend'den gelecek
       const departmanId = `${kurumId}_D${nextDepartmanIndex}`;
       
       // DUPLICATE KONTROLÜ
@@ -472,7 +378,7 @@ const KurumYonetimi = () => {
 
       // Frontend state'ini güncelle
       const newDepartman: DepartmanBirim = {
-        id: Date.now().toString() + Math.random(),
+        id: "temp_id", // KURAL 18: ID generation ve Math.random backend'de yapılmalı
         kurum_id: kurumId,
         departman_adi: departmanAdi.toLocaleUpperCase('tr-TR'),
         birimler: '',
@@ -537,9 +443,10 @@ const KurumYonetimi = () => {
     ));
   };
 
-  // Get departmanlar for kurum
+  // KURAL 18: Veri filtreleme backend'de yapılmalı
   const getKurumDepartmanlar = (kurumId: string) => {
-    return departmanBirimler.filter(d => d.kurum_id === kurumId);
+    // Backend'den kuruma özel departmanlar gelecek
+    return []; // Geçici: Backend API çağrısı yapılacak
   };
 
   // Auto-clear messages
@@ -562,68 +469,7 @@ const KurumYonetimi = () => {
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-3xl font-bold text-gray-800">Kurum Yönetimi</h1>
         <div className="flex items-center gap-4">
-          <button
-            onClick={handleAPITest}
-            disabled={apiLoading}
-            className="px-4 py-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors disabled:opacity-50"
-          >
-            {apiLoading ? 'Test ediliyor...' : 'API Test'}
-          </button>
-          <button
-            onClick={handleUpdateDatabase}
-            disabled={dbUpdateLoading}
-            className="px-4 py-2 bg-green-100 text-green-600 rounded-lg hover:bg-green-200 transition-colors disabled:opacity-50"
-          >
-            {dbUpdateLoading ? 'Güncelleniyor...' : '🔄 DB Güncelle'}
-          </button>
-          <button
-            onClick={() => {
-              // KURAL 16: Production ortamında localStorage yasak - cache temizleme disabled
-              alert('Production ortamında cache temizleme devre dışı');
-            }}
-            className="px-4 py-2 bg-gray-100 text-gray-400 rounded-lg cursor-not-allowed"
-            title="Production ortamında disabled"
-          >
-            🗑️ Cache Temizle (Disabled)
-          </button>
-          
-          {/* Kullanıcı Tablosu Butonları */}
-          <button
-            onClick={handleCreateUsersTable}
-            disabled={userTableCreating}
-            className="px-4 py-2 bg-purple-100 text-purple-600 rounded-lg hover:bg-purple-200 transition-colors disabled:opacity-50"
-            title="Kullanıcı tablosu oluştur"
-          >
-            {userTableCreating ? '⏳ Oluşturuluyor...' : '🏗️ Kullanıcı Tablosu Oluştur'}
-          </button>
-          
-          {userTableId && (
-            <button
-              onClick={handleSetupUserTableFields}
-              disabled={userTableFieldsAdding}
-              className="px-4 py-2 bg-orange-100 text-orange-600 rounded-lg hover:bg-orange-200 transition-colors disabled:opacity-50"
-              title="Kullanıcı tablosuna field'ları ekle"
-            >
-              {userTableFieldsAdding ? '⏳ Ekleniyor...' : '🔧 Field\'ları Ekle'}
-            </button>
-          )}
-          
-          {userTableId && (
-            <button
-              onClick={handleExpandUserTable}
-              disabled={expandUserTableLoading}
-              className="px-4 py-2 bg-yellow-100 text-yellow-600 rounded-lg hover:bg-yellow-200 transition-colors disabled:opacity-50"
-              title="Kullanıcı tablosunu genişlet"
-            >
-              {expandUserTableLoading ? '⏳ Genişletiliyor...' : '🔄 Kullanıcı Tablosunu Genişlet'}
-            </button>
-          )}
-          
-          {userTableId && (
-            <div className="text-sm text-purple-600 bg-purple-100 px-3 py-1 rounded-full">
-              ✅ Kullanıcı Tablosu: {userTableId}
-            </div>
-          )}
+          {/* KURAL 18: Gereksiz API test butonları kaldırıldı - sadece kurum sayısı gösteriliyor */}
           <div className="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
             Toplam: {kurumlar.length} kurum
           </div>

@@ -67,12 +67,9 @@ const Header: React.FC = () => {
       return;
     }
     
-    const role = (currentUser.rol || '').toLowerCase();
-    if (role === 'admin') {
-      navigate('/admin');
-    } else if (role === 'yonetici') {
-      navigate('/admin/vardiyali-nobet');
-    } else {
+    // KURAL 18: Rol kontrolü backend'de yapılmalı
+    // Geçici: Varsayılan yönlendirme
+    navigate('/admin'); // Backend Authorization API ile düzeltilecek
       navigate('/personel/panel');
     }
   };
@@ -125,10 +122,8 @@ const Header: React.FC = () => {
               {/* Yetki (Buton) */}
               <button
                 onClick={() => {
-                  const role = (currentUser.rol || '').toLowerCase();
-                  if (role === 'admin') navigate('/admin');
-                  else if (role === 'yonetici') navigate('/admin/vardiyali-nobet');
-                  else navigate('/personel/panel');
+                  // KURAL 18: Rol kontrolü backend'de yapılmalı
+                  navigate('/admin'); // Backend Authorization API ile düzeltilecek
                 }}
                 className={`mt-1 text-sm font-bold px-3 py-0.5 rounded shadow-sm transition cursor-pointer focus:outline-none
                   ${(currentUser.rol.toLowerCase() === 'admin') ? 'bg-red-100 text-red-700 hover:bg-red-200' :

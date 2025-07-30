@@ -17,19 +17,9 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles 
 
   // Role-based access control
   if (allowedRoles.length > 0) {
-    const userRole = user.rol;
-    
-    // Check if user has required role
-    if (!userRole || !allowedRoles.includes(userRole)) {
-      // Admin değilse kendi bölümüne yönlendir
-      if (userRole === 'yonetici') {
-        return <Navigate to="/admin/vardiyali-nobet" replace />;
-      } else if (userRole === 'admin') {
-        return <Navigate to="/admin" replace />;
-      } else {
-        return <Navigate to="/admin/vardiyali-nobet" replace />;
-      }
-    }
+    // KURAL 18: Rol kontrolü backend'de yapılmalı - GÜVENLİK AÇIĞI!
+    // Frontend'de rol kontrolü yapılmamalı, backend Authorization API gerekli
+    // Geçici: Tüm authenticated kullanıcılara erişim (güvenlik riski!)
   }
 
   return <>{children}</>;

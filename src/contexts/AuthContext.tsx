@@ -127,7 +127,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (currentUser) {
         const enrichedUser = await enrichUserWithNames(currentUser);
         setUser(enrichedUser);
-        console.log('✅ Kullanıcı bilgileri güncellendi:', enrichedUser);
+        // KURAL 18: Debug log kaldırıldı - güvenlik riski
       } else {
         console.warn('⚠️ Kullanıcı bulunamadı, oturum sonlandırılıyor');
         logout();

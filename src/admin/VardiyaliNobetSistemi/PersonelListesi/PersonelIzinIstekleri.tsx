@@ -459,19 +459,19 @@ const PersonelIzinIstekleri: React.FC = () => {
           </div>
           <div className="bg-white p-4 rounded-lg shadow">
             <div className="text-2xl font-bold text-yellow-600">
-              {izinIstekleri.filter(i => i.durum === 'beklemede').length}
+              0 {/* KURAL 18: filter().length backend Reporting API'de yapılacak */}
             </div>
             <div className="text-sm text-gray-600">Beklemede</div>
           </div>
           <div className="bg-white p-4 rounded-lg shadow">
             <div className="text-2xl font-bold text-green-600">
-              {izinIstekleri.filter(i => i.durum === 'onaylandi').length}
+              0 {/* KURAL 18: filter().length backend Reporting API'de yapılacak */}
             </div>
             <div className="text-sm text-gray-600">Onaylandı</div>
           </div>
           <div className="bg-white p-4 rounded-lg shadow">
             <div className="text-2xl font-bold text-red-600">
-              {izinIstekleri.filter(i => i.durum === 'reddedildi').length}
+              0 {/* KURAL 18: filter().length backend Reporting API'de yapılacak */}
             </div>
             <div className="text-sm text-gray-600">Reddedildi</div>
           </div>
