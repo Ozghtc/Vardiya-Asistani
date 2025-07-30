@@ -72,9 +72,9 @@ export const handler = async (event, context) => {
     const apiUrl = `https://hzmbackendveritabani-production.up.railway.app${path}`;
     
     // 3-Layer Authentication System
-      const apiKey = bodyApiKey || event.headers['x-api-key'] || process.env.VITE_API_KEY;
-  const userEmail = bodyUserEmail || event.headers['x-user-email'] || process.env.VITE_USER_EMAIL;
-  const projectPassword = bodyProjectPassword || event.headers['x-project-password'] || process.env.VITE_PROJECT_PASSWORD;
+    const apiKey = bodyApiKey || event.headers['x-api-key'] || process.env.API_KEY;
+    const userEmail = bodyUserEmail || event.headers['x-user-email'] || process.env.USER_EMAIL;
+    const projectPassword = bodyProjectPassword || event.headers['x-project-password'] || process.env.PROJECT_PASSWORD;
     
     console.log('🔄 Proxy Request Details (3-Layer):', {
       apiUrl,

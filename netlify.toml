@@ -45,16 +45,34 @@
 # Environment Variables (Production)
 # These values should be set in Netlify dashboard for security
 [context.production.environment]
+  VITE_BASE_URL = "https://hzmbackendveritabani-production.up.railway.app"
+  VITE_API_KEY = "hzm_1ce98c92189d4a109cd604b22bfd86b7"
+  VITE_USER_EMAIL = "ozgurhzm@gmail.com"
+  VITE_PROJECT_PASSWORD = "hzmsoft123456"
+  VITE_PROJECT_ID = "5"
   VITE_HZM_BASE_URL = "https://hzmbackendveritabani-production.up.railway.app"
   VITE_HZM_PROJECT_ID = "5"
   VITE_NETLIFY_SITE_URL = "https://vardiyaasistani.netlify.app"
   VITE_DEV_MODE = "false"
   VITE_DEBUG_API = "false"
+  # Netlify Functions için (VITE_ prefix'i olmadan)
+  API_KEY = "hzm_1ce98c92189d4a109cd604b22bfd86b7"
+  USER_EMAIL = "ozgurhzm@gmail.com"
+  PROJECT_PASSWORD = "hzmsoft123456"
 
 # Environment Variables (Deploy Previews)
 # These values should be set in Netlify dashboard for security
 [context.deploy-preview.environment]
+  VITE_BASE_URL = "https://hzmbackendveritabani-production.up.railway.app"
+  VITE_API_KEY = "hzm_1ce98c92189d4a109cd604b22bfd86b7"
+  VITE_USER_EMAIL = "ozgurhzm@gmail.com"
+  VITE_PROJECT_PASSWORD = "hzmsoft123456"
+  VITE_PROJECT_ID = "5"
   VITE_HZM_BASE_URL = "https://hzmbackendveritabani-production.up.railway.app"
   VITE_HZM_PROJECT_ID = "5"
   VITE_DEV_MODE = "true"
   VITE_DEBUG_API = "true"
+  # Netlify Functions için (VITE_ prefix'i olmadan)
+  API_KEY = "hzm_1ce98c92189d4a109cd604b22bfd86b7"
+  USER_EMAIL = "ozgurhzm@gmail.com"
+  PROJECT_PASSWORD = "hzmsoft123456"
