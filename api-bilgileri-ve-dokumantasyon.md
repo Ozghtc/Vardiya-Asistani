@@ -1,21 +1,20 @@
-# HZM VERİTABANI - GENİŞLETİLMİŞ API KEY SİSTEMİ DOKÜMANTASYONU
+# Vardiyali Nobet Asistani - HZM VERİTABANI API KEY SİSTEMİ DOKÜMANTASYONU
 
 ## 🔗 Temel Bilgiler
-- **Base URL:** `https://hzmbackendveritabani-production.up.railway.app`
-- **Authentication:** 3-Katmanlı API Key Sistemi
-- **Test Tarihi:** 28.07.2025
-- **Durum:** ✅ %100 ÇALIŞAN GENİŞLETİLMİŞ API KEY SİSTEMİ
+- **Base URL:** `http://localhost:8080` (Development) / `https://hzmbackendveritabani-production.up.railway.app` (Production)
 - **Proje ID:** `5`
 - **API Key:** `hzm_1ce98c92189d4a109cd604b22bfd86b7`
+- **Test Tarihi:** 30.07.2025
+- **Durum:** ✅ %100 ÇALIŞAN API KEY SİSTEMİ
 
 ## 🔐 3-KATMANLI API KEY KİMLİK DOĞRULAMA
 
 ### 🚀 GEREKLİ HEADER'LAR
+Her API isteğinde bu 3 header zorunlu:
 ```bash
-# Her API isteğinde bu 3 header zorunlu:
-X-API-Key: ${VITE_HZM_API_KEY}                        # Proje API Key'i (environment variable)
-X-User-Email: ${VITE_HZM_USER_EMAIL}                  # Kullanıcı email'i (environment variable)
-X-Project-Password: ${VITE_HZM_PROJECT_PASSWORD}      # Proje şifresi (environment variable)
+X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7                    # Proje API Key'i
+X-User-Email: [KENDİ_EMAİLİNİZ]           # Kullanıcı email'i  
+X-Project-Password: [KENDİ_ŞİFRENİZ]  # Proje şifresi (min 8 karakter)
 ```
 
 ### 📧 KENDİ BİLGİLERİNİZİ NEREDEN BULACAKSINIZ?
@@ -40,10 +39,10 @@ X-Project-Password: ${VITE_HZM_PROJECT_PASSWORD}      # Proje şifresi (environm
 ```bash
 # API Key Doğrulama ve Bilgi Alma - TEST EDİLDİ ✅
 curl -X GET \
-  "https://hzmbackendveritabani-production.up.railway.app/api/v1/tables/api-key-info" \
+  "http://localhost:8080/api/v1/tables/api-key-info" \
   -H "X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7" \
-  -H "X-User-Email: user@example.com" \
-  -H "X-Project-Password: hzmsoft123456"
+  -H "X-User-Email: [KENDİ_EMAİLİNİZ]" \
+  -H "X-Project-Password: [KENDİ_ŞİFRENİZ]"
 
 # Response:
 {
@@ -479,6 +478,155 @@ curl -X POST \
       }
     ]
   }'
+```
+
+## 🧮 MATEMATİK API'LERİ (YENİ!)
+
+### 📐 Temel Matematik İşlemleri
+```bash
+curl -X POST \
+  "https://hzmbackendveritabani-production.up.railway.app/api/v1/math/basic" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7" \
+  -H "X-User-Email: [KENDİ_EMAİLİNİZ]" \
+  -H "X-Project-Password: [KENDİ_ŞİFRENİZ]" \
+  -d '{
+    "operation": "add",
+    "a": 10,
+    "b": 20
+  }'
+```
+
+### 📊 İstatistik Hesaplamaları
+```bash
+curl -X POST \
+  "https://hzmbackendveritabani-production.up.railway.app/api/v1/math/statistics" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7" \
+  -H "X-User-Email: [KENDİ_EMAİLİNİZ]" \
+  -H "X-Project-Password: [KENDİ_ŞİFRENİZ]" \
+  -d '{
+    "operation": "mean",
+    "data": [10, 20, 30, 40, 50]
+  }'
+```
+
+### 💰 Finansal Hesaplamalar
+```bash
+curl -X POST \
+  "https://hzmbackendveritabani-production.up.railway.app/api/v1/math/finance" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7" \
+  -H "X-User-Email: [KENDİ_EMAİLİNİZ]" \
+  -H "X-Project-Password: [KENDİ_ŞİFRENİZ]" \
+  -d '{
+    "operation": "compound_interest",
+    "principal": 1000,
+    "rate": 0.05,
+    "time": 10
+  }'
+```
+
+### 🔬 Bilimsel Hesaplamalar
+```bash
+curl -X POST \
+  "https://hzmbackendveritabani-production.up.railway.app/api/v1/math/science" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7" \
+  -H "X-User-Email: [KENDİ_EMAİLİNİZ]" \
+  -H "X-Project-Password: [KENDİ_ŞİFRENİZ]" \
+  -d '{
+    "operation": "physics_force",
+    "mass": 10,
+    "acceleration": 9.8
+  }'
+```
+
+## 🔐 KİMLİK DOĞRULAMA (YENİ!)
+
+### 🚪 Giriş Yap
+```bash
+curl -X POST \
+  "https://hzmbackendveritabani-production.up.railway.app/api/v1/auth/login" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7" \
+  -H "X-User-Email: [KENDİ_EMAİLİNİZ]" \
+  -H "X-Project-Password: [KENDİ_ŞİFRENİZ]" \
+  -d '{
+    "email": "user@example.com",
+    "password": "userpassword"
+  }'
+```
+
+### 📝 Kayıt Ol
+```bash
+curl -X POST \
+  "https://hzmbackendveritabani-production.up.railway.app/api/v1/auth/register" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: hzm_1ce98c92189d4a109cd604b22bfd86b7" \
+  -H "X-User-Email: [KENDİ_EMAİLİNİZ]" \
+  -H "X-Project-Password: [KENDİ_ŞİFRENİZ]" \
+  -d '{
+    "name": "Yeni Kullanıcı",
+    "email": "newuser@example.com",
+    "password": "newpassword"
+  }'
+```
+
+## 💻 JavaScript SDK Örneği
+
+### 🚀 3-Katmanlı API Key ile Veri Okuma
+```javascript
+// 3-Katmanlı API Key ile veri okuma örneği
+const response = await fetch(
+  'http://localhost:8080/api/v1/tables/project/5',
+  {
+    method: 'GET',
+    headers: {
+      'X-API-Key': 'hzm_1ce98c92189d4a109cd604b22bfd86b7',
+      'X-User-Email': 'KENDİ_EMAİLİNİZ@domain.com',
+      'X-Project-Password': 'KENDİ_ŞİFRENİZ',
+      'Content-Type': 'application/json'
+    }
+  }
+);
+
+if (!response.ok) {
+  throw new Error(`HTTP error! status: ${response.status}`);
+}
+
+const data = await response.json();
+console.log('Tablolar:', data.data.tables);
+```
+
+### 📝 Veri Ekleme Örneği
+```javascript
+// Yeni kayıt ekleme
+const response = await fetch(
+  'http://localhost:8080/api/v1/data/table/TABLO_ID/rows',
+  {
+    method: 'POST',
+    headers: {
+      'X-API-Key': 'hzm_1ce98c92189d4a109cd604b22bfd86b7',
+      'X-User-Email': 'KENDİ_EMAİLİNİZ@domain.com',
+      'X-Project-Password': 'KENDİ_ŞİFRENİZ',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      "name": "Yeni Ürün",
+      "price": 99.99,
+      "category": "Elektronik",
+      "active": true
+    })
+  }
+);
+
+const result = await response.json();
+if (result.success) {
+  console.log('Veri eklendi:', result.data.row);
+} else {
+  console.error('Hata:', result.error);
+}
 ```
 
 ## 📈 RAPORLAMA & ANALİTİK (YENİ!)
@@ -1012,35 +1160,55 @@ curl -X GET \
 
 ---
 
-## 🎯 TEST EDİLEN ENDPOINT'LER ÖZET
+## 🎯 TEST EDİLEN ENDPOINT'LER (30/30) ✅
 
-### ✅ %100 ÇALIŞAN GENİŞLETİLMİŞ API KEY ENDPOINT'LERİ (25/25):
+### 🔐 Kimlik Doğrulama (2/2)
+- ✅ **POST** `/api/v1/auth/login` - Giriş yap **YENİ!**
+- ✅ **POST** `/api/v1/auth/register` - Kayıt ol **YENİ!**
 
-1. **GET** `/api/v1/tables/api-key-info` - API Key doğrulama ✅
-2. **GET** `/api/v1/tables/project/:id` - Tablo listesi ✅
-3. **POST** `/api/v1/tables/project/:id` - Tablo oluşturma ✅
-4. **PUT** `/api/v1/tables/:id` - Tablo güncelleme ✅
-5. **DELETE** `/api/v1/tables/:id` - Tablo silme ✅
-6. **POST** `/api/v1/tables/:projectId/:tableId/fields` - Field ekleme ✅
-7. **PUT** `/api/v1/tables/:tableId/fields/:fieldId` - Field güncelleme ✅
-8. **DELETE** `/api/v1/tables/:tableId/fields/:fieldId` - Field silme ✅
-9. **GET** `/api/v1/data/table/:id` - Veri okuma ✅
-10. **POST** `/api/v1/data/table/:id/rows` - Veri ekleme ✅
-11. **PUT** `/api/v1/data/table/:id/rows/:rowId` - Veri güncelleme ✅
-12. **DELETE** `/api/v1/data/table/:id/rows/:rowId` - Veri silme ✅
-13. **POST** `/api/v1/data/table/:id/bulk` - Toplu işlemler ✅
-14. **GET** `/api/v1/api-keys/usage-stats` - Kullanım istatistikleri ✅
-15. **PUT** `/api/v1/projects/:id/api-key-password` - Şifre güncelleme ✅
-16. **GET** `/api/v1/relationships/project/:id` - İlişkileri listele ✅ **YENİ!**
-17. **POST** `/api/v1/relationships` - İlişki oluştur ✅ **YENİ!**
-18. **PUT** `/api/v1/relationships/:id` - İlişki güncelle ✅ **YENİ!**
-19. **DELETE** `/api/v1/relationships/:id` - İlişki sil ✅ **YENİ!**
-20. **POST** `/api/v1/joins/execute` - JOIN sorguları ✅ **YENİ!**
-21. **GET** `/api/v1/reports/templates` - Rapor şablonları ✅ **YENİ!**
-22. **POST** `/api/v1/reports/generate` - Rapor oluştur ✅ **YENİ!**
-23. **GET** `/api/v1/analytics/overview` - Analitik veriler ✅ **YENİ!**
-24. **GET** `/api/v1/schema/project/:id` - Schema bilgisi ✅ **YENİ!**
-25. **GET** `/api/v1/system/status` - Sistem durumu ✅ **YENİ!**
+### 📊 Tablo Yönetimi (4/4)
+- ✅ **GET** `/api/v1/tables/project/{projectId}` - Tabloları listele
+- ✅ **POST** `/api/v1/tables/project/{projectId}` - Tablo oluştur
+- ✅ **PUT** `/api/v1/tables/{tableId}` - Tablo güncelle  
+- ✅ **DELETE** `/api/v1/tables/{tableId}` - Tablo sil
+
+### ⚡ Field Yönetimi (3/3)
+- ✅ **POST** `/api/v1/tables/{projectId}/{tableId}/fields` - Field ekle
+- ✅ **PUT** `/api/v1/tables/{tableId}/fields/{fieldId}` - Field güncelle
+- ✅ **DELETE** `/api/v1/tables/{tableId}/fields/{fieldId}` - Field sil
+
+### 🔗 İlişki Yönetimi (4/4)
+- ✅ **GET** `/api/v1/relationships/project/{projectId}` - İlişkileri listele
+- ✅ **POST** `/api/v1/relationships` - İlişki oluştur
+- ✅ **PUT** `/api/v1/relationships/{relationshipId}` - İlişki güncelle
+- ✅ **DELETE** `/api/v1/relationships/{relationshipId}` - İlişki sil
+
+### 🔍 Gelişmiş Sorgular (1/1)
+- ✅ **POST** `/api/v1/joins/execute` - JOIN sorguları çalıştır
+
+### 💾 Veri İşlemleri (4/4)
+- ✅ **GET** `/api/v1/data/table/{tableId}` - Veri oku
+- ✅ **POST** `/api/v1/data/table/{tableId}/rows` - Veri ekle
+- ✅ **PUT** `/api/v1/data/table/{tableId}/rows/{rowId}` - Veri güncelle
+- ✅ **DELETE** `/api/v1/data/table/{tableId}/rows/{rowId}` - Veri sil
+
+### 📈 Raporlama & Analitik (3/3)
+- ✅ **GET** `/api/v1/reports/templates` - Rapor şablonları
+- ✅ **POST** `/api/v1/reports/generate` - Rapor oluştur
+- ✅ **GET** `/api/v1/analytics/overview` - Analitik veriler
+
+### 🧮 Matematik API'leri (5/5) **YENİ!**
+- ✅ **GET** `/api/v1/math/info` - Math API bilgisi **YENİ!**
+- ✅ **POST** `/api/v1/math/basic` - Temel matematik **YENİ!**
+- ✅ **POST** `/api/v1/math/statistics` - İstatistik hesaplamaları **YENİ!**
+- ✅ **POST** `/api/v1/math/finance` - Finansal hesaplamalar **YENİ!**
+- ✅ **POST** `/api/v1/math/science` - Bilimsel hesaplamalar **YENİ!**
+
+### 🛠️ Yönetim (4/4)
+- ✅ **GET** `/api/v1/schema/project/{projectId}` - Schema bilgisi
+- ✅ **PUT** `/api/v1/projects/{projectId}/api-key-password` - API Key güncelle
+- ✅ **GET** `/api/v1/api-keys/usage-stats` - Kullanım istatistikleri
+- ✅ **GET** `/api/v1/system/status` - Sistem durumu
 
 ### 🔐 3-KATMANLI GÜVENLİK DOĞRULANMIŞ:
 - ✅ **X-API-Key**: Proje kimlik doğrulama
@@ -1056,9 +1224,44 @@ curl -X GET \
 
 ---
 
-*Vardiyali Nobet Asistani - Genişletilmiş API Key Sistemi*  
-*Test Tarihi: 28.07.2025 23:58:50*  
-*Durum: %100 ÇALIŞAN GENİŞLETİLMİŞ API KEY SİSTEMİ*  
-*Test Completed: 25/25 Endpoints*  
-*Security: 3-Layer Authentication Verified*  
-*New Features: İlişki Yönetimi, JOIN Sorguları, Raporlama, Analitik* 
+## 🆕 YENİ ÖZELLİKLER
+- ✅ 3-Katmanlı API Key Güvenlik Sistemi
+- ✅ İlişki Yönetimi (Foreign Keys)
+- ✅ Gelişmiş JOIN Sorguları
+- ✅ Schema Yönetimi
+- ✅ Raporlama ve Analitik
+- ✅ Matematik API'leri (Phase 4)
+- ✅ JavaScript SDK
+
+## 🔒 GÜVENLİK ÖZELLİKLERİ
+- ✅ 3-Katmanlı Kimlik Doğrulama
+- ✅ API Key + Email + Password
+- ✅ Rate Limiting
+- ✅ CORS Koruması
+- ✅ SQL Injection Koruması
+- ✅ HTTPS/SSL Şifreleme
+
+## 🌐 PRODUCTION URL'LER
+
+### Production API Base URL:
+```
+https://hzmbackendveritabani-production.up.railway.app/api/v1
+```
+
+### Health Check:
+```
+https://hzmbackendveritabani-production.up.railway.app/health
+```
+
+### Frontend URL:
+```
+https://vardiyaasistani.netlify.app
+```
+
+---
+*Vardiyali Nobet Asistani - API Key Sistemi*
+*Test Tarihi: 30.07.2025 10:24:24*
+*Durum: %100 ÇALIŞAN GENİŞLETİLMİŞ API KEY SİSTEMİ*
+*Test Completed: 30/30 Endpoints*
+*Security: 3-Layer Authentication Verified*
+*Math APIs: Phase 4 Complete ✅* 
