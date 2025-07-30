@@ -5,10 +5,10 @@ import { useAuthContext } from '../../../contexts/AuthContext';
 
 // 3-Layer API Key Configuration
 const API_CONFIG = {
-  apiKey: import.meta.env.VITE_HZM_API_KEY,
-  userEmail: import.meta.env.VITE_HZM_USER_EMAIL,
-  projectPassword: import.meta.env.VITE_HZM_PROJECT_PASSWORD,
-  baseURL: import.meta.env.VITE_HZM_BASE_URL || 'https://hzmbackendveritabani-production.up.railway.app'
+  apiKey: import.meta.env.VITE_API_KEY,
+  userEmail: import.meta.env.VITE_USER_EMAIL,
+  projectPassword: import.meta.env.VITE_PROJECT_PASSWORD,
+  baseURL: import.meta.env.VITE_BASE_URL || 'https://hzmbackendveritabani-production.up.railway.app'
 };
 
 interface FormData {

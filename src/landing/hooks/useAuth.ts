@@ -6,9 +6,9 @@ import { useAuthContext } from '../../contexts/AuthContext';
 
 // 3-Layer API Key Configuration
 const API_CONFIG = {
-  apiKey: import.meta.env.VITE_HZM_API_KEY,
-  userEmail: import.meta.env.VITE_HZM_USER_EMAIL,
-  projectPassword: import.meta.env.VITE_HZM_PROJECT_PASSWORD,
+  apiKey: import.meta.env.VITE_API_KEY,
+  userEmail: import.meta.env.VITE_USER_EMAIL,
+  projectPassword: import.meta.env.VITE_PROJECT_PASSWORD,
   proxyURL: '/.netlify/functions/api-proxy'
 };
 

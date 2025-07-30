@@ -1,10 +1,10 @@
 // 3-Layer API Key System Configuration
 const API_CONFIG = {
-  baseURL: import.meta.env.VITE_HZM_BASE_URL || 'https://hzmbackendveritabani-production.up.railway.app',
-  apiKey: import.meta.env.VITE_HZM_API_KEY,
-  userEmail: import.meta.env.VITE_HZM_USER_EMAIL,
-  projectPassword: import.meta.env.VITE_HZM_PROJECT_PASSWORD,
-  projectId: import.meta.env.VITE_HZM_PROJECT_ID || '5',
+  baseURL: import.meta.env.VITE_BASE_URL || 'https://hzmbackendveritabani-production.up.railway.app',
+  apiKey: import.meta.env.VITE_API_KEY,
+  userEmail: import.meta.env.VITE_USER_EMAIL,
+  projectPassword: import.meta.env.VITE_PROJECT_PASSWORD,
+  projectId: import.meta.env.VITE_PROJECT_ID || '5',
   proxyURL: '/.netlify/functions/api-proxy'
 };
 

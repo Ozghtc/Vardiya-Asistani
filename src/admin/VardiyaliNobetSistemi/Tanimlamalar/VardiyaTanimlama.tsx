@@ -68,9 +68,9 @@ const VardiyaTanimlama: React.FC = () => {
           path: '/api/v1/data/table/71',
           method: 'GET',
           // 3-Layer Authentication
-          apiKey: import.meta.env.VITE_HZM_API_KEY,
-          userEmail: import.meta.env.VITE_HZM_USER_EMAIL,
-          projectPassword: import.meta.env.VITE_HZM_PROJECT_PASSWORD
+                        apiKey: import.meta.env.VITE_API_KEY,
+              userEmail: import.meta.env.VITE_USER_EMAIL,
+              projectPassword: import.meta.env.VITE_PROJECT_PASSWORD
         })
       });
 
