@@ -1,7 +1,7 @@
 import React from 'react';
 import { Calendar } from 'lucide-react';
 
-const Nobetlerim: React.FC = () => {
+const NobetlerimPanel: React.FC = () => {
   return (
     <div className="bg-white rounded-xl shadow-sm p-6">
       <div className="flex items-center gap-2 mb-4">
@@ -16,4 +16,4 @@ const Nobetlerim: React.FC = () => {
   );
 };
 
-export default Nobetlerim;
+export default NobetlerimPanel; 

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Calendar, FileText } from 'lucide-react';
-import Nobetlerim from './Nobetlerim';
-import IstekTaleplerim from './IstekTaleplerim';
+import IstekTaleplerimPanel from './components/IstekTaleplerimPanel';
+import NobetlerimPanel from './components/NobetlerimPanel';
 
 const PersonelPaneli: React.FC = () => {
   const [activeTab, setActiveTab] = useState('nobetlerim');
@@ -50,10 +50,10 @@ const PersonelPaneli: React.FC = () => {
       </div>
 
       <div className="mt-6">
-        {activeTab === 'nobetlerim' ? <Nobetlerim /> : <IstekTaleplerim />}
+        {activeTab === 'nobetlerim' ? <NobetlerimPanel /> : <IstekTaleplerimPanel />}
       </div>
     </div>
   );
 };
 
-export default PersonelPaneli;
+export default PersonelPaneli; 

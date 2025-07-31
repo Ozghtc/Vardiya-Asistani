@@ -23,9 +23,8 @@ import PersonelListesi from './admin/VardiyaliNobetSistemi/PersonelListesi/Perso
 import PersonelEkle from './admin/VardiyaliNobetSistemi/PersonelListesi/PersonelEkle';
 import PersonelNobetTanimlama from './admin/VardiyaliNobetSistemi/PersonelListesi/PersonelNobetTanimlama';
 import PersonelIzinIstekleri from './admin/VardiyaliNobetSistemi/PersonelListesi/PersonelIzinIstekleri';
-import PersonelPaneli from './admin/PersonelPaneli/PersonelPaneli';
-import Nobetlerim from './admin/PersonelPaneli/Nobetlerim';
-import IstekTaleplerim from './admin/PersonelPaneli/IstekTaleplerim';
+import PersonelPaneli from './admin/PersonelKullaniciPaneli/PersonelPaneli';
+
 import VardiyaliNobetDashboard from './admin/VardiyaliNobetSistemi/VardiyaliNobetDashboard';
 import NobetEkrani from './admin/VardiyaliNobetSistemi/NobetIslemleri/NobetEkrani';
 import NobetKurallari from './admin/VardiyaliNobetSistemi/NobetIslemleri/NobetKurallari';
@@ -102,16 +101,7 @@ function App() {
             <Layout><PersonelPaneli /></Layout>
           </ProtectedRoute>
         } />
-        <Route path="/personel/nobetlerim" element={
-          <ProtectedRoute allowedRoles={['admin', 'yonetici', 'personel']}>
-            <Layout><Nobetlerim /></Layout>
-          </ProtectedRoute>
-        } />
-        <Route path="/personel/istekler" element={
-          <ProtectedRoute allowedRoles={['admin', 'yonetici', 'personel']}>
-            <Layout><IstekTaleplerim /></Layout>
-          </ProtectedRoute>
-        } />
+
         <Route path="/nobet/ekran" element={
           <ProtectedRoute allowedRoles={['admin', 'yonetici']}>
             <Layout><NobetEkrani /></Layout>
