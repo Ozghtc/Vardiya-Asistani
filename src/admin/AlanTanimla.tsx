@@ -289,7 +289,6 @@ const handleSaveToDatabase = async () => {
 
     if (response.ok) {
       const result = await response.json();
-      console.log('✅ Kaydetme başarılı:', result);
       
       // Cache temizle ve veri yenile
       clearTableCache('18');
