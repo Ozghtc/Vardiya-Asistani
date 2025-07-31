@@ -1,22 +1,14 @@
 // Kurum Management Helper Functions
-// Kurum yönetimi için yardımcı fonksiyonlar
+import { Kurum, FilterType, KurumFormData, EditKurumValues } from '../types/KurumManagement.types';
 
-import { Kurum, KurumFormData, EditKurumValues, FilterType } from '../types/KurumManagement.types';
-
-/**
- * Kurum form validasyonu
- */
-export const validateKurumForm = (formData: KurumFormData): string | null => {
-  if (!formData.kurum_adi.trim()) {
+// Form validation
+export const validateKurumForm = (formData: any): string | null => {
+  if (!formData.kurum_adi?.trim()) {
     return 'Kurum adı gereklidir';
   }
   
-  if (!formData.kurum_turu.trim()) {
-    return 'Kurum türü seçiniz';
-  }
-  
   if (formData.email && !isValidEmail(formData.email)) {
-    return 'Geçerli bir email adresi giriniz';
+    return 'Geçerli bir e-posta adresi giriniz';
   }
   
   if (formData.telefon && !isValidPhone(formData.telefon)) {
@@ -26,42 +18,40 @@ export const validateKurumForm = (formData: KurumFormData): string | null => {
   return null;
 };
 
-/**
- * Email validasyonu
- */
+// Email validation
 export const isValidEmail = (email: string): boolean => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email);
 };
 
-/**
- * Telefon validasyonu
- */
+// Phone validation
 export const isValidPhone = (phone: string): boolean => {
-  const phoneRegex = /^[0-9\s\(\)\-\+]+$/;
-  return phoneRegex.test(phone) && phone.length >= 10;
+  const phoneRegex = /^[0-9\s\-\+\(\)]{10,}$/;
+  return phoneRegex.test(phone);
 };
 
-/**
- * Kurum verilerini formatla (API için)
- */
-export const formatKurumDataForAPI = (formData: KurumFormData) => {
+// Format data for API
+export const formatKurumDataForAPI = (formData: any) => {
   return {
-    kurum_adi: formData.kurum_adi.trim(),
-    kurum_turu: formData.kurum_turu.trim(),
-    adres: formData.adres.trim(),
-    il: formData.il?.value || '',
-    ilce: formData.ilce?.value || '',
-    telefon: formData.telefon?.trim() || '',
-    email: formData.email?.trim() || '',
-    aktif_mi: formData.aktif_mi
+    kurum_adi: formData.kurum_adi?.trim(),
+    kurum_turu: formData.kurum_turu?.trim(),
+    adres: formData.adres?.trim(),
+    il: formData.il?.value,
+    ilce: formData.ilce?.value,
+    telefon: formData.telefon?.trim(),
+    email: formData.email?.trim(),
+    aktif_mi: formData.aktif_mi,
+    departmanlar: Array.isArray(formData.departmanlar) 
+      ? formData.departmanlar.join(',') 
+      : formData.departmanlar,
+    birimler: Array.isArray(formData.birimler) 
+      ? formData.birimler.join(',') 
+      : formData.birimler
   };
 };
 
-/**
- * API'den gelen kurum verisini form formatına çevir
- */
-export const formatKurumDataForForm = (kurum: Kurum): KurumFormData => {
+// Format data for form
+export const formatKurumDataForForm = (kurum: any): any => {
   return {
     kurum_adi: kurum.kurum_adi || '',
     kurum_turu: kurum.kurum_turu || '',
@@ -70,176 +60,127 @@ export const formatKurumDataForForm = (kurum: Kurum): KurumFormData => {
     ilce: kurum.ilce ? { value: kurum.ilce, label: kurum.ilce } : null,
     telefon: kurum.telefon || '',
     email: kurum.email || '',
-    aktif_mi: kurum.aktif_mi ?? true
+    aktif_mi: kurum.aktif_mi !== false
   };
 };
 
-/**
- * Kurumları filtrele (arama ve durum filtresine göre)
- */
-export const filterKurumlar = (
-  kurumlar: Kurum[], 
-  searchTerm: string, 
-  filterType: FilterType
-): Kurum[] => {
+// Filter kurumlar
+export const filterKurumlar = (kurumlar: any[], searchTerm: string, filterType: any): any[] => {
   return kurumlar.filter(kurum => {
-    // Arama filtresi
-    const matchesSearch = searchTerm === '' || 
-      kurum.kurum_adi.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (kurum.adres && kurum.adres.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (kurum.il && kurum.il.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (kurum.kurum_turu && kurum.kurum_turu.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesSearch = !searchTerm || 
+      kurum.kurum_adi?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      kurum.adres?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      kurum.kurum_turu?.toLowerCase().includes(searchTerm.toLowerCase());
     
-    // Durum filtresi
-    const matchesFilter = 
-      filterType === 'all' || 
-      (filterType === 'aktif' && kurum.aktif_mi) ||
-      (filterType === 'pasif' && !kurum.aktif_mi);
+    const matchesFilter = filterType === 'all' || 
+      (filterType === 'aktif' && kurum.aktif_mi !== false) ||
+      (filterType === 'pasif' && kurum.aktif_mi === false);
     
     return matchesSearch && matchesFilter;
   });
 };
 
-/**
- * Kurum listesini sırala (kurum adına göre)
- */
-export const sortKurumlar = (kurumlar: Kurum[]): Kurum[] => {
-  return [...kurumlar].sort((a, b) => 
-    a.kurum_adi.localeCompare(b.kurum_adi, 'tr-TR')
-  );
+// Sort kurumlar
+export const sortKurumlar = (kurumlar: any[]): any[] => {
+  return [...kurumlar].sort((a, b) => {
+    return a.kurum_adi?.localeCompare(b.kurum_adi || '', 'tr-TR') || 0;
+  });
 };
 
-/**
- * Departman string'ini array'e çevir
- */
+// Parse departmanlar string
 export const parseDepartmanlar = (departmanStr: string): string[] => {
   if (!departmanStr) return [];
-  return departmanStr.split(',').map(d => d.trim()).filter(d => d.length > 0);
+  return departmanStr.split(',').map(d => d.trim()).filter(d => d);
 };
 
-/**
- * Birim string'ini array'e çevir
- */
+// Parse birimler string
 export const parseBirimler = (birimStr: string): string[] => {
   if (!birimStr) return [];
-  return birimStr.split(',').map(b => b.trim()).filter(b => b.length > 0);
+  return birimStr.split(',').map(b => b.trim()).filter(b => b);
 };
 
-/**
- * Array'i string'e çevir (virgülle ayrılmış)
- */
+// Array to string
 export const arrayToString = (arr: string[]): string => {
-  return arr.filter(item => item.trim().length > 0).join(', ');
+  return arr.filter(item => item.trim()).join(', ');
 };
 
-/**
- * String'i büyük harfe çevir (Türkçe karakterler dahil)
- */
+// Turkish uppercase
 export const toUpperCaseTurkish = (str: string): string => {
   return str.toLocaleUpperCase('tr-TR');
 };
 
-/**
- * Form'u sıfırla
- */
-export const getInitialKurumForm = (): KurumFormData => ({
-  kurum_adi: '',
-  kurum_turu: '',
-  adres: '',
-  il: null,
-  ilce: null,
-  telefon: '',
-  email: '',
-  aktif_mi: true
-});
+// Get initial form data
+export const getInitialKurumForm = (): any => {
+  return {
+    kurum_adi: '',
+    kurum_turu: '',
+    adres: '',
+    il: null,
+    ilce: null,
+    aktif_mi: true
+  };
+};
 
-/**
- * Edit values'ları sıfırla
- */
-export const getInitialEditValues = (): EditKurumValues => ({
-  kurum_adi: '',
-  adres: '',
-  telefon: '',
-  email: ''
-});
+// Get initial edit values
+export const getInitialEditValues = (): any => {
+  return {
+    kurum_adi: '',
+    adres: '',
+    telefon: '',
+    email: ''
+  };
+};
 
-/**
- * Success mesajı göster (otomatik kaybolur)
- */
-export const showSuccessMessage = (
-  message: string,
-  setSuccessMsg: (msg: string) => void
-) => {
+// Message helpers
+export const showSuccessMessage = (message: string, setSuccessMsg: (msg: string) => void) => {
   setSuccessMsg(message);
   setTimeout(() => setSuccessMsg(''), 3000);
 };
 
-/**
- * Error mesajı göster (otomatik kaybolur)
- */
-export const showErrorMessage = (
-  message: string,
-  setErrorMsg: (msg: string) => void
-) => {
+export const showErrorMessage = (message: string, setErrorMsg: (msg: string) => void) => {
   setErrorMsg(message);
   setTimeout(() => setErrorMsg(''), 5000);
 };
 
-/**
- * Kurum istatistiklerini hesapla
- */
-export const calculateKurumStats = (kurumlar: Kurum[]) => {
+// Stats calculation
+export const calculateKurumStats = (kurumlar: any[]) => {
   const total = kurumlar.length;
-  const aktif = kurumlar.filter(k => k.aktif_mi).length;
+  const aktif = kurumlar.filter(k => k.aktif_mi !== false).length;
   const pasif = total - aktif;
   
   return { total, aktif, pasif };
 };
 
-/**
- * Kurum türlerine göre gruplama
- */
-export const groupKurumlarByType = (kurumlar: Kurum[]): Record<string, Kurum[]> => {
+// Group kurumlar by type
+export const groupKurumlarByType = (kurumlar: any[]): Record<string, any[]> => {
   return kurumlar.reduce((groups, kurum) => {
-    const type = kurum.kurum_turu || 'Belirsiz';
-    if (!groups[type]) {
-      groups[type] = [];
-    }
+    const type = kurum.kurum_turu || 'Diğer';
+    if (!groups[type]) groups[type] = [];
     groups[type].push(kurum);
     return groups;
-  }, {} as Record<string, Kurum[]>);
+  }, {} as Record<string, any[]>);
 };
 
-/**
- * İllere göre kurum sayısı
- */
-export const getKurumCountByIl = (kurumlar: Kurum[]): Record<string, number> => {
+// Get kurum count by il
+export const getKurumCountByIl = (kurumlar: any[]): Record<string, number> => {
   return kurumlar.reduce((counts, kurum) => {
-    const il = kurum.il || 'Belirsiz';
+    const il = kurum.il || 'Belirtilmemiş';
     counts[il] = (counts[il] || 0) + 1;
     return counts;
   }, {} as Record<string, number>);
 };
 
-/**
- * Aktif/Pasif durumunu toggle et
- */
+// UI helpers
 export const getToggleActiveText = (aktif_mi: boolean): string => {
   return aktif_mi ? 'Pasif Yap' : 'Aktif Yap';
 };
 
-/**
- * Durum badge class'ı al
- */
 export const getStatusBadgeClass = (aktif_mi: boolean): string => {
   return aktif_mi 
-    ? 'bg-green-100 text-green-800 border-green-200'
-    : 'bg-red-100 text-red-800 border-red-200';
+    ? 'bg-green-100 text-green-600' 
+    : 'bg-red-100 text-red-600';
 };
 
-/**
- * Durum text'i al
- */
 export const getStatusText = (aktif_mi: boolean): string => {
   return aktif_mi ? 'Aktif' : 'Pasif';
 }; 

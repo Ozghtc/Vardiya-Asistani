@@ -1,10 +1,15 @@
 import React, { useState } from 'react';
-import { useCapitalization } from '../../hooks/useCapitalization';
+import { useCapitalization } from '../../../hooks/useCapitalization';
 import { ChevronLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { addKurum, testAPI } from '../../lib/api';
+import { KurumCrudOperations } from '../services/kurumCrudOperations';
 
-const KurumEkleFormu = () => {
+interface KurumEkleFormuProps {
+  onSuccess?: () => void;
+  onCancel?: () => void;
+}
+
+const KurumEkleFormu: React.FC<KurumEkleFormuProps> = ({ onSuccess, onCancel }) => {
   const [kurumAdi, handleKurumAdiChange] = useCapitalization('');
   const [adres, handleAdresChange] = useCapitalization('');
   const [telefon, setTelefon] = useState('');
@@ -17,11 +22,8 @@ const KurumEkleFormu = () => {
   // API Test fonksiyonu
   const handleAPITest = async () => {
     try {
-      const result = await testAPI();
-      setSuccessMsg('API bağlantısı başarılı!');
-      console.log('API Test:', result);
+      await KurumCrudOperations.testApiConnection(setSuccessMsg, setErrorMsg);
     } catch (error) {
-      setErrorMsg('API bağlantısı başarısız!');
       console.error('API Test Error:', error);
     }
   };
@@ -40,19 +42,19 @@ const KurumEkleFormu = () => {
     };
 
     try {
-      // Sadece API'ye kaydet
-      const response = await addKurum(kurumData);
+      const result = await KurumCrudOperations.createKurum(kurumData, setSuccessMsg, setErrorMsg);
       
-      if (response.success) {
-        setSuccessMsg('Kurum başarıyla kaydedildi!');
-        
+      if (result.success) {
         // Formu sıfırla
         handleKurumAdiChange({ target: { value: '' } } as any);
         handleAdresChange({ target: { value: '' } } as any);
         setTelefon('');
         setEmail('');
-      } else {
-        throw new Error(response.message || 'Kurum kaydedilemedi');
+        
+        // Callback çağır
+        if (onSuccess) {
+          onSuccess();
+        }
       }
     } catch (error: any) {
       setErrorMsg(`Hata: ${error.message}`);
@@ -62,13 +64,19 @@ const KurumEkleFormu = () => {
     }
   };
 
-
+  const handleGoBack = () => {
+    if (onCancel) {
+      onCancel();
+    } else {
+      navigate(-1);
+    }
+  };
 
   return (
     <div className="p-4">
       <div className="flex justify-between items-center mb-4">
         <button
-          onClick={() => navigate(-1)}
+          onClick={handleGoBack}
           className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-blue-600 transition shadow-sm"
         >
           <ChevronLeft className="w-5 h-5" />
