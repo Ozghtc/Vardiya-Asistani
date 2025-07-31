@@ -5,10 +5,10 @@ import { useAuthContext } from '../../../contexts/AuthContext';
 
 // 3-Layer API Key Configuration
 const API_CONFIG = {
-  apiKey: import.meta.env.VITE_API_KEY,
-  userEmail: import.meta.env.VITE_USER_EMAIL,
-  projectPassword: import.meta.env.VITE_PROJECT_PASSWORD,
-  baseURL: import.meta.env.VITE_BASE_URL || 'https://hzmbackendveritabani-production.up.railway.app'
+  apiKey: import.meta.env.VITE_HZM_API_KEY,
+  userEmail: import.meta.env.VITE_HZM_USER_EMAIL,
+  projectPassword: import.meta.env.VITE_HZM_PROJECT_PASSWORD,
+  baseURL: import.meta.env.VITE_HZM_BASE_URL || 'https://hzmbackendveritabani-production.up.railway.app'
 };
 
 interface FormData {
@@ -42,10 +42,22 @@ const YeniAlan: React.FC = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  // KURAL 18: Frontend validation kaldırıldı - server-side validation gerekli
+  // Form validation
   const validateForm = (): boolean => {
-    // Backend'de validation yapılacak, frontend sadece UI
-    return true; // Geçici: Tüm validationları backend'e bırak
+    if (!formData.alan_adi.trim()) {
+      setError('Alan adı gereklidir');
+      return false;
+    }
+
+    if (formData.alan_adi.trim().length < 2) {
+      setError('Alan adı en az 2 karakter olmalıdır');
+      return false;
+    }
+
+    if (formData.alan_adi.trim().length > 100) {
+      setError('Alan adı en fazla 100 karakter olabilir');
+      return false;
+    }
 
     return true;
   };
