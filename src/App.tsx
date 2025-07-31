@@ -26,7 +26,7 @@ import PersonelIzinIstekleri from './admin/VardiyaliNobetSistemi/PersonelListesi
 import PersonelPaneli from './admin/PersonelPaneli/PersonelPaneli';
 import Nobetlerim from './admin/PersonelPaneli/Nobetlerim';
 import IstekTaleplerim from './admin/PersonelPaneli/IstekTaleplerim';
-import VardiyaliNobet from './admin/VardiyaliNobetSistemi/VardiyaliNobet';
+import TanimlamalarAnaSayfa from './admin/VardiyaliNobetSistemi/TanimlamalarAnaSayfa';
 import NobetEkrani from './admin/VardiyaliNobetSistemi/NobetIslemleri/NobetEkrani';
 import NobetKurallari from './admin/VardiyaliNobetSistemi/NobetIslemleri/NobetKurallari';
 import NobetOlustur from './admin/VardiyaliNobetSistemi/NobetIslemleri/NobetOlustur';
@@ -94,7 +94,7 @@ function App() {
         } />
         <Route path="/admin/vardiyali-nobet" element={
           <ProtectedRoute allowedRoles={['admin', 'yonetici']}>
-            <Layout><VardiyaliNobet /></Layout>
+            <Layout><TanimlamalarAnaSayfa /></Layout>
           </ProtectedRoute>
         } />
         <Route path="/personel/panel" element={

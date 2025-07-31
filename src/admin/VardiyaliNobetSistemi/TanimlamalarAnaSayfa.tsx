@@ -6,7 +6,7 @@ import { apiRequest } from '../../lib/api';
 
 
 
-const VardiyaliNobet: React.FC = () => {
+const TanimlamalarAnaSayfa: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuthContext();
   const [checkingAuth, setCheckingAuth] = useState(true);
@@ -190,8 +190,8 @@ const VardiyaliNobet: React.FC = () => {
       {/* Main Content */}
       <div className="bg-white rounded-xl shadow-sm p-6">
         <div className="mb-6">
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Vardiyalı Nöbet Sistemi</h2>
-          <p className="text-gray-600">Vardiya sistemi yönetimi ve planlaması</p>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Sistem Tanımlamaları</h2>
+          <p className="text-gray-600">Sistem tanımlamaları ve ana işlemler</p>
         </div>
 
         {/* Main Cards */}
@@ -222,4 +222,4 @@ const VardiyaliNobet: React.FC = () => {
   );
 };
 
-export default VardiyaliNobet;
+export default TanimlamalarAnaSayfa;
