@@ -6,7 +6,7 @@ import { apiRequest } from '../../lib/api';
 
 
 
-const TanimlamalarAnaSayfa: React.FC = () => {
+const VardiyaliNobetDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuthContext();
   const [checkingAuth, setCheckingAuth] = useState(true);
@@ -190,8 +190,8 @@ const TanimlamalarAnaSayfa: React.FC = () => {
       {/* Main Content */}
       <div className="bg-white rounded-xl shadow-sm p-6">
         <div className="mb-6">
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Sistem Tanımlamaları</h2>
-          <p className="text-gray-600">Sistem tanımlamaları ve ana işlemler</p>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Vardiyalı Nöbet Sistemi</h2>
+          <p className="text-gray-600">Nöbet yönetimi, personel işlemleri ve sistem tanımlamaları</p>
         </div>
 
         {/* Main Cards */}
@@ -222,4 +222,4 @@ const TanimlamalarAnaSayfa: React.FC = () => {
   );
 };
 
-export default TanimlamalarAnaSayfa;
+export default VardiyaliNobetDashboard;
