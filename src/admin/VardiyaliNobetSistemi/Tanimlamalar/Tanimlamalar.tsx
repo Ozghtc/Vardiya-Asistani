@@ -9,6 +9,7 @@ import VardiyaTanimlama from './VardiyaTanimlama';
 import YeniAlan from './YeniAlan';
 import TanimliAlanlar from './TanimliAlanlar';
 import TanimliVardiyalar from './TanimliVardiyalar';
+import AlanTanimla from '../../AlanTanimla';
 import { useDepartmanBirim } from './DepartmanBirimContext';
 import { useAuthContext } from '../../../contexts/AuthContext';
 // Otomatik tablo oluşturma kaldırıldı - Kural 15 gereği
@@ -80,6 +81,12 @@ const SistemTanimlamalari: React.FC = () => {
       name: 'Yeni Alan',
       icon: <MapPin className="w-5 h-5" />, 
       component: <YeniAlan />
+    },
+    {
+      id: 'alan-tanimla',
+      name: 'Alan Tanımla',
+      icon: <UserCog className="w-5 h-5" />, 
+      component: <AlanTanimla />
     },
     {
       id: 'tanimli-alanlar',
