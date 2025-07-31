@@ -93,9 +93,9 @@ const KullaniciYonetimPaneli: React.FC = () => {
     
     const success = await crudOps.handleDeleteUser(showDeleteModal.user, showDeleteModal.confirmText);
     if (success) {
-      setPermissions(prev => prev.filter(p => p.kullanici_id !== showDeleteModal.user.id));
-      setShowDeleteModal(null);
-      setSelectedUser(null);
+          setPermissions(prev => prev.filter(p => p.kullanici_id !== showDeleteModal.user.id));
+          setShowDeleteModal(null);
+          setSelectedUser(null);
     }
   };
 
@@ -123,7 +123,7 @@ const KullaniciYonetimPaneli: React.FC = () => {
   const handleAddPermission = () => {
     const newPermission = crudOps.handleAddPermission(selectedUser, permissions, permissionForm);
     if (newPermission) {
-      setPermissions(prev => [...prev, newPermission]);
+    setPermissions(prev => [...prev, newPermission]);
       resetPermissionForm();
     }
   };
