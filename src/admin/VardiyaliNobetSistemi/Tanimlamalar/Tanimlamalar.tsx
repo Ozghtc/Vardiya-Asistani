@@ -9,7 +9,7 @@ import VardiyaTanimlama from './VardiyaTanimlama';
 import YeniAlan from './YeniAlan';
 import TanimliAlanlar from './TanimliAlanlar';
 import TanimliVardiyalar from './TanimliVardiyalar';
-import AlanTanimla from '../../AlanTanimla';
+import AlanTanimla from './AlanTanimla';
 import { useDepartmanBirim } from './DepartmanBirimContext';
 import { useAuthContext } from '../../../contexts/AuthContext';
 // Otomatik tablo oluşturma kaldırıldı - Kural 15 gereği

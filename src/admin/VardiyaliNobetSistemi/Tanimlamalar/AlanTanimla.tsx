@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Check, X, Clock, Save } from 'lucide-react';
-import { useCapitalization } from '../hooks/useCapitalization';
-import { useAuthContext } from '../contexts/AuthContext';
-import { useToast } from '../components/ui/ToastContainer';
-import { clearAllCache, clearTableCache } from '../lib/api';
+import { useCapitalization } from '../../../hooks/useCapitalization';
+import { useAuthContext } from '../../../contexts/AuthContext';
+import { useToast } from '../../../components/ui/ToastContainer';
+import { clearAllCache, clearTableCache } from '../../../lib/api';
 
 // 3-Layer API Key Configuration
 const API_CONFIG = {
