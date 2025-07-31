@@ -1,19 +1,17 @@
-// Dosyayı SistemTanimlamalari.tsx olarak yeniden adlandır
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Users, Clock, UserPlus, Settings, UserCog } from 'lucide-react';
 import UnvanTanimlama from './UnvanTanimlama';
 import IzinTanimlama from './IzinTanimlama';
-import VardiyaTanimlama from './VardiyaTanimlama';
+import VardiyaTanimlama from './VardiyaTanimlama/VardiyaTanimlama';
 
 import TanimliAlanlar from './TanimliAlanlar';
-import TanimliVardiyalar from './TanimliVardiyalar';
+
 import AlanTanimla from './AlanTanimla';
 import { useDepartmanBirim } from './DepartmanBirimContext';
 import { useAuthContext } from '../../../contexts/AuthContext';
-// Otomatik tablo oluşturma kaldırıldı - Kural 15 gereği
 
-const SistemTanimlamalari: React.FC = () => {
+const TanimlamalarPaneli: React.FC = () => {
   const [activeTab, setActiveTab] = useState('unvan-izin');
   const navigate = useNavigate();
   const { setDepartmanBirim } = useDepartmanBirim();
@@ -140,4 +138,4 @@ const SistemTanimlamalari: React.FC = () => {
   );
 };
 
-export default SistemTanimlamalari;
+export default TanimlamalarPaneli;

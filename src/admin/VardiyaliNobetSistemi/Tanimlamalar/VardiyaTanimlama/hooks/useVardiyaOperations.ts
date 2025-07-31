@@ -1,25 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import { Clock, AlertTriangle } from 'lucide-react';
-import { useCapitalization } from '../../../hooks/useCapitalization';
-import QuickShiftButton from '../../../components/shifts/QuickShiftButton';
-import { SuccessNotification } from '../../../components/ui/Notification';
-import TanimliVardiyalar from './TanimliVardiyalar';
-import { apiRequest, getTableData, addTableData, deleteTableData, clearAllCache, clearTableCache } from '../../../lib/api';
-import { useAuthContext } from '../../../contexts/AuthContext';
+import { useState, useEffect } from 'react';
+import { useCapitalization } from '../../../../../hooks/useCapitalization';
+import { apiRequest, getTableData, clearAllCache, clearTableCache } from '../../../../../lib/api';
+import { useAuthContext } from '../../../../../contexts/AuthContext';
+import { 
+  Shift, 
+  VardiyaFormData, 
+  CurrentUser, 
+  VardiyaOperationsState,
+  VardiyaOperationsActions 
+} from '../types/VardiyaTanimlama.types';
 
-interface Shift {
-  id: number;
-  vardiya_adi: string;
-  baslangic_saati: string;
-  bitis_saati: string;
-  calisma_saati: number;
-  aktif_mi: boolean;
-  kurum_id: string;
-  departman_id: string;
-  birim_id: string;
-}
-
-const VardiyaTanimlama: React.FC = () => {
+export const useVardiyaOperations = (): VardiyaOperationsState & VardiyaOperationsActions & {
+  name: string;
+  handleNameChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  startHour: string;
+  setStartHour: (hour: string) => void;
+  endHour: string;
+  setEndHour: (hour: string) => void;
+} => {
+  // State
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [name, handleNameChange] = useCapitalization('');
   const [startHour, setStartHour] = useState<string>('');
@@ -30,7 +29,7 @@ const VardiyaTanimlama: React.FC = () => {
   const { user } = useAuthContext();
 
   // AuthContext'ten gerçek kullanıcı bilgilerini al
-  const getCurrentUser = () => {
+  const getCurrentUser = (): CurrentUser | null => {
     if (user && user.kurum_id && user.departman_id && user.birim_id) {
       return { 
         kurum_id: user.kurum_id, 
@@ -41,11 +40,8 @@ const VardiyaTanimlama: React.FC = () => {
     return null;
   };
 
-  useEffect(() => {
-    loadShifts();
-  }, []);
-
-  const loadShifts = async () => {
+  // Load shifts from API
+  const loadShifts = async (): Promise<void> => {
     setLoading(true);
     try {
       const currentUser = getCurrentUser();
@@ -68,9 +64,9 @@ const VardiyaTanimlama: React.FC = () => {
           path: '/api/v1/data/table/71',
           method: 'GET',
           // 3-Layer Authentication
-                        apiKey: import.meta.env.VITE_API_KEY,
-              userEmail: import.meta.env.VITE_USER_EMAIL,
-              projectPassword: import.meta.env.VITE_PROJECT_PASSWORD
+          apiKey: import.meta.env.VITE_API_KEY,
+          userEmail: import.meta.env.VITE_USER_EMAIL,
+          projectPassword: import.meta.env.VITE_PROJECT_PASSWORD
         })
       });
 
@@ -118,12 +114,15 @@ const VardiyaTanimlama: React.FC = () => {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Handle form submit
+  const handleSubmit = async (e: React.FormEvent, formData?: VardiyaFormData): Promise<void> => {
     e.preventDefault();
     
-    const safeName = name || '';
+    const safeName = formData?.name || name || '';
+    const submitStartHour = formData?.startHour || startHour;
+    const submitEndHour = formData?.endHour || endHour;
     
-        // KURAL 18: Frontend validation kaldırıldı - server-side validation gerekli
+    // KURAL 18: Frontend validation kaldırıldı - server-side validation gerekli
     // Backend'de validation yapılacak, frontend sadece UI
 
     // KURAL 18: Zaman hesaplama mantığı kaldırıldı - backend hesaplayacak
@@ -132,6 +131,11 @@ const VardiyaTanimlama: React.FC = () => {
     const currentUser = getCurrentUser();
     if (!currentUser) {
       setError('Kullanıcı bilgisi bulunamadı');
+      return;
+    }
+
+    if (!user) {
+      setError('Kullanıcı oturumu bulunamadı');
       return;
     }
 
@@ -164,8 +168,8 @@ const VardiyaTanimlama: React.FC = () => {
       const newShift = {
         vardiya_id: vardiyaId,
         vardiya_adi: safeName.trim(),
-        baslangic_saati: startHour,
-        bitis_saati: endHour,
+        baslangic_saati: submitStartHour,
+        bitis_saati: submitEndHour,
         calisma_saati: Math.round(toplamSaat),
         aktif_mi: true,
         kurum_id: user.kurum_id,
@@ -192,6 +196,11 @@ const VardiyaTanimlama: React.FC = () => {
         setTimeout(() => setShowSuccess(false), 2000);
         loadShifts(); // Listeyi yenile
         
+        // Form'u temizle
+        handleNameChange({ target: { value: '' } } as React.ChangeEvent<HTMLInputElement>);
+        setStartHour('');
+        setEndHour('');
+        
         console.log('✅ Vardiya eklendi ve liste güncellendi');
       } else {
         setError(response.error || 'Vardiya eklenirken hata oluştu');
@@ -204,7 +213,8 @@ const VardiyaTanimlama: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id: number | string) => {
+  // Handle delete
+  const handleDelete = async (id: number | string): Promise<void> => {
     if (!confirm('Bu vardiyayı silmek istediğinizden emin misiniz?')) return;
 
     try {
@@ -238,7 +248,8 @@ const VardiyaTanimlama: React.FC = () => {
     }
   };
 
-  const handleQuickAdd = async (shiftName: string, startHour: string, endHour: string) => {
+  // Handle quick add
+  const handleQuickAdd = async (shiftName: string, startHour: string, endHour: string): Promise<void> => {
     // API çağrısı geçici olarak devre dışı
     console.log('API çağrısı geçici olarak devre dışı - Hızlı vardiya ekleme');
     setError('API bağlantıları geçici olarak devre dışı. Tablolar oluşturulduktan sonra aktif edilecek.');
@@ -253,9 +264,14 @@ const VardiyaTanimlama: React.FC = () => {
     // KURAL 18: Zaman hesaplama mantığı kaldırıldı - backend hesaplayacak
     const toplamSaat = 8; // Varsayılan değer, backend'de doğru hesaplama yapılacak
 
-    const user = getCurrentUser();
-    if (!user) {
+    const currentUser = getCurrentUser();
+    if (!currentUser) {
       setError('Kullanıcı bilgisi bulunamadı');
+      return;
+    }
+
+    if (!user) {
+      setError('Kullanıcı oturumu bulunamadı');
       return;
     }
 
@@ -302,120 +318,32 @@ const VardiyaTanimlama: React.FC = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="text-lg">Yükleniyor, lütfen bekleyin...</div>
-      </div>
-    );
-  }
+  // Load shifts on mount
+  useEffect(() => {
+    loadShifts();
+  }, []);
 
-  return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <div className="space-y-6">
-        {/* Hızlı Vardiya Ekleme */}
-        <div className="bg-white rounded-xl p-6 shadow-sm">
-          <h2 className="text-lg font-semibold mb-4">Hızlı Vardiya Ekleme</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <QuickShiftButton
-              name="GÜNDÜZ"
-              startHour="08:00"
-              endHour="16:00"
-              isDisabled={shifts.some(s => s.vardiya_adi.toUpperCase() === "GÜNDÜZ")}
-              onAdd={handleQuickAdd}
-            />
-            <QuickShiftButton
-              name="AKŞAM"
-              startHour="16:00"
-              endHour="24:00"
-              isDisabled={shifts.some(s => s.vardiya_adi.toUpperCase() === "AKŞAM")}
-              onAdd={handleQuickAdd}
-            />
-            <QuickShiftButton
-              name="GECE"
-              startHour="00:00"
-              endHour="08:00"
-              isDisabled={shifts.some(s => s.vardiya_adi.toUpperCase() === "GECE")}
-              onAdd={handleQuickAdd}
-            />
-            <QuickShiftButton
-              name="24 SAAT"
-              startHour="08:00"
-              endHour="08:00"
-              isDisabled={shifts.some(s => s.vardiya_adi.toUpperCase() === "24 SAAT")}
-              onAdd={handleQuickAdd}
-            />
-          </div>
-        </div>
-
-        {/* Manuel Vardiya Ekleme */}
-        <form onSubmit={handleSubmit} className="bg-white rounded-xl p-6 shadow-sm space-y-6">
-          <h2 className="text-lg font-semibold">Manuel Vardiya Ekleme</h2>
-          <div>
-            <label className="block text-gray-700 mb-2">Vardiya Adı</label>
-            <input
-              type="text"
-              value={name}
-              onChange={handleNameChange}
-              placeholder="GECE, SABAH, AKŞAM 1"
-              className="w-full rounded-lg border-gray-300"
-            />
-          </div>
-          <div>
-            <label className="block text-gray-700 mb-2">
-              <Clock className="inline-block w-5 h-5 mr-2 text-blue-600" />
-              Vardiya Saatleri
-            </label>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">Başlangıç Saati:</label>
-                <input
-                  type="time"
-                  value={startHour}
-                  onChange={(e) => setStartHour(e.target.value)}
-                  className="w-full rounded-lg border-gray-300"
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">Bitiş Saati:</label>
-                <input
-                  type="time"
-                  value={endHour}
-                  onChange={(e) => setEndHour(e.target.value)}
-                  className="w-full rounded-lg border-gray-300"
-                />
-              </div>
-            </div>
-          </div>
-          {error && (
-            <div className="bg-red-50 border-l-4 border-red-400 p-4">
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="w-5 h-5 text-red-400" />
-                <p className="text-red-700">{error}</p>
-              </div>
-            </div>
-          )}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
-          >
-            {loading ? 'Ekleniyor...' : 'Vardiya Ekle'}
-          </button>
-        </form>
-      </div>
-
-      {/* Tanımlı Vardiyalar */}
-      <TanimliVardiyalar shifts={shifts} onDelete={handleDelete} />
-      
-      {showSuccess && (
-        <SuccessNotification
-          message="Vardiya başarıyla eklendi!"
-          onClose={() => setShowSuccess(false)}
-        />
-      )}
-    </div>
-  );
-};
-
-export default VardiyaTanimlama;
+  return {
+    // State
+    shifts,
+    loading,
+    error,
+    showSuccess,
+    name,
+    startHour,
+    endHour,
+    
+    // Form handlers
+    handleNameChange,
+    setStartHour,
+    setEndHour,
+    
+    // Actions
+    loadShifts,
+    handleSubmit,
+    handleDelete,
+    handleQuickAdd,
+    setError,
+    setShowSuccess
+  };
+}; 
