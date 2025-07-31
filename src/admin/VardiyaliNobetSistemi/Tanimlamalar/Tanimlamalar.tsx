@@ -1,12 +1,11 @@
 // Dosyayı SistemTanimlamalari.tsx olarak yeniden adlandır
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Users, Clock, MapPin, UserPlus, Settings, UserCog } from 'lucide-react';
+import { ArrowLeft, Users, Clock, UserPlus, Settings, UserCog } from 'lucide-react';
 import UnvanTanimlama from './UnvanTanimlama';
 import IzinTanimlama from './IzinTanimlama';
 import VardiyaTanimlama from './VardiyaTanimlama';
 
-import YeniAlan from './YeniAlan';
 import TanimliAlanlar from './TanimliAlanlar';
 import TanimliVardiyalar from './TanimliVardiyalar';
 import AlanTanimla from './AlanTanimla';
@@ -76,12 +75,6 @@ const SistemTanimlamalari: React.FC = () => {
       component: <VardiyaTanimlama />
     },
 
-    {
-      id: 'yeni-alan',
-      name: 'Yeni Alan',
-      icon: <MapPin className="w-5 h-5" />, 
-      component: <YeniAlan />
-    },
     {
       id: 'alan-tanimla',
       name: 'Alan Tanımla',
