@@ -13,6 +13,7 @@ import {
   DEPARTMAN_SABLONLARI, BIRIM_SABLONLARI, PERSONEL_TURLERI
 } from './data/locationData';
 import KurumEkleFormu from './components/KurumEkleFormu';
+import KurumListesi from './components/KurumListesi';
 
 const KurumYonetimPaneli: React.FC = () => {
   // States - Orijinal koddan koruyorum
@@ -46,7 +47,7 @@ const KurumYonetimPaneli: React.FC = () => {
   const [showDeleteModal, setShowDeleteModal] = useState<DeleteModalState | null>(null);
   const [apiLoading, setApiLoading] = useState(false);
 
-  // Inline editing states - Orijinal koddan
+  // Inline editing states - RESTORE EDİLDİ
   const [editingDepartman, setEditingDepartman] = useState<{kurumId: string, departmanIndex: number} | null>(null);
   const [newDepartmanInputs, setNewDepartmanInputs] = useState<{[kurumId: string]: string}>({});
   const [newBirimInputs, setNewBirimInputs] = useState<{[key: string]: string}>({});
@@ -88,6 +89,109 @@ const KurumYonetimPaneli: React.FC = () => {
     }
   };
 
+  // RESTORE EDİLDİ - Departman/Birim handlers
+  const handleDeleteKurum = (kurum: Kurum) => {
+    setShowDeleteModal({ kurum, confirmText: '' });
+  };
+
+  const confirmDelete = async () => {
+    if (showDeleteModal && showDeleteModal.confirmText === showDeleteModal.kurum.kurum_adi) {
+      try {
+        // Delete kurum logic here - implement in services
+        setKurumlar(prev => prev.filter(k => k.id !== showDeleteModal.kurum.id));
+        // Remove related departmanlar
+        setDepartmanBirimler(prev => prev.filter(d => d.kurum_id !== showDeleteModal.kurum.id));
+        setShowDeleteModal(null);
+        setSelectedKurum(null);
+        setSuccessMsg('Kurum başarıyla silindi!');
+      } catch (error: any) {
+        setErrorMsg('Kurum silinirken hata oluştu: ' + error.message);
+      }
+    }
+  };
+
+  const handleToggleActive = async (kurum: Kurum) => {
+    try {
+      // Toggle active logic here - implement in services
+      setKurumlar(prev => prev.map(k => 
+        k.id === kurum.id ? { ...k, aktif_mi: !k.aktif_mi } : k
+      ));
+      setSuccessMsg(`Kurum ${!kurum.aktif_mi ? 'aktif' : 'pasif'} hale getirildi!`);
+    } catch (error: any) {
+      setErrorMsg('Kurum durumu değiştirilirken hata oluştu: ' + error.message);
+    }
+  };
+
+  const handleEditKurum = (kurum: Kurum) => {
+    setEditingKurum(kurum);
+    // Edit logic here
+  };
+
+  // Departman/Birim inline handlers - RESTORE EDİLDİ
+  const addDepartman = (kurumId: string) => {
+    const departmanAdi = newDepartmanInputs[kurumId]?.trim();
+    if (!departmanAdi) return;
+
+    const newDepartman: DepartmanBirim = {
+      id: Date.now().toString() + Math.random(),
+      kurum_id: kurumId,
+      departman_adi: departmanAdi.toLocaleUpperCase('tr-TR'),
+      birimler: '',
+      personel_turleri: ''
+    };
+
+    setDepartmanBirimler(prev => [...prev, newDepartman]);
+    setNewDepartmanInputs(prev => ({ ...prev, [kurumId]: '' }));
+    setSuccessMsg('Departman başarıyla eklendi!');
+  };
+
+  const removeDepartman = (departmanId: string) => {
+    setDepartmanBirimler(prev => prev.filter(d => d.id !== departmanId));
+    setSuccessMsg('Departman silindi!');
+  };
+
+  const addBirim = (departmanId: string) => {
+    const birimAdi = newBirimInputs[departmanId]?.trim();
+    if (!birimAdi) return;
+
+    setDepartmanBirimler(prev => prev.map(d => 
+      d.id === departmanId 
+        ? { ...d, birimler: d.birimler ? `${d.birimler}, ${birimAdi.toLocaleUpperCase('tr-TR')}` : birimAdi.toLocaleUpperCase('tr-TR') }
+        : d
+    ));
+    setNewBirimInputs(prev => ({ ...prev, [departmanId]: '' }));
+    setSuccessMsg('Birim başarıyla eklendi!');
+  };
+
+  const addPersonel = (departmanId: string) => {
+    const personelAdi = newPersonelInputs[departmanId]?.trim();
+    if (!personelAdi) return;
+
+    setDepartmanBirimler(prev => prev.map(d => 
+      d.id === departmanId 
+        ? { ...d, personel_turleri: d.personel_turleri ? `${d.personel_turleri}, ${personelAdi.toLocaleUpperCase('tr-TR')}` : personelAdi.toLocaleUpperCase('tr-TR') }
+        : d
+    ));
+    setNewPersonelInputs(prev => ({ ...prev, [departmanId]: '' }));
+    setSuccessMsg('Personel türü başarıyla eklendi!');
+  };
+
+  const removeBirim = (departmanId: string, birimToRemove: string) => {
+    setDepartmanBirimler(prev => prev.map(d => 
+      d.id === departmanId 
+        ? { ...d, birimler: d.birimler.split(', ').filter(b => b !== birimToRemove).join(', ') }
+        : d
+    ));
+  };
+
+  const removePersonel = (departmanId: string, personelToRemove: string) => {
+    setDepartmanBirimler(prev => prev.map(d => 
+      d.id === departmanId 
+        ? { ...d, personel_turleri: d.personel_turleri.split(', ').filter(p => p !== personelToRemove).join(', ') }
+        : d
+    ));
+  };
+
   // Auto-clear messages - Orijinal koddan
   useEffect(() => {
     if (successMsg) {
@@ -102,13 +206,6 @@ const KurumYonetimPaneli: React.FC = () => {
       return () => clearTimeout(timer);
     }
   }, [errorMsg]);
-
-  // Filtered data - Orijinal koddan
-  const filteredKurumlar = kurumlar.filter(kurum => {
-    const matchesSearch = kurum.kurum_adi.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (kurum.adres?.toLowerCase().includes(searchTerm.toLowerCase()) || false);
-    return matchesSearch;
-  });
 
   return (
     <div className="w-full max-w-full mx-0 mt-4 bg-white rounded-xl shadow-lg p-6">
@@ -150,79 +247,37 @@ const KurumYonetimPaneli: React.FC = () => {
         <KurumEkleFormu onSuccess={loadKurumlar} />
       </div>
 
-      {/* Kurum Listesi Placeholder */}
-      <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
-        <div className="p-6 border-b border-gray-200">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <h2 className="text-xl font-semibold text-gray-800">Kurumlar ({filteredKurumlar.length})</h2>
-            
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Kurum ara..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full md:w-64"
-                />
-                <div className="absolute left-3 top-2.5 text-gray-400">
-                  🔍
-                </div>
-              </div>
-
-              <button
-                onClick={loadKurumlar}
-                className="px-4 py-2 bg-green-100 text-green-600 rounded-lg hover:bg-green-200 transition-colors"
-              >
-                🔄 Yenile
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div className="p-6">
-          {loading ? (
-            <div className="text-center py-12 text-gray-500">
-              <div className="text-6xl mb-4">⏳</div>
-              <p className="text-lg">Kurumlar yükleniyor...</p>
-            </div>
-          ) : filteredKurumlar.length === 0 ? (
-            <div className="text-center py-12 text-gray-500">
-              <div className="text-6xl mb-4">🏥</div>
-              <p className="text-lg">Henüz kurum bulunmamaktadır</p>
-              <p className="text-sm">Yukarıdaki formdan yeni kurum ekleyebilirsiniz</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {filteredKurumlar.map(kurum => (
-                <div key={kurum.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="text-2xl">🏥</div>
-                      <div>
-                        <h3 className="font-semibold text-gray-800 text-lg">
-                          {kurum.kurum_adi}
-                        </h3>
-                        <div className="text-sm text-gray-600">
-                          {kurum.adres && <span>📍 {kurum.adres}</span>}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      <span className={`px-2 py-1 text-xs rounded-full ${
-                        kurum.aktif_mi !== false ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
-                      }`}>
-                        {kurum.aktif_mi !== false ? 'Aktif' : 'Pasif'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
+      {/* RESTORE EDİLDİ - Kapsamlı Kurumlar Listesi */}
+      <KurumListesi
+        kurumlar={kurumlar}
+        departmanBirimler={departmanBirimler}
+        loading={loading}
+        searchTerm={searchTerm}
+        filterType={filterType}
+        selectedKurum={selectedKurum}
+        showDeleteModal={showDeleteModal}
+        newDepartmanInputs={newDepartmanInputs}
+        newBirimInputs={newBirimInputs}
+        newPersonelInputs={newPersonelInputs}
+        onEdit={handleEditKurum}
+        onDelete={handleDeleteKurum}
+        onToggleActive={handleToggleActive}
+        onSelectKurum={setSelectedKurum}
+        onRefresh={loadKurumlar}
+        setSearchTerm={setSearchTerm}
+        setFilterType={setFilterType}
+        setShowDeleteModal={setShowDeleteModal}
+        confirmDelete={confirmDelete}
+        setNewDepartmanInputs={setNewDepartmanInputs}
+        setNewBirimInputs={setNewBirimInputs}
+        setNewPersonelInputs={setNewPersonelInputs}
+        addDepartman={addDepartman}
+        removeDepartman={removeDepartman}
+        addBirim={addBirim}
+        removeBirim={removeBirim}
+        addPersonel={addPersonel}
+        removePersonel={removePersonel}
+      />
     </div>
   );
 };
