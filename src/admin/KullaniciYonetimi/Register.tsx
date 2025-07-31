@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { addUser, getKurumlar } from '../lib/api';
-import { useCapitalization } from '../hooks/useCapitalization';
+import { addUser, getKurumlar } from '../../lib/api';
+import { useCapitalization } from '../../hooks/useCapitalization';
 
 interface KurumData {
   id: string;

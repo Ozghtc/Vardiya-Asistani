@@ -31,7 +31,7 @@ import NobetEkrani from './admin/VardiyaliNobetSistemi/NobetIslemleri/NobetEkran
 import NobetKurallari from './admin/VardiyaliNobetSistemi/NobetIslemleri/NobetKurallari';
 import NobetOlustur from './admin/VardiyaliNobetSistemi/NobetIslemleri/NobetOlustur';
 import Raporlar from './admin/VardiyaliNobetSistemi/NobetIslemleri/Raporlar';
-import Register from './admin/Register';
+import Register from './admin/KullaniciYonetimi/Register';
 
 function App() {
   return (
