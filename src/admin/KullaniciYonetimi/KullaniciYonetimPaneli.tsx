@@ -1,358 +1,111 @@
-import React, { useState, useEffect } from 'react';
-import { useTemporaryState } from '../../hooks/useApiState';
-import { getKurumlar, createUsersTable, getUsers, addUser, updateUser, deleteUser, clearAllCache, clearTableCache } from '../../lib/api';
+// User Management Panel - Modular Version
+// Ana kullanıcı yönetimi paneli - tüm modüler bileşenleri orchestrate eder
+
+import React from 'react';
 import { useToast } from '../../components/ui/ToastContainer';
+import { createUsersTable } from '../../lib/api';
 
-// Types
-interface BaseUser {
-  id: string;
-  name: string;
-  email: string;
-  password: string;
-  phone: string;
-  rol: 'admin' | 'yonetici' | 'personel';
-  aktif_mi: boolean;
-  created_at: string;
-}
-
-interface User extends BaseUser {
-  kullanici_id?: string; // Hiyerarşik kullanıcı ID'si
-  kurum_id?: string;
-  departman_id?: string;
-  birim_id?: string;
-}
-
-interface Kurum {
-  id: string;
-  kurum_id: string; // Hiyerarşik kurum ID'si (01, 02, 03...)
-  kurum_adi: string;
-  kurum_turu: string;
-  adres: string;
-  il: string;
-  ilce: string;
-  aktif_mi: boolean;
-  departmanlar?: string; // Virgülle ayrılmış string
-  birimler?: string; // Virgülle ayrılmış string
-  created_at: string;
-}
-
-interface Departman {
-  id: string;
-  departman_id?: string; // Hiyerarşik departman ID'si (01_D1, 01_D2...)
-  departman_adi: string;
-  kurum_id: string;
-}
-
-interface Birim {
-  id: string;
-  birim_id?: string; // Hiyerarşik birim ID'si (01_B1, 01_B2...)
-  birim_adi: string;
-  kurum_id: string;
-  departman_id: string;
-}
-
-interface Permission {
-  id: string;
-  kullanici_id: string;
-  departman_id: string;
-  birim_id: string;
-  yetki_turu: 'GOREBILIR' | 'DUZENLEYEBILIR' | 'YONETICI' | 'SADECE_KENDI';
-}
+// Modular Imports
+import { useUserManagement } from './hooks/useUserManagement';
+import { UserCrudOperations } from './services/userCrudOperations';
+import UserForm from './components/UserForm';
+import UserList from './components/UserList';
+import PermissionManagement from './components/PermissionManagement';
+import DeleteConfirmation from './components/DeleteConfirmation';
+import { getInitialFormData } from './utils/userHelpers';
 
 const KullaniciYonetimPaneli: React.FC = () => {
   // Toast hook
   const { showToast } = useToast();
   
-  // States - Tüm veriler API'den
-  const [users, setUsers] = useState<User[]>([]);
-  const [kurumlar, setKurumlar] = useState<Kurum[]>([]);
-  const [departmanlar, setDepartmanlar] = useState<Departman[]>([]);
-  const [birimler, setBirimler] = useState<Birim[]>([]);
-  const [permissions, setPermissions] = useTemporaryState<Permission[]>([]);
-  const [loading, setLoading] = useState(true); // Başlangıçta loading true
-  const [error, setError] = useState<string | null>(null);
-  const [tableCreating, setTableCreating] = useState(false);
-  const [usersTableId, setUsersTableId] = useState<number | null>(33); // Yeni kullanıcı tablosu ID'si (kullanici_id ilk sırada)
-  
-  // Form states
-  const [formData, setFormData] = useState({
-    rol: 'admin' as 'admin' | 'yonetici' | 'personel',
-    name: '',
-    email: '',
-    password: '',
-    phone: '',
-    kurum_id: '',
-    departman_id: '',
-    birim_id: ''
-  });
-
-  // UI states
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterRole, setFilterRole] = useState<'all' | 'admin' | 'yonetici' | 'personel'>('all');
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [editingUser, setEditingUser] = useState<User | null>(null);
-  const [showPermissionModal, setShowPermissionModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState<{user: User, confirmText: string} | null>(null);
-
-  // Permission form states
-  const [permissionForm, setPermissionForm] = useState({
-    departman_id: '',
-    birim_id: '',
-    yetki_turu: 'GOREBILIR' as 'GOREBILIR' | 'DUZENLEYEBILIR' | 'YONETICI' | 'SADECE_KENDI'
-  });
-
-  // Load kurumlar from API
-  useEffect(() => {
-    const loadKurumlar = async () => {
-      setLoading(true);
-      try {
-        const apiKurumlar = await getKurumlar(true); // Fresh data
-        
-        if (!apiKurumlar || apiKurumlar.length === 0) {
-          console.warn('⚠️ API\'den kurum verisi gelmedi!');
-          return;
-        }
-        
-        setKurumlar(apiKurumlar);
-        
-        // Parse departmanlar and birimler from kurumlar
-        const allDepartmanlar: Departman[] = [];
-        const allBirimler: Birim[] = [];
-        
-        apiKurumlar.forEach((kurum: Kurum) => {
-          if (kurum.departmanlar) {
-            kurum.departmanlar.split(', ').filter((d: string) => d.trim()).forEach((dept: string, index: number) => {
-              allDepartmanlar.push({
-                id: `${kurum.kurum_id}_D${index + 1}`, // @HIYERARSIK_ID_SISTEMI.md uyumlu: 01_D1, 01_D2
-                departman_adi: dept,
-                kurum_id: kurum.kurum_id
-              });
-            });
-          }
-          
-          if (kurum.birimler) {
-            kurum.birimler.split(', ').filter((b: string) => b.trim()).forEach((birim: string, index: number) => {
-              allBirimler.push({
-                id: `${kurum.kurum_id}_B${index + 1}`, // @HIYERARSIK_ID_SISTEMI.md uyumlu: 01_B1, 01_B2
-                birim_adi: birim,
-                kurum_id: kurum.kurum_id,
-                departman_id: '' // Birimler kuruma bağlı
-              });
-            });
-          }
-        });
-        
-        setDepartmanlar(allDepartmanlar);
-        setBirimler(allBirimler);
-      } catch (error) {
-        console.error('❌ Kurumlar yüklenirken hata:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  // Custom hook for all state management
+  const {
+    // Data
+    users,
+    setUsers,
+    kurumlar,
+    departmanlar,
+    birimler,
+    permissions,
+    setPermissions,
     
-    loadKurumlar();
-  }, []);
-
-  // Load users from API - HER ZAMAN FRESH DATA
-  const loadUsers = async (forceRefresh: boolean = true) => {
-    if (!usersTableId) return;
+    // Loading States
+    loading,
+    error,
+    setError,
+    tableCreating,
+    setTableCreating,
+    usersTableId,
+    setUsersTableId,
     
-    console.log('🔄 FRESH USER DATA ÇEKILIYOR - Cache temizleniyor!');
+    // Form States
+    formData,
+    setFormData,
+    permissionForm,
+    setPermissionForm,
     
-    try {
-      // 🧹 EXTRA CACHE TEMİZLEME - DOUBLE SURE!
-      if (forceRefresh) {
-        clearAllCache(); // Tüm cache'i temizle
-        clearTableCache(String(usersTableId)); // Kullanıcı tablosu cache'ini temizle
-        console.log('🧹 EXTRA CACHE TEMİZLEME YAPILDI!');
-      }
-      
-      // 🧹 CACHE TEMİZLE VE FRESH DATA ÇEK
-      const apiUsers = await getUsers(usersTableId, forceRefresh);
-      setUsers(apiUsers);
-      console.log('✅ FRESH USER DATA YÜKLENDI:', apiUsers.length, 'kullanıcı');
-      // KURAL 18: Debug log kaldırıldı - kullanıcı bilgisi sızıntısı riski
-    } catch (error) {
-      console.error('❌ Kullanıcılar yüklenirken hata:', error);
-    }
-  };
+    // UI States
+    searchTerm,
+    setSearchTerm,
+    filterRole,
+    setFilterRole,
+    selectedUser,
+    setSelectedUser,
+    editingUser,
+    setEditingUser,
+    showPermissionModal,
+    setShowPermissionModal,
+    showDeleteModal,
+    setShowDeleteModal,
+    
+    // Methods
+    loadUsers,
+    resetFormData,
+    resetPermissionForm
+  } = useUserManagement();
 
-  // Kullanıcıları yükle - Sayfa açılınca ve tablo ID değişince
-  useEffect(() => {
-    if (usersTableId) {
-      loadUsers(true); // Her zaman fresh data
-    }
-  }, [usersTableId]);
+  // CRUD Operations Service
+  const crudOps = new UserCrudOperations(showToast, usersTableId, loadUsers);
 
-  // Sayfa ilk açıldığında kullanıcıları yükle
-  useEffect(() => {
-    console.log('🚀 KULLANICI PANELİ AÇILDI - Fresh data çekiliyor');
-    if (usersTableId) {
-      loadUsers(true);
-    }
-  }, []); // Component mount olduğunda bir kez çalış
-
-  // Filtered data
-  const filteredUsers = users.filter(user => {
-    const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesRole = filterRole === 'all' || user.rol === filterRole;
-    return matchesSearch && matchesRole;
-  });
-
-  // KURAL 18: Veri filtreleme backend'de yapılmalı
-  const filteredDepartmanlar: any[] = []; // Backend'den kuruma özel departmanlar gelecek
-  const filteredBirimler: any[] = []; // Backend'den kuruma özel birimler gelecek
-
-  // Handlers
+  // Form submit handler
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!formData.name || !formData.email || !formData.password || !formData.phone) {
-      showToast({
-        type: 'warning',
-        title: 'Eksik Bilgi',
-        message: 'Lütfen tüm zorunlu alanları doldurunuz.'
-      });
-      return;
-    }
-
-    if ((formData.rol === 'yonetici' || formData.rol === 'personel') && 
-        (!formData.kurum_id || !formData.departman_id || !formData.birim_id)) {
-      showToast({
-        type: 'warning',
-        title: 'Kurum Bilgileri Eksik',
-        message: 'Lütfen kurum, departman ve birim bilgilerini seçiniz.'
-      });
-      return;
-    }
-
-    if (!usersTableId) {
-      showToast({
-        type: 'error',
-        title: 'Tablo Bulunamadı',
-        message: 'Kullanıcı tablosu bulunamadı. Lütfen önce tabloyu oluşturunuz.'
-      });
-      return;
-    }
-    
-    // Process departman/birim data (debug removed for production security)
-
-    try {
-      const result = await addUser(usersTableId, formData);
-      if (result.success) {
-        showToast({
-          type: 'success',
-          title: 'Kullanıcı Eklendi',
-          message: `${formData.name} başarıyla sisteme eklendi.`
-        });
-        
-        // 🧹 CACHE TEMİZLE VE FRESH DATA ÇEK
-        clearAllCache(); // Tüm cache'i temizle
-        clearTableCache(String(usersTableId)); // kullanicilar_final tablosu
-        
-        // Kullanıcı listesini ZORLA yeniden yükle
-        await loadUsers(true); // 🚀 FORCE REFRESH!
-        
-        // Form'u tamamen sıfırla
-        setFormData({
-          rol: 'admin',
-          name: '',
-          email: '',
-          password: '',
-          phone: '',
-          kurum_id: '',
-          departman_id: '',
-          birim_id: ''
-        });
-      } else {
-        showToast({
-          type: 'error',
-          title: 'Ekleme Başarısız',
-          message: result.message || 'Kullanıcı eklenirken bir hata oluştu.'
-        });
-      }
-    } catch (error) {
-      console.error('❌ Kullanıcı ekleme hatası:', error);
-      showToast({
-        type: 'error',
-        title: 'Sistem Hatası',
-        message: 'Kullanıcı eklenirken beklenmeyen bir hata oluştu.'
-      });
+    const success = await crudOps.handleFormSubmit(formData);
+    if (success) {
+      resetFormData();
     }
   };
 
-  const handleDeleteUser = (user: User) => {
-    setShowDeleteModal({ user, confirmText: '' });
+  // Update user handler
+  const handleUpdateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUser) return;
+    
+    const success = await crudOps.handleUpdateUser(editingUser, formData);
+    if (success) {
+      resetFormData();
+    }
   };
 
+  // Delete user handler
   const confirmDelete = async () => {
-    if (showDeleteModal && showDeleteModal.confirmText === showDeleteModal.user.name && usersTableId) {
-      try {
-        const result = await deleteUser(usersTableId, showDeleteModal.user.id);
-        if (result.success) {
-          showToast({
-            type: 'success',
-            title: 'Kullanıcı Silindi',
-            message: `${showDeleteModal.user.name} başarıyla sistemden kaldırıldı.`
-          });
-          
-          // 🔄 FRESH API REQUEST - Cache yok, direkt backend'den çek
-          await loadUsers(true);
-          setPermissions(prev => prev.filter(p => p.kullanici_id !== showDeleteModal.user.id));
-          setShowDeleteModal(null);
-          setSelectedUser(null);
-        } else {
-          showToast({
-            type: 'error',
-            title: 'Silme Başarısız',
-            message: 'Kullanıcı silinirken bir hata oluştu.'
-          });
-        }
-      } catch (error) {
-        console.error('❌ Kullanıcı silme hatası:', error);
-        showToast({
-          type: 'error',
-          title: 'Sistem Hatası',
-          message: 'Kullanıcı silinirken beklenmeyen bir hata oluştu.'
-        });
-      }
-    }
-  };
-
-  const handleToggleActive = async (user: User) => {
-    if (!usersTableId) return;
+    if (!showDeleteModal) return;
     
-    try {
-      const result = await updateUser(usersTableId, user.id, { aktif_mi: !user.aktif_mi });
-      if (result.success) {
-        // 🔄 FRESH API REQUEST - Cache yok, direkt backend'den çek
-        await loadUsers(true);
-        
-        showToast({
-          type: 'success',
-          title: 'Durum Güncellendi',
-          message: `${user.name} kullanıcısının durumu güncellendi.`
-        });
-      } else {
-        showToast({
-          type: 'error',
-          title: 'Güncelleme Başarısız',
-          message: 'Kullanıcı durumu güncellenirken bir hata oluştu.'
-        });
-      }
-    } catch (error) {
-      console.error('❌ Kullanıcı güncelleme hatası:', error);
-      showToast({
-        type: 'error',
-        title: 'Sistem Hatası',
-        message: 'Kullanıcı durumu güncellenirken beklenmeyen bir hata oluştu.'
-      });
+    const success = await crudOps.handleDeleteUser(showDeleteModal.user, showDeleteModal.confirmText);
+    if (success) {
+      setPermissions(prev => prev.filter(p => p.kullanici_id !== showDeleteModal.user.id));
+      setShowDeleteModal(null);
+      setSelectedUser(null);
     }
   };
 
-  const handleEditUser = (user: User) => {
+  // Toggle active handler
+  const handleToggleActive = async (user: any) => {
+    await crudOps.handleToggleActive(user);
+  };
+
+  // Edit user handler
+  const handleEditUser = (user: any) => {
     setEditingUser(user);
     setFormData({
       rol: user.rol,
@@ -366,114 +119,32 @@ const KullaniciYonetimPaneli: React.FC = () => {
     });
   };
 
-  const handleUpdateUser = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!editingUser || !usersTableId) return;
-
-    try {
-      const result = await updateUser(usersTableId, editingUser.id, formData);
-      if (result.success) {
-        showToast({
-          type: 'success',
-          title: 'Kullanıcı Güncellendi',
-          message: `${editingUser.name} başarıyla güncellendi.`
-        });
-        
-        // 🔄 FRESH API REQUEST - Cache yok, direkt backend'den çek
-        await loadUsers();
-        setEditingUser(null);
-        setFormData({
-          rol: 'admin',
-          name: '',
-          email: '',
-          password: '',
-          phone: '',
-          kurum_id: '',
-          departman_id: '',
-          birim_id: ''
-        });
-      } else {
-        showToast({
-          type: 'error',
-          title: 'Güncelleme Başarısız',
-          message: 'Kullanıcı güncellenirken bir hata oluştu.'
-        });
-      }
-    } catch (error) {
-      console.error('❌ Kullanıcı güncelleme hatası:', error);
-      showToast({
-        type: 'error',
-        title: 'Sistem Hatası',
-        message: 'Kullanıcı güncellenirken beklenmeyen bir hata oluştu.'
-      });
+  // Add permission handler
+  const handleAddPermission = () => {
+    const newPermission = crudOps.handleAddPermission(selectedUser, permissions, permissionForm);
+    if (newPermission) {
+      setPermissions(prev => [...prev, newPermission]);
+      resetPermissionForm();
     }
   };
 
-  const handleAddPermission = () => {
-    if (!selectedUser || !permissionForm.departman_id || !permissionForm.birim_id) return;
-
-    const newPermission: Permission = {
-      id: `perm_${permissions.length + 1}`, // KURAL 18: Date.now() kaldırıldı
-      kullanici_id: selectedUser.id,
-      departman_id: permissionForm.departman_id,
-      birim_id: permissionForm.birim_id,
-      yetki_turu: permissionForm.yetki_turu
-    };
-
-    setPermissions(prev => [...prev, newPermission]);
-    setPermissionForm({
-      departman_id: '',
-      birim_id: '',
-      yetki_turu: 'GOREBILIR'
-    });
-  };
-
+  // Delete permission handler
   const handleDeletePermission = (permissionId: string) => {
     setPermissions(prev => prev.filter(p => p.id !== permissionId));
-  };
-
-  const getUserPermissions = (userId: string) => {
-    return permissions.filter(p => p.kullanici_id === userId);
-  };
-
-  const getRoleColor = (rol: string) => {
-    switch (rol) {
-      case 'admin': return 'bg-red-100 text-red-800 border-red-200';
-      case 'yonetici': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'personel': return 'bg-green-100 text-green-800 border-green-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
-
-  const getRoleIcon = (rol: string) => {
-    switch (rol) {
-      case 'admin': return '🔴';
-      case 'yonetici': return '🔵';
-      case 'personel': return '🟢';
-      default: return '⚪';
-    }
   };
 
   // TEST: Kullanıcı tablosu oluştur
   const handleCreateUsersTable = async () => {
     setTableCreating(true);
     try {
-      console.log('🏗️ Kullanıcı tablosu oluşturuluyor...');
-      const result = await createUsersTable();
+      const result = await crudOps.handleCreateUsersTable();
       
-      if (result.success) {
-        const tableId = result.data?.table?.id;
-        if (tableId) {
-          setUsersTableId(tableId);
-          alert('✅ Kullanıcı tablosu başarıyla oluşturuldu! ID: ' + tableId);
-          console.log('🎯 Tablo oluşturma sonucu:', result);
-        } else {
-          alert('❌ Tablo oluşturuldu ama ID alınamadı');
-        }
+      if (result.success && result.tableId) {
+        setUsersTableId(result.tableId);
+        crudOps.updateTableId(result.tableId);
+        alert('✅ Kullanıcı tablosu başarıyla oluşturuldu! ID: ' + result.tableId);
       } else {
-        alert('❌ Hata: ' + result.message);
-        console.error('❌ Tablo oluşturma hatası:', result);
+        alert('❌ Kullanıcı tablosu oluşturulamadı');
       }
     } catch (error) {
       console.error('❌ Tablo oluşturma hatası:', error);
@@ -516,548 +187,59 @@ const KullaniciYonetimPaneli: React.FC = () => {
         </div>
       </div>
 
-      {/* Yeni Kullanıcı Ekleme Formu */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6 mb-8 shadow-sm hover:shadow-md transition-shadow duration-300">
-        <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
-          <span className="text-blue-600">➕</span>
-          {editingUser ? 'Kullanıcı Güncelle' : 'Yeni Kullanıcı Ekle'}
-        </h2>
-        
-        {!usersTableId && (
-          <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <div className="flex items-center gap-2 text-yellow-800">
-              <span>⚠️</span>
-              <span className="font-medium">Kullanıcı tablosu bulunamadı!</span>
-            </div>
-            <p className="text-sm text-yellow-700 mt-1">
-              Kullanıcı eklemek için önce admin sayfasından (Kurum Yönetimi) kullanıcı tablosunu oluşturun.
-            </p>
-          </div>
-        )}
-        
-        <form onSubmit={editingUser ? handleUpdateUser : handleFormSubmit} className="space-y-4">
-          {/* Rol Seçimi */}
-          <div className="flex gap-4 mb-6">
-            {['admin', 'yonetici', 'personel'].map(rol => (
-              <label key={rol} className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  value={rol}
-                  checked={formData.rol === rol}
-                  onChange={(e) => setFormData(prev => ({ 
-                    ...prev, 
-                    rol: e.target.value as any,
-                    // Admin seçildiğinde kurum bilgilerini temizle
-                    kurum_id: e.target.value === 'admin' ? '' : prev.kurum_id,
-                    departman_id: e.target.value === 'admin' ? '' : prev.departman_id,
-                    birim_id: e.target.value === 'admin' ? '' : prev.birim_id
-                  }))}
-                  className="text-blue-600 focus:ring-blue-500"
-                />
-                <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getRoleColor(rol)}`}>
-                  {getRoleIcon(rol)} {rol.charAt(0).toUpperCase() + rol.slice(1)}
-                </span>
-              </label>
-            ))}
-          </div>
+      {/* User Form Component */}
+      <UserForm
+        formData={formData}
+        setFormData={setFormData}
+        editingUser={editingUser}
+        setEditingUser={setEditingUser}
+        kurumlar={kurumlar}
+        usersTableId={usersTableId}
+        onSubmit={handleFormSubmit}
+        onUpdate={handleUpdateUser}
+      />
 
-          {/* Temel Bilgiler */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Ad Soyad</label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value.toLocaleUpperCase('tr-TR') }))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors hover:border-blue-300"
-                  placeholder="Kullanıcı adı soyadı"
-                  required
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors hover:border-blue-300"
-                  placeholder="email@example.com"
-                  required
-                />
-              </div>
-            </div>
+      {/* User List Component */}
+      <UserList
+        users={users}
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        filterRole={filterRole}
+        setFilterRole={setFilterRole}
+        selectedUser={selectedUser}
+        setSelectedUser={setSelectedUser}
+        kurumlar={kurumlar}
+        departmanlar={departmanlar}
+        birimler={birimler}
+        permissions={permissions}
+        onEditUser={handleEditUser}
+        onToggleActive={handleToggleActive}
+        onDeleteUser={(user) => setShowDeleteModal({ user, confirmText: '' })}
+        onShowPermissionModal={() => setShowPermissionModal(true)}
+      />
 
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Şifre</label>
-                <input
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors hover:border-blue-300"
-                  placeholder="Güvenli şifre"
-                  required
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Telefon</label>
-            <input
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors hover:border-blue-300"
-                  placeholder="0532 123 45 67"
-                  required
-                />
-              </div>
-            </div>
-          </div>
+      {/* Permission Management Modal */}
+      <PermissionManagement
+        show={showPermissionModal}
+        onClose={() => setShowPermissionModal(false)}
+        selectedUser={selectedUser}
+        permissions={permissions}
+        setPermissions={setPermissions}
+        departmanlar={departmanlar}
+        birimler={birimler}
+        permissionForm={permissionForm}
+        setPermissionForm={setPermissionForm}
+        onAddPermission={handleAddPermission}
+        onDeletePermission={handleDeletePermission}
+      />
 
-          {/* Kurum Bilgileri - Sadece yönetici ve personel için */}
-          {(formData.rol === 'yonetici' || formData.rol === 'personel') && (
-            <div className="mt-6 p-4 bg-white rounded-lg border border-gray-200">
-              <h3 className="text-lg font-medium text-gray-800 mb-4">Kurum Bilgileri</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Kurum</label>
-                  <select
-                    value={formData.kurum_id}
-                    onChange={(e) => setFormData(prev => ({ ...prev, kurum_id: e.target.value, departman_id: '', birim_id: '' }))}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors hover:border-blue-300"
-                    required
-                  >
-                    <option value="">Kurum Seçiniz</option>
-                    {kurumlar.map(kurum => (
-                      <option key={kurum.kurum_id} value={kurum.kurum_id}>{kurum.kurum_adi}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Departman</label>
-                  <select
-                    value={formData.departman_id}
-                    onChange={(e) => setFormData(prev => ({ ...prev, departman_id: e.target.value, birim_id: '' }))}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors hover:border-blue-300"
-                    disabled={!formData.kurum_id}
-                    required
-                  >
-                    <option value="">Departman Seçiniz</option>
-                    {filteredDepartmanlar.map(departman => (
-                      <option key={departman.departman_id} value={departman.departman_id}>{departman.departman_adi}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Birim</label>
-                  <select
-                    value={formData.birim_id}
-                    onChange={(e) => setFormData(prev => ({ ...prev, birim_id: e.target.value }))}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors hover:border-blue-300"
-                    disabled={!formData.kurum_id}
-                    required
-                  >
-                    <option value="">Birim Seçiniz</option>
-                    {filteredBirimler.map(birim => (
-                      <option key={birim.birim_id} value={birim.birim_id}>{birim.birim_adi}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Form Buttons */}
-          <div className="flex gap-4 pt-4">
-            <button
-              type="submit"
-              disabled={!usersTableId}
-              className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-lg font-medium hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {editingUser ? '✅ Güncelle' : '➕ Kullanıcı Ekle'}
-            </button>
-            
-            {editingUser && (
-              <button
-                type="button"
-                onClick={() => {
-                  setEditingUser(null);
-                  setFormData({
-                    rol: 'admin',
-                    name: '',
-                    email: '',
-                    password: '',
-                    phone: '',
-                    kurum_id: '',
-                    departman_id: '',
-                    birim_id: ''
-                  });
-                }}
-                className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                ❌ İptal
-              </button>
-            )}
-          </div>
-        </form>
-      </div>
-
-      {/* Kullanıcı Listesi */}
-      <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
-        <div className="p-6 border-b border-gray-200">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <h2 className="text-xl font-semibold text-gray-800">Kullanıcılar ({filteredUsers.length})</h2>
-            
-            <div className="flex flex-col md:flex-row gap-4">
-              {/* Arama */}
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Kullanıcı ara..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full md:w-64"
-                />
-                <div className="absolute left-3 top-2.5 text-gray-400">
-                  🔍
-                </div>
-              </div>
-
-              {/* Rol Filtresi */}
-              <select
-                value={filterRole}
-                onChange={(e) => setFilterRole(e.target.value as any)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="all">Tüm Roller</option>
-                <option value="admin">Adminler</option>
-                <option value="yonetici">Yöneticiler</option>
-                <option value="personel">Personeller</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <div className="p-6">
-          {filteredUsers.length === 0 ? (
-            <div className="text-center py-12 text-gray-500">
-              <div className="text-6xl mb-4">👤</div>
-              <p className="text-lg">Henüz kullanıcı bulunmamaktadır</p>
-              <p className="text-sm">Yukarıdaki formdan yeni kullanıcı ekleyebilirsiniz</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-              {filteredUsers.map(user => (
-                <div
-                  key={user.id}
-                  className={`bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-all duration-300 hover:border-blue-300 cursor-pointer ${
-                    selectedUser?.id === user.id ? 'ring-2 ring-blue-500 border-blue-500' : ''
-                  } ${!user.aktif_mi ? 'opacity-60' : ''}`}
-                  onClick={() => setSelectedUser(selectedUser?.id === user.id ? null : user)}
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="text-2xl">{getRoleIcon(user.rol)}</div>
-                      <div>
-                        <h3 className="font-semibold text-gray-800 hover:text-blue-600 transition-colors">
-                          {user.name}
-                        </h3>
-                        <span className={`inline-block px-2 py-1 text-xs rounded-full border ${getRoleColor(user.rol)}`}>
-                          {user.rol.charAt(0).toUpperCase() + user.rol.slice(1)}
-                        </span>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleToggleActive(user);
-                        }}
-                        className={`p-2 rounded-lg transition-colors ${
-                          user.aktif_mi 
-                            ? 'bg-green-100 text-green-600 hover:bg-green-200' 
-                            : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
-                        }`}
-                        title={user.aktif_mi ? 'Aktif' : 'Pasif'}
-                      >
-                        {user.aktif_mi ? '✅' : '⏸️'}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2 text-sm text-gray-600">
-                    <div className="flex items-center gap-2">
-                      <span>📧</span>
-                      <span>{user.email}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span>📱</span>
-                      <span>{user.phone}</span>
-                    </div>
-                    
-                    {user.kurum_id && (
-                      <div className="mt-3 p-2 bg-gray-50 rounded-lg">
-                        <div className="text-xs text-gray-500 mb-1">Kurum Bilgileri</div>
-                        <div className="text-sm">
-                          🏥 {kurumlar.find(k => String(k.kurum_id) === String(user.kurum_id))?.kurum_adi || 'Bilinmeyen'}
-                        </div>
-                        
-                        <div className="text-xs text-gray-500 mt-1">
-                          {departmanlar.find(d => d.id === user.departman_id)?.departman_adi || 'Bilinmeyen'} › {birimler.find(b => b.id === user.birim_id)?.birim_adi || 'Bilinmeyen'}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Expanded Actions */}
-                  {selectedUser?.id === user.id && (
-                    <div className="mt-4 pt-4 border-t border-gray-200">
-                      <div className="flex gap-2">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEditUser(user);
-                          }}
-                          className="flex-1 px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-sm font-medium"
-                        >
-                          ✏️ Düzenle
-                        </button>
-                        
-                        {user.rol === 'yonetici' && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedUser(user);
-                              setShowPermissionModal(true);
-                            }}
-                            className="flex-1 px-3 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors text-sm font-medium"
-                          >
-                            🔐 Yetki
-                          </button>
-                        )}
-                        
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteUser(user);
-                          }}
-                          className="px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-sm font-medium"
-                        >
-                          🗑️
-                        </button>
-                      </div>
-
-                      {/* Yetki Özeti */}
-                      {user.rol === 'yonetici' && (
-                        <div className="mt-3 p-3 bg-gray-50 rounded-lg">
-                          <div className="text-xs text-gray-500 mb-2">Ek Yetkiler</div>
-                          {getUserPermissions(user.id).length > 0 ? (
-                            <div className="space-y-1">
-                              {getUserPermissions(user.id).map(permission => (
-                                <div key={permission.id} className="flex items-center justify-between text-xs">
-                                  <span>
-                                    {departmanlar.find(d => d.id === permission.departman_id)?.departman_adi} › {birimler.find(b => b.id === permission.birim_id)?.birim_adi}
-                                  </span>
-                                  <span className={`px-2 py-1 rounded text-xs ${
-                                    permission.yetki_turu === 'YONETICI' 
-                                      ? 'bg-red-100 text-red-600' 
-                                      : permission.yetki_turu === 'DUZENLEYEBILIR' 
-                                        ? 'bg-orange-100 text-orange-600' 
-                                        : permission.yetki_turu === 'SADECE_KENDI'
-                                          ? 'bg-purple-100 text-purple-600'
-                                          : 'bg-blue-100 text-blue-600'
-                                  }`}>
-                                    {permission.yetki_turu === 'YONETICI' ? '🔐' : 
-                                     permission.yetki_turu === 'DUZENLEYEBILIR' ? '✏️' : 
-                                     permission.yetki_turu === 'SADECE_KENDI' ? '🔒' : '👁️'}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <p className="text-xs text-gray-400">Ek yetki yok</p>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Yetki Modalı */}
-      {showPermissionModal && selectedUser && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xl font-semibold text-gray-800">
-                  Yetki Yönetimi: {selectedUser.name}
-                </h3>
-                <button
-                  onClick={() => setShowPermissionModal(false)}
-                  className="text-gray-500 hover:text-gray-700 text-xl"
-                >
-                  ❌
-                </button>
-              </div>
-            </div>
-
-            <div className="p-6">
-              {/* Yeni Yetki Ekleme */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                <h4 className="font-medium text-gray-800 mb-4">Yeni Yetki Ekle</h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <select
-                    value={permissionForm.departman_id}
-                    onChange={(e) => setPermissionForm(prev => ({ ...prev, departman_id: e.target.value, birim_id: '' }))}
-                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">Departman Seçiniz</option>
-                    {departmanlar.filter(d => d.kurum_id === selectedUser.kurum_id).map(departman => (
-                      <option key={departman.id} value={departman.id}>{departman.departman_adi}</option>
-                    ))}
-                  </select>
-
-                  <select
-                    value={permissionForm.birim_id}
-                    onChange={(e) => setPermissionForm(prev => ({ ...prev, birim_id: e.target.value }))}
-                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    disabled={!permissionForm.departman_id}
-                  >
-                    <option value="">Birim Seçiniz</option>
-                    {birimler.filter(b => b.kurum_id === selectedUser.kurum_id).map(birim => (
-                      <option key={birim.id} value={birim.id}>{birim.birim_adi}</option>
-                    ))}
-                  </select>
-
-                  <select
-                    value={permissionForm.yetki_turu}
-                    onChange={(e) => setPermissionForm(prev => ({ ...prev, yetki_turu: e.target.value as any }))}
-                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="GOREBILIR">👁️ Görüntüleyebilir</option>
-                    <option value="DUZENLEYEBILIR">✏️ Düzenleyebilir</option>
-                    <option value="YONETICI">🔐 Yönetici (Tam Yetki)</option>
-                    <option value="SADECE_KENDI">🔒 Sadece Kendi Kayıtları</option>
-                  </select>
-                </div>
-                
-                <button
-                  onClick={handleAddPermission}
-                  disabled={!permissionForm.departman_id || !permissionForm.birim_id}
-                  className="mt-4 w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  ➕ Yetki Ekle
-                </button>
-              </div>
-
-              {/* Mevcut Yetkiler */}
-              <div>
-                <h4 className="font-medium text-gray-800 mb-4">Mevcut Yetkiler</h4>
-                {getUserPermissions(selectedUser.id).length > 0 ? (
-                  <div className="space-y-3">
-                    {getUserPermissions(selectedUser.id).map(permission => (
-                      <div key={permission.id} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
-                        <div>
-                          <div className="font-medium text-gray-800">
-                            {departmanlar.find(d => d.id === permission.departman_id)?.departman_adi || 'Bilinmeyen'}
-                          </div>
-                          <div className="text-sm text-gray-600">
-                            {birimler.find(b => b.id === permission.birim_id)?.birim_adi || 'Bilinmeyen'}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className={`px-2 py-1 rounded text-xs ${
-                            permission.yetki_turu === 'YONETICI' 
-                              ? 'bg-red-100 text-red-600' 
-                              : permission.yetki_turu === 'DUZENLEYEBILIR' 
-                                ? 'bg-orange-100 text-orange-600' 
-                                : permission.yetki_turu === 'SADECE_KENDI'
-                                  ? 'bg-purple-100 text-purple-600'
-                                  : 'bg-blue-100 text-blue-600'
-                          }`}>
-                            {permission.yetki_turu === 'YONETICI' ? '🔐 Yönetici' : 
-                             permission.yetki_turu === 'DUZENLEYEBILIR' ? '✏️ Düzenleyebilir' : 
-                             permission.yetki_turu === 'SADECE_KENDI' ? '🔒 Sadece Kendi' : '👁️ Görüntüleyebilir'}
-                          </span>
-                          <button
-                            onClick={() => handleDeletePermission(permission.id)}
-                            className="p-1 text-red-600 hover:bg-red-100 rounded"
-                          >
-                            🗑️
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-gray-500 text-center py-8">Bu kullanıcının ek yetkisi bulunmamaktadır</p>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Silme Onay Modalı */}
-      {showDeleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
-            <div className="p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="text-2xl">⚠️</div>
-                <h3 className="text-xl font-semibold text-gray-800">Kullanıcı Silme Onayı</h3>
-              </div>
-              
-              <div className="mb-6">
-                <p className="text-gray-600 mb-4">
-                  Bu kullanıcıyı silmek üzeresiniz:
-                </p>
-                <div className="bg-gray-50 p-3 rounded-lg">
-                  <div className="font-medium text-gray-800">{showDeleteModal.user.name}</div>
-                  <div className="text-sm text-gray-600">{showDeleteModal.user.email}</div>
-                </div>
-                
-                <p className="text-sm text-gray-600 mt-4 mb-2">
-                  Onaylamak için kullanıcı adını yazın:
-                </p>
-                <input
-                  type="text"
-                  value={showDeleteModal.confirmText}
-                  onChange={(e) => setShowDeleteModal(prev => prev ? { ...prev, confirmText: e.target.value } : null)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  placeholder={showDeleteModal.user.name}
-                />
-              </div>
-              
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setShowDeleteModal(null)}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  ❌ İptal
-                </button>
-                <button
-                  onClick={confirmDelete}
-                  disabled={showDeleteModal.confirmText !== showDeleteModal.user.name}
-                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  🗑️ Sil
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmation
+        show={!!showDeleteModal}
+        deleteModal={showDeleteModal}
+        setDeleteModal={setShowDeleteModal}
+        onConfirmDelete={confirmDelete}
+      />
     </div>
   );
 };
