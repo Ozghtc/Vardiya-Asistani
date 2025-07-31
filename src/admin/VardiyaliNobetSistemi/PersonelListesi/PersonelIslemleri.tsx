@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users, Calendar, FileText, Plus, ArrowRight } from 'lucide-react';
 import { useAuthContext } from '../../../contexts/AuthContext';
+import { apiRequest } from '../../../lib/api';
 
 interface Personnel {
   id: number;
@@ -37,31 +38,21 @@ const PersonelIslemleri: React.FC = () => {
     try {
       setLoading(true);
       
-      const response = await fetch('/.netlify/functions/api-proxy', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          path: '/api/v1/data/table/21',
-          method: 'GET'
-        })
+      const result = await apiRequest('/api/v1/data/table/21', {
+        method: 'GET'
       });
 
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success && result.data?.rows) {
-          const filteredPersonnel = result.data.rows.filter((person: Personnel) => 
-            person.kurum_id === user.kurum_id &&
-            person.departman_id === user.departman_id &&
-            person.birim_id === user.birim_id
-          );
-          
-          setPersonnel(filteredPersonnel);
-        }
+      if (result.success && result.data?.rows) {
+        const filteredPersonnel = result.data.rows.filter((person: Personnel) => 
+          person.kurum_id === user.kurum_id &&
+          person.departman_id === user.departman_id &&
+          person.birim_id === user.birim_id
+        );
+        
+        setPersonnel(filteredPersonnel);
       }
     } catch (error) {
-      console.error('Personel yükleme hatası:', error);
+      // Personel yükleme hatası
     } finally {
       setLoading(false);
     }
@@ -71,32 +62,22 @@ const PersonelIslemleri: React.FC = () => {
     if (!user) return;
     
     try {
-      const response = await fetch('/.netlify/functions/api-proxy', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          path: '/api/v1/data/table/22',
-          method: 'GET'
-        })
+      const result = await apiRequest('/api/v1/data/table/22', {
+        method: 'GET'
       });
 
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success && result.data?.rows) {
-          const filteredNobetler = result.data.rows.filter((nobet: KayitliNobetTanimlamasi) => 
-            nobet.kurum_id === user.kurum_id &&
-            nobet.departman_id === user.departman_id &&
-            nobet.birim_id === user.birim_id &&
-            nobet.aktif_mi
-          );
-          
-          setKayitliNobetTanimlama(filteredNobetler);
-        }
+      if (result.success && result.data?.rows) {
+        const filteredNobetler = result.data.rows.filter((nobet: KayitliNobetTanimlamasi) => 
+          nobet.kurum_id === user.kurum_id &&
+          nobet.departman_id === user.departman_id &&
+          nobet.birim_id === user.birim_id &&
+          nobet.aktif_mi
+        );
+        
+        setKayitliNobetTanimlama(filteredNobetler);
       }
     } catch (error) {
-      console.error('Nöbet tanımlamaları yükleme hatası:', error);
+      // Nöbet tanımlamaları yükleme hatası
     }
   };
 

@@ -54,15 +54,15 @@ const PersonelEkle: React.FC = () => {
     
     setMesaiLoading(true);
     try {
-      console.log('🔍 Mesai türleri yükleniyor...');
+      // Mesai türleri yükleniyor
       
       const filterParams = `kurum_id=${user.kurum_id}&departman_id=${user.departman_id}&birim_id=${user.birim_id}`;
       const data = await getTableData('24', filterParams);
       
-      console.log('📦 Mesai türleri yüklendi:', data);
+      // Mesai türleri yüklendi
       setMesaiTurleri(data);
     } catch (error) {
-      console.error('🚨 Mesai türleri yüklenemedi:', error);
+      // Mesai türleri yüklenemedi
     } finally {
       setMesaiLoading(false);
     }
@@ -81,7 +81,7 @@ const PersonelEkle: React.FC = () => {
         const data = await getTableData('15', filterParams);
         setUnvanlar(data);
       } catch (error) {
-        console.error('Unvanlar yüklenirken hata:', error);
+        // Unvanlar yüklenirken hata
         setError('Ünvanlar yüklenirken bir hata oluştu');
       } finally {
         setLoading(false);
@@ -195,14 +195,14 @@ const PersonelEkle: React.FC = () => {
         updated_at: new Date().toISOString()
       };
 
-      console.log('Personel verisi gönderiliyor:', personelData);
+      // Personel verisi gönderiliyor
 
       const response = await apiRequest('/api/v1/data/table/21/rows', {
         method: 'POST',
         body: JSON.stringify(personelData)
       });
 
-      console.log('API yanıtı:', response);
+      // API yanıtı alındı
 
       if (response.success) {
         // Cache temizle ve veri yenile
@@ -216,7 +216,7 @@ const PersonelEkle: React.FC = () => {
         setError(response.message || 'Personel eklenirken bir hata oluştu');
       }
     } catch (error: any) {
-      console.error('Personel ekleme hatası:', error);
+      // Personel ekleme hatası
       setError(error.message || 'Personel eklenirken bir hata oluştu');
     } finally {
       setSaving(false);

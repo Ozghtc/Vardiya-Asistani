@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Settings, Users, UserPlus, FileText, Clock, Building2, MapPin, UserCircle, BellRing } from 'lucide-react';
 import { useAuthContext } from '../../contexts/AuthContext';
+import { apiRequest } from '../../lib/api';
 
 
 
@@ -25,26 +26,19 @@ const VardiyaliNobet: React.FC = () => {
       if (!user) return;
       
       try {
-        console.log('📊 Dashboard verileri çekiliyor...');
+        // Dashboard verileri çekiliyor
         
         // 1. Kullanıcıları çek (Toplam Personel)
-        const usersResponse = await fetch('/.netlify/functions/api-proxy', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            path: '/api/v1/data/table/33', // kullanicilar_final
-            method: 'GET'
-          })
+        const usersResult = await apiRequest('/api/v1/data/table/33', {
+          method: 'GET'
         });
 
-        if (usersResponse.ok) {
-          const usersResult = await usersResponse.json();
-          
+        if (usersResult.success && usersResult.data?.rows) {
           // Admin hariç personel sayısı
-          const personnel = usersResult.data?.rows?.filter((u: any) => u.rol !== 'admin') || [];
+          const personnel = usersResult.data.rows.filter((u: any) => u.rol !== 'admin') || [];
           const totalPersonnel = personnel.length;
           
-          console.log('👥 Toplam personel:', totalPersonnel);
+          // Toplam personel sayısı alındı
           
           // KURAL 18: İstatistik hesaplamaları backend'de yapılmalı
           setStats({
@@ -56,7 +50,7 @@ const VardiyaliNobet: React.FC = () => {
         }
 
       } catch (error) {
-        console.error('❌ Dashboard verileri yüklenirken hata:', error);
+        // Dashboard verileri yüklenirken hata
       }
     };
 
@@ -66,13 +60,7 @@ const VardiyaliNobet: React.FC = () => {
   useEffect(() => {
     if (user) {
       // AuthContext'ten gelen enriched user data'yı direkt kullan
-      console.log('👤 Kullanıcı bilgileri:', {
-        name: user.name,
-        kurum_adi: user.kurum_adi,
-        departman_adi: user.departman_adi,
-        birim_adi: user.birim_adi,
-        rol: user.rol
-      });
+      // Kullanıcı bilgileri alındı
       
       setCurrentUser(user);
     }
@@ -211,10 +199,10 @@ const VardiyaliNobet: React.FC = () => {
           {mainCards.map((card, index) => (
             <div
               key={index}
-              onClick={() => {
-                console.log('🎯 Karta tıklandı:', card.title, 'Route:', card.route);
-                navigate(card.route);
-              }}
+                          onClick={() => {
+              // Karta tıklandı
+              navigate(card.route);
+            }}
               className={`${card.bgColor} ${card.hoverColor} rounded-xl p-6 text-white cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105`}
             >
               <div className="flex items-center justify-between mb-4">
