@@ -5,6 +5,14 @@ import { useAuthContext } from '../contexts/AuthContext';
 import { useToast } from '../components/ui/ToastContainer';
 import { clearAllCache, clearTableCache } from '../lib/api';
 
+// 3-Layer API Key Configuration
+const API_CONFIG = {
+  apiKey: import.meta.env.VITE_HZM_API_KEY,
+  userEmail: import.meta.env.VITE_HZM_USER_EMAIL,
+  projectPassword: import.meta.env.VITE_HZM_PROJECT_PASSWORD,
+  baseURL: import.meta.env.VITE_HZM_BASE_URL || 'https://hzmbackendveritabani-production.up.railway.app'
+};
+
 const colorMap = {
   '#DC2626': 'Kırmızı',
   '#059669': 'Yeşil', 
@@ -228,6 +236,22 @@ const handleSaveToDatabase = async () => {
     return;
   }
 
+  // KURAL 18: User bilgileri zorunlu - hard-coded fallback'ler kaldırıldı
+  if (!user || !user.kurum_id || !user.departman_id || !user.birim_id) {
+    alert('Kullanıcı bilgileri eksik. Lütfen sayfayı yenileyin.');
+    setIsSaving(false);
+    setIsProcessing(false);
+    return;
+  }
+
+  // 3-Layer API Authentication zorunlu
+  if (!API_CONFIG.apiKey || !API_CONFIG.userEmail || !API_CONFIG.projectPassword) {
+    alert('API ayarları eksik. Lütfen sistem yöneticisine başvurun.');
+    setIsSaving(false);
+    setIsProcessing(false);
+    return;
+  }
+
   setIsSaving(true);
   setIsProcessing(true);
   
@@ -241,10 +265,10 @@ const handleSaveToDatabase = async () => {
       gunluk_saatler: JSON.stringify(area.dayHours),
       aktif_gunler: JSON.stringify(area.activeDays),
       vardiyalar: JSON.stringify(area.shifts),
-      kullanici_id: user?.id || 1,
-      kurum_id: user?.kurum_id || "6",
-      departman_id: user?.departman_id || "6_ACİL SERVİS",
-      birim_id: user?.birim_id || "6_HEMSİRE"
+      kullanici_id: user?.id,
+      kurum_id: user?.kurum_id,
+      departman_id: user?.departman_id,
+      birim_id: user?.birim_id
     };
 
     const response = await fetch('/.netlify/functions/api-proxy', {
@@ -256,7 +280,10 @@ const handleSaveToDatabase = async () => {
         path: '/api/v1/data/table/18/rows',
         method: 'POST',
         body: data,
-        apiKey: 'hzm_1ce98c92189d4a109cd604b22bfd86b7'
+        // 3-Layer Authentication
+        apiKey: API_CONFIG.apiKey,
+        userEmail: API_CONFIG.userEmail,
+        projectPassword: API_CONFIG.projectPassword
       })
     });
 
