@@ -114,14 +114,37 @@ const IzinTanimlama: React.FC = () => {
     }
 
     try {
-      // KURAL 18: Dizi operasyonları ve duplicate kontrolü backend'de yapılmalı
-      // Backend'den unique ID ve duplicate kontrolü gelecek
-      const nextSira = 1; // Backend'den gelecek
+      // KURAL 18: ID üretimi backend'e taşındı - Sequential ID Generation API
+      const parent_id = `${kurum_id}_${departman_id.split('_')[1]}_${birim_id.split('_')[1]}`;
       
-      // DOĞRU FORMAT: kurum_D#_B#_sira (HIYERARSIK_ID_SISTEMI.md uyumlu)
-      const departmanKodu = departman_id.split('_')[1] || 'D1'; // "6_D1" -> "D1"
-      const birimKodu = birim_id.split('_')[1] || 'B1'; // "6_B1" -> "B1"
-      const izinId = `${kurum_id}_${departmanKodu}_${birimKodu}_${nextSira}`;
+      const idResponse = await fetch(
+        'https://hzmbackendveritabani-production.up.railway.app/api/v1/admin/generate-sequential-id',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-API-Key': import.meta.env.VITE_HZM_API_KEY,
+            'X-User-Email': import.meta.env.VITE_HZM_USER_EMAIL,
+            'X-Project-Password': import.meta.env.VITE_HZM_PROJECT_PASSWORD
+          },
+          body: JSON.stringify({
+            type: 'IZIN',
+            parent_id: parent_id,
+            padding: 3
+          })
+        }
+      );
+
+      if (!idResponse.ok) {
+        throw new Error('ID generation failed');
+      }
+
+      const idResult = await idResponse.json();
+      if (!idResult.success) {
+        throw new Error(idResult.message || 'ID generation failed');
+      }
+
+      const izinId = idResult.data.generated_id; // "6_D1_B1-IZIN-001"
 
       const newIzinIstek = {
         izin_id: izinId,

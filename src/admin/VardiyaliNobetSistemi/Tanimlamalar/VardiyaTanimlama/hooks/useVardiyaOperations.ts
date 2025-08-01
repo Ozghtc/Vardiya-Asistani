@@ -158,12 +158,37 @@ export const useVardiyaOperations = (): VardiyaOperationsState & VardiyaOperatio
         return;
       }
       
-      const nextSira = vardiyaArray.length + 1;
+      // KURAL 18: ID üretimi backend'e taşındı - Sequential ID Generation API
+      const parent_id = `${currentUser.kurum_id}_${currentUser.departman_id.split('_')[1]}_${currentUser.birim_id.split('_')[1]}`;
       
-      // DOĞRU FORMAT: kurum_D#_B#_sira (HIYERARSIK_ID_SISTEMI.md uyumlu)
-      const departmanKodu = currentUser.departman_id.split('_')[1] || 'D1'; // "6_D1" -> "D1"
-      const birimKodu = currentUser.birim_id.split('_')[1] || 'B1'; // "6_B1" -> "B1"
-      const vardiyaId = `${currentUser.kurum_id}_${departmanKodu}_${birimKodu}_${nextSira}`;
+      const idResponse = await fetch(
+        'https://hzmbackendveritabani-production.up.railway.app/api/v1/admin/generate-sequential-id',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-API-Key': import.meta.env.VITE_HZM_API_KEY,
+            'X-User-Email': import.meta.env.VITE_HZM_USER_EMAIL,
+            'X-Project-Password': import.meta.env.VITE_HZM_PROJECT_PASSWORD
+          },
+          body: JSON.stringify({
+            type: 'VARDIYA',
+            parent_id: parent_id,
+            padding: 3
+          })
+        }
+      );
+
+      if (!idResponse.ok) {
+        throw new Error('ID generation failed');
+      }
+
+      const idResult = await idResponse.json();
+      if (!idResult.success) {
+        throw new Error(idResult.message || 'ID generation failed');
+      }
+
+      const vardiyaId = idResult.data.generated_id; // "6_D1_B1-VARDIYA-001"
 
       const newShift = {
         vardiya_id: vardiyaId,
@@ -275,15 +300,48 @@ export const useVardiyaOperations = (): VardiyaOperationsState & VardiyaOperatio
       return;
     }
 
+        // KURAL 18: ID üretimi backend'e taşındı - Sequential ID Generation API
+    const parent_id = `${currentUser!.kurum_id}_${currentUser!.departman_id.split('_')[1]}_${currentUser!.birim_id.split('_')[1]}`;
+
+    const idResponse = await fetch(
+      'https://hzmbackendveritabani-production.up.railway.app/api/v1/admin/generate-sequential-id',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-Key': import.meta.env.VITE_HZM_API_KEY,
+          'X-User-Email': import.meta.env.VITE_HZM_USER_EMAIL,
+          'X-Project-Password': import.meta.env.VITE_HZM_PROJECT_PASSWORD
+        },
+        body: JSON.stringify({
+          type: 'VARDIYA',
+          parent_id: parent_id,
+          padding: 3
+        })
+      }
+    );
+
+    if (!idResponse.ok) {
+      throw new Error('ID generation failed');
+    }
+
+    const idResult = await idResponse.json();
+    if (!idResult.success) {
+      throw new Error(idResult.message || 'ID generation failed');
+    }
+
+    const vardiyaId = idResult.data.generated_id; // "6_D1_B1-VARDIYA-001"
+
     const newShift = {
+      vardiya_id: vardiyaId,
       vardiya_adi: shiftName,
       baslangic_saati: startHour,
       bitis_saati: endHour,
       calisma_saati: Math.round(toplamSaat),
       aktif_mi: true,
-      kurum_id: user.kurum_id,
-      departman_id: user.departman_id,
-      birim_id: user.birim_id
+      kurum_id: currentUser!.kurum_id,
+      departman_id: currentUser!.departman_id,
+      birim_id: currentUser!.birim_id
     };
 
     try {
