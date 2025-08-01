@@ -5,7 +5,7 @@ import UnvanTanimlama from './UnvanTanimlama';
 import IzinTanimlama from './IzinTanimlama';
 import VardiyaTanimlama from './VardiyaTanimlama/VardiyaTanimlama';
 
-import TanimliAlanlar from './TanimliAlanlar';
+import TanimliAlanlar from './TanimliAlanlar/TanimliAlanlar';
 
 import AlanTanimla from './AlanTanimla/AlanTanimla';
 import { useDepartmanBirim } from './DepartmanBirimContext';
