@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuthContext } from '../../../../contexts/AuthContext';
 import { clearTableCache, clearAllCache } from '../../../../lib/api';
 import API_CONFIG from '../../../../lib/api';
@@ -36,15 +36,64 @@ const UnvanTanimlama: React.FC = () => {
     showErrorToast
   );
 
+  // Mesai loading state
+  const [mesaiLoading, setMesaiLoading] = useState(false);
+
+  // Mesai türlerini yükle - useCallback ile infinite loop önlenir
+  const loadMesaiTurleri = useCallback(async (): Promise<void> => {
+    if (!user?.kurum_id || !user?.departman_id || !user?.birim_id) return;
+
+    setMesaiLoading(true);
+    try {
+      clearAllCache();
+      clearTableCache('73');
+      
+      const response = await fetch('/.netlify/functions/api-proxy', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          path: '/api/v1/data/table/73',
+          method: 'GET',
+          apiKey: API_CONFIG.apiKey,
+          userEmail: API_CONFIG.userEmail,
+          projectPassword: API_CONFIG.projectPassword
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('API request failed');
+      }
+
+      const data = await response.json();
+      
+      if (data.success && data.data && Array.isArray(data.data.rows)) {
+        const filteredMesai = data.data.rows.filter((mesai: any) => 
+          matchesUserContext(mesai, user)
+        );
+        setKaydedilenMesaiTurleri(filteredMesai);
+      } else {
+        setKaydedilenMesaiTurleri([]);
+      }
+    } catch (error) {
+      console.error('Mesai türleri yüklenirken hata:', error);
+      setKaydedilenMesaiTurleri([]);
+    } finally {
+      setMesaiLoading(false);
+    }
+  }, [user?.kurum_id, user?.departman_id, user?.birim_id]);
+
   // Mesai operasyonları
-  const { handleMesaiEkle, handleMesaiTuruSil, mesaiLoading, loadMesaiTurleri } = useMesaiOperations(
+  const { handleMesaiEkle, handleMesaiTuruSil } = useMesaiOperations(
     kaydedilenMesaiTurleri,
     setKaydedilenMesaiTurleri,
     showSuccessToast,
-    showErrorToast
+    showErrorToast,
+    loadMesaiTurleri
   );
 
-  // Initial data loading
+  // Initial data loading - SADECE BİR KEZ
   useEffect(() => {
     const loadInitialData = async () => {
       if (!user?.kurum_id || !user?.departman_id || !user?.birim_id) {

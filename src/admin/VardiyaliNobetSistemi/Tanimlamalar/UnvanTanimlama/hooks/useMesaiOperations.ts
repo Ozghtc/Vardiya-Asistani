@@ -9,55 +9,12 @@ export const useMesaiOperations = (
   kaydedilenMesaiTurleri: KaydedilenMesai[],
   setKaydedilenMesaiTurleri: React.Dispatch<React.SetStateAction<KaydedilenMesai[]>>,
   showSuccessToast: (message: string) => void,
-  showErrorToast: (message: string) => void
-): MesaiOperations => {
+  showErrorToast: (message: string) => void,
+  loadMesaiTurleri: () => Promise<void>
+): { handleMesaiEkle: (mesaiData: MesaiFormData) => Promise<void>; handleMesaiTuruSil: (mesaiId: number) => Promise<void> } => {
   const { user } = useAuthContext();
-  const [mesaiLoading, setMesaiLoading] = useState(false);
 
-  const loadMesaiTurleri = async (): Promise<void> => {
-    if (!user?.kurum_id || !user?.departman_id || !user?.birim_id) return;
 
-    setMesaiLoading(true);
-    try {
-      // KURAL 17: Cache'leri temizle
-      clearAllCache();
-      clearTableCache('73');
-      
-      const response = await fetch('/.netlify/functions/api-proxy', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          path: '/api/v1/data/table/73',
-          method: 'GET',
-          apiKey: API_CONFIG.apiKey,
-          userEmail: API_CONFIG.userEmail,
-          projectPassword: API_CONFIG.projectPassword
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error('API request failed');
-      }
-
-      const data = await response.json();
-      
-      if (data.success && data.data && Array.isArray(data.data.rows)) {
-        const filteredMesai = data.data.rows.filter((mesai: any) => 
-          matchesUserContext(mesai, user)
-        );
-        setKaydedilenMesaiTurleri(filteredMesai);
-      } else {
-        setKaydedilenMesaiTurleri([]);
-      }
-    } catch (error) {
-      console.error('Mesai türleri yüklenirken hata:', error);
-      setKaydedilenMesaiTurleri([]);
-    } finally {
-      setMesaiLoading(false);
-    }
-  };
 
   const handleMesaiEkle = async (mesaiData: MesaiFormData): Promise<void> => {
     if (!mesaiData.mesaiAdi.trim()) {
@@ -206,8 +163,6 @@ export const useMesaiOperations = (
 
   return {
     handleMesaiEkle,
-    handleMesaiTuruSil,
-    mesaiLoading,
-    loadMesaiTurleri
+    handleMesaiTuruSil
   };
 }; 
