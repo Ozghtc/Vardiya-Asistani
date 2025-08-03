@@ -7,7 +7,7 @@ import VardiyaTanimlama from './VardiyaTanimlama/VardiyaTanimlama';
 
 import TanimliAlanlar from './TanimliAlanlar';
 
-import AlanTanimla from './AlanTanimla/AlanTanimla';
+import AlanTanimla from './AlanTanimla';
 import { useDepartmanBirim } from './DepartmanBirimContext';
 import { useAuthContext } from '../../../contexts/AuthContext';
 
