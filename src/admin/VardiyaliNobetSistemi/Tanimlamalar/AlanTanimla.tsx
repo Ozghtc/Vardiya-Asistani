@@ -4,21 +4,21 @@ import { useToast } from '../../../components/ui/ToastContainer';
 import { clearAllCache, clearTableCache } from '../../../lib/api';
 
 // Hooks
-import { useAlanTanimlaState } from './hooks/useAlanTanimlaState';
-import { useStepNavigation } from './hooks/useStepNavigation';
-import { useAlanOperations } from './hooks/useAlanOperations';
+import { useAlanTanimlaState } from './AlanTanimla/hooks/useAlanTanimlaState';
+import { useStepNavigation } from './AlanTanimla/hooks/useStepNavigation';
+import { useAlanOperations } from './AlanTanimla/hooks/useAlanOperations';
 
 // Components  
-import AlanBilgileriFormu from './components/AlanBilgileriFormu';
-import MesaiAyarlariFormu from './components/MesaiAyarlariFormu';
-import VardiyaEklemeFormu from './components/VardiyaEklemeFormu';
-import AlanOnizleme from './components/AlanOnizleme';
+import AlanBilgileriFormu from './AlanTanimla/components/AlanBilgileriFormu';
+import MesaiAyarlariFormu from './AlanTanimla/components/MesaiAyarlariFormu';
+import VardiyaEklemeFormu from './AlanTanimla/components/VardiyaEklemeFormu';
+import AlanOnizleme from './AlanTanimla/components/AlanOnizleme';
 
 // Types
-import { Area, Shift } from './types/AlanTanimla.types';
+import { Area, Shift } from './AlanTanimla/types/AlanTanimla.types';
 
 // Utils
-import { calculateDayHours } from './utils/alanHelpers';
+import { calculateDayHours } from './AlanTanimla/utils/alanHelpers';
 
 const AlanTanimla: React.FC = () => {
   const { showToast } = useToast();
@@ -52,7 +52,7 @@ const AlanTanimla: React.FC = () => {
   const handleDayHoursChange = (newDayHours: typeof state.dayHours) => {
     state.setDayHours(newDayHours);
     // Recalculate daily work hours based on total
-    const totalHours = Object.values(newDayHours).reduce((total, hours) => total + hours, 0);
+    const totalHours = Object.values(newDayHours).reduce((total: number, hours) => total + hours, 0);
     state.setDailyWorkHours(totalHours);
   };
 
