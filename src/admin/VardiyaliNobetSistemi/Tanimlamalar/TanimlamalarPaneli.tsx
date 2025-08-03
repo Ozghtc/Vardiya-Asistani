@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Users, Clock, UserPlus, Settings, UserCog } from 'lucide-react';
-import UnvanTanimlama from './UnvanTanimlama';
+import UnvanTanimlama from './UnvanTanimlama/UnvanTanimlama';
 import IzinTanimlama from './IzinTanimlama';
 import VardiyaTanimlama from './VardiyaTanimlama/VardiyaTanimlama';
 
