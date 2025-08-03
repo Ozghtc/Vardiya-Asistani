@@ -1,7 +1,7 @@
 import React from 'react';
 import { ArrowRight, ArrowLeft, Plus } from 'lucide-react';
-import { useToast } from '../../../../components/ui/ToastContainer';
-import { clearAllCache, clearTableCache } from '../../../../lib/api';
+import { useToast } from '../../../components/ui/ToastContainer';
+import { clearAllCache, clearTableCache } from '../../../lib/api';
 
 // Hooks
 import { useAlanTanimlaState } from './hooks/useAlanTanimlaState';
