@@ -1,3 +1,11 @@
+// 3-Layer API Key Configuration
+export const API_CONFIG = {
+  apiKey: import.meta.env.VITE_HZM_API_KEY,
+  userEmail: import.meta.env.VITE_HZM_USER_EMAIL,
+  projectPassword: import.meta.env.VITE_HZM_PROJECT_PASSWORD,
+  baseURL: import.meta.env.VITE_HZM_BASE_URL || 'https://hzmbackendveritabani-production.up.railway.app'
+};
+
 export const colorMap = {
   '#DC2626': 'Kırmızı',
   '#059669': 'Yeşil', 
@@ -26,24 +34,22 @@ export const colorMap = {
 } as const;
 
 export const weekDays = [
-  { value: 'pazartesi', label: 'Pazartesi' },
-  { value: 'sali', label: 'Salı' },
-  { value: 'carsamba', label: 'Çarşamba' },
-  { value: 'persembe', label: 'Perşembe' },
-  { value: 'cuma', label: 'Cuma' },
-  { value: 'cumartesi', label: 'Cumartesi' },
-  { value: 'pazar', label: 'Pazar' }
+  { value: 'Pazartesi', name: 'Pazartesi', short: 'Pzt' },
+  { value: 'Salı', name: 'Salı', short: 'Sal' },
+  { value: 'Çarşamba', name: 'Çarşamba', short: 'Çar' },
+  { value: 'Perşembe', name: 'Perşembe', short: 'Per' },
+  { value: 'Cuma', name: 'Cuma', short: 'Cum' },
+  { value: 'Cumartesi', name: 'Cumartesi', short: 'Cmt' },
+  { value: 'Pazar', name: 'Pazar', short: 'Paz' }
 ];
 
 export const vardiyalar = [
-  { name: '08:00-16:00', start: '08:00', end: '16:00' },
-  { name: '16:00-00:00', start: '16:00', end: '00:00' },
-  { name: '00:00-08:00', start: '00:00', end: '08:00' }
-];
-
-export const API_CONFIG = {
-  apiKey: import.meta.env.VITE_HZM_API_KEY,
-  userEmail: import.meta.env.VITE_HZM_USER_EMAIL,
-  projectPassword: import.meta.env.VITE_HZM_PROJECT_PASSWORD,
-  baseURL: import.meta.env.VITE_HZM_BASE_URL || 'https://hzmbackendveritabani-production.up.railway.app'
-}; 
+  { name: 'GÜNDÜZ', hours: '08:00 - 16:00', duration: 8 },
+  { name: 'AKŞAM', hours: '16:00 - 24:00', duration: 8 },
+  { name: 'GECE', hours: '00:00 - 08:00', duration: 8 },
+  { name: '24 SAAT', hours: '08:00 - 08:00', duration: 24 },
+  { name: 'SABAH', hours: '08:00 - 13:00', duration: 5 },
+  { name: 'ÖĞLE', hours: '13:00 - 18:00', duration: 5 },
+  { name: 'GEÇ', hours: '16:00 - 08:00', duration: 16 },
+  { name: 'GÜNDÜZ UZUN', hours: '08:00 - 00:00', duration: 16 }
+]; 

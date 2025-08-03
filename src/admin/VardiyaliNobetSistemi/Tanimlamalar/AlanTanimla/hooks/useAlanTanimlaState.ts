@@ -1,39 +1,46 @@
 import { useState } from 'react';
-import { AlanTanimlaHookReturn, Area, DayHours } from '../types/AlanTanimla.types';
+import { useCapitalization } from '../../../../../hooks/useCapitalization';
+import { Area, DayHours, AlanTanimlaState } from '../types/AlanTanimla.types';
 import { weekDays, vardiyalar } from '../constants/alanConstants';
-import { calculateDayHours } from '../utils/alanHelpers';
 
-export const useAlanTanimlaState = (): AlanTanimlaHookReturn => {
-  // Form state'leri
-  const [alanAdi, setAlanAdi] = useState('');
+export const useAlanTanimlaState = () => {
+  // Capitalization hook
+  const [name, handleNameChange] = useCapitalization('');
+  
+  // Basic form state
   const [description, setDescription] = useState('');
   const [selectedColor, setSelectedColor] = useState('');
   const [usedColors, setUsedColors] = useState<string[]>([]);
   
-  // UI state'leri
+  // UI state
   const [showShiftSettings, setShowShiftSettings] = useState(false);
   const [showShiftAddition, setShowShiftAddition] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [hasShownCompletionToast, setHasShownCompletionToast] = useState(false);
   
-  // Data state'leri
+  // Data state
   const [areas, setAreas] = useState<Area[]>([]);
   
-  // Mesai ayarları
+  // Work schedule state
   const [dailyWorkHours, setDailyWorkHours] = useState(40);
   const [selectedDays, setSelectedDays] = useState<string[]>(weekDays.map(day => day.value));
   const [dayHours, setDayHours] = useState<DayHours>(
-    calculateDayHours(40, weekDays.map(day => day.value))
+    weekDays.reduce((acc, day) => ({ ...acc, [day.value]: 40 }), {})
   );
   
-  // Vardiya ayarları
+  // Shift state
   const [selectedShift, setSelectedShift] = useState(vardiyalar[0].name);
   const [selectedShiftDays, setSelectedShiftDays] = useState<string[]>([]);
 
+  // Textarea handler
+  const handleDescriptionTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setDescription(e.target.value.toUpperCase());
+  };
+
   return {
-    // State values
-    alanAdi,
+    // Values
+    name,
     description,
     selectedColor,
     usedColors,
@@ -49,8 +56,9 @@ export const useAlanTanimlaState = (): AlanTanimlaHookReturn => {
     isProcessing,
     hasShownCompletionToast,
     
-    // State setters
-    setAlanAdi,
+    // Handlers
+    handleNameChange,
+    handleDescriptionTextareaChange,
     setDescription,
     setSelectedColor,
     setUsedColors,

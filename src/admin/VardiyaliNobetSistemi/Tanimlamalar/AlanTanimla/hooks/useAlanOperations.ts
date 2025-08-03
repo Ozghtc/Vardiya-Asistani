@@ -1,150 +1,281 @@
 import { useCallback } from 'react';
 import { useAuthContext } from '../../../../../contexts/AuthContext';
+import { useToast } from '../../../../../components/ui/ToastContainer';
 import { clearAllCache, clearTableCache } from '../../../../../lib/api';
 import { Area, Shift } from '../types/AlanTanimla.types';
-import { API_CONFIG } from '../constants/alanConstants';
-import { generateId } from '../utils/alanHelpers';
+import { API_CONFIG, vardiyalar, weekDays } from '../constants/alanConstants';
+import { resetFormState, resetToInitialState } from '../utils/alanHelpers';
 
 interface UseAlanOperationsProps {
+  // State values
+  name: string;
+  description: string;
+  selectedColor: string;
   areas: Area[];
+  selectedDays: string[];
+  dayHours: any;
+  dailyWorkHours: number;
+  selectedShift: string;
+  selectedShiftDays: string[];
+  isProcessing: boolean;
+  
+  // State setters
   setAreas: React.Dispatch<React.SetStateAction<Area[]>>;
+  setShowShiftSettings: (value: boolean) => void;
+  setShowShiftAddition: (value: boolean) => void;
+  setSelectedShiftDays: React.Dispatch<React.SetStateAction<string[]>>;
   setIsSaving: (value: boolean) => void;
   setIsProcessing: (value: boolean) => void;
-  setUsedColors: React.Dispatch<React.SetStateAction<string[]>>;
-  showToast: (message: string, type: 'success' | 'error') => void;
+  setHasShownCompletionToast: (value: boolean) => void;
+  handleNameChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  setDescription: (value: string) => void;
+  setSelectedColor: (value: string) => void;
+  setSelectedDays: React.Dispatch<React.SetStateAction<string[]>>;
+  setDailyWorkHours: (value: number) => void;
+  setDayHours: any;
+  setSelectedShift: (value: string) => void;
 }
 
-export const useAlanOperations = ({
-  areas,
-  setAreas,
-  setIsSaving,
-  setIsProcessing,
-  setUsedColors,
-  showToast
-}: UseAlanOperationsProps) => {
-  
+export const useAlanOperations = (props: UseAlanOperationsProps) => {
   const { user } = useAuthContext();
-  
-  const addArea = useCallback((newArea: Omit<Area, 'id'>) => {
-    const area: Area = {
-      ...newArea,
-      id: generateId()
-    };
+  const { showToast } = useToast();
+
+  const handleAddArea = useCallback(() => {
+    if (!props.name.trim() || !props.selectedColor || props.isProcessing) {
+      if (props.isProcessing) {
+        alert('İşlem devam ediyor, lütfen bekleyin!');
+        return;
+      }
+      alert('Lütfen alan adı ve renk seçin!');
+      return;
+    }
+
+    props.setIsProcessing(true);
     
-    setAreas(prevAreas => [...prevAreas, area]);
-    setUsedColors(prevColors => [...prevColors, area.color]);
-  }, [setAreas, setUsedColors]);
-  
-  const removeArea = useCallback((areaId: string) => {
-    setAreas(prevAreas => {
-      const updatedAreas = prevAreas.filter(area => area.id !== areaId);
-      const updatedColors = updatedAreas.map(area => area.color);
-      setUsedColors(updatedColors);
+    const newArea: Area = {
+      id: Date.now().toString(),
+      name: props.name.trim(),
+      color: props.selectedColor,
+      description: props.description.trim(),
+      dailyHours: props.dailyWorkHours,
+      activeDays: [...props.selectedDays],
+      dayHours: { ...props.dayHours },
+      shifts: []
+    };
+
+    props.setAreas([...props.areas, newArea]);
+    props.setShowShiftSettings(true);
+    
+    // Form reset
+    props.handleNameChange({ target: { value: '' } } as React.ChangeEvent<HTMLInputElement>);
+    props.setDescription('');
+    props.setSelectedColor('');
+    
+    props.setIsProcessing(false);
+  }, [props]);
+
+  const handleAddShiftSettings = useCallback(() => {
+    if (props.selectedDays.length === 0 || props.isProcessing) {
+      if (props.isProcessing) {
+        alert('İşlem devam ediyor, lütfen bekleyin!');
+        return;
+      }
+      alert('Lütfen en az bir gün seçin!');
+      return;
+    }
+
+    props.setIsProcessing(true);
+
+    // Son eklenen alanı güncelle
+    props.setAreas(prevAreas => {
+      const updatedAreas = [...prevAreas];
+      if (updatedAreas.length > 0) {
+        const lastArea = updatedAreas[updatedAreas.length - 1];
+        lastArea.activeDays = [...props.selectedDays];
+        lastArea.dayHours = { ...props.dayHours };
+        lastArea.dailyHours = props.dailyWorkHours;
+        lastArea.shifts = [];
+      }
       return updatedAreas;
     });
-  }, [setAreas, setUsedColors]);
-  
-  const addShiftToArea = useCallback((areaId: string, shift: Shift) => {
-    setAreas(prevAreas => 
-      prevAreas.map(area => 
-        area.id === areaId 
-          ? { ...area, shifts: [...area.shifts, shift] }
-          : area
-      )
-    );
-  }, [setAreas]);
-  
-  const removeShiftFromArea = useCallback((areaId: string, shiftId: string) => {
-    setAreas(prevAreas => 
-      prevAreas.map(area => 
-        area.id === areaId 
-          ? { ...area, shifts: area.shifts.filter(shift => shift.id !== shiftId) }
-          : area
-      )
-    );
-  }, [setAreas]);
-  
-  const saveToDatabase = useCallback(async () => {
-    if (!user?.kurum_id || !user?.departman_id || !user?.birim_id) {
-      showToast('Kullanıcı bilgileri eksik!', 'error');
+
+    props.setShowShiftAddition(true);
+    props.setSelectedShiftDays([...props.selectedDays]);
+    
+    props.setIsProcessing(false);
+  }, [props]);
+
+  const handleAddShift = useCallback(() => {
+    if (props.selectedShiftDays.length === 0 || props.isProcessing) {
+      if (props.isProcessing) {
+        alert('İşlem devam ediyor, lütfen bekleyin!');
+        return;
+      }
+      alert('Lütfen en az bir gün seçin!');
       return;
     }
-    
-    if (areas.length === 0) {
-      showToast('Kaydedilecek alan bulunamadı!', 'error');
+
+    props.setIsProcessing(true);
+
+    const shift = vardiyalar.find(v => v.name === props.selectedShift);
+    if (!shift) {
+      props.setIsProcessing(false);
       return;
     }
+
+    const newShift: Shift = {
+      id: Date.now().toString(),
+      name: shift.name,
+      hours: shift.hours,
+      duration: shift.duration,
+      days: [...props.selectedShiftDays]
+    };
+
+    // Son eklenen alana vardiyayı ekle
+    props.setAreas(prevAreas => {
+      const updatedAreas = [...prevAreas];
+      if (updatedAreas.length > 0) {
+        const lastArea = updatedAreas[updatedAreas.length - 1];
+        lastArea.shifts = [...lastArea.shifts, newShift];
+      }
+      return updatedAreas;
+    });
+
+    // Toast notification göster
+    showToast({
+      type: 'success',
+      title: 'Vardiya başarıyla eklendi!',
+      message: `${shift.name} vardiyası seçilen günlere eklendi.`,
+      duration: 3000
+    });
     
-    setIsSaving(true);
-    setIsProcessing(true);
+    props.setIsProcessing(false);
+  }, [props, showToast]);
+
+  const handleSaveToDatabase = useCallback(async () => {
+    if (props.areas.length === 0 || props.isProcessing) {
+      if (props.isProcessing) {
+        alert('İşlem devam ediyor, lütfen bekleyin!');
+        return;
+      }
+      alert('Kaydedilecek alan bulunamadı!');
+      return;
+    }
+
+    // User bilgileri kontrolü
+    if (!user || !user.kurum_id || !user.departman_id || !user.birim_id) {
+      alert('Kullanıcı bilgileri eksik. Lütfen sayfayı yenileyin.');
+      props.setIsSaving(false);
+      props.setIsProcessing(false);
+      return;
+    }
+
+    // API configuration kontrolü
+    if (!API_CONFIG.apiKey || !API_CONFIG.userEmail || !API_CONFIG.projectPassword) {
+      alert('API ayarları eksik. Lütfen sistem yöneticisine başvurun.');
+      props.setIsSaving(false);
+      props.setIsProcessing(false);
+      return;
+    }
+
+    props.setIsSaving(true);
+    props.setIsProcessing(true);
     
     try {
-      // Clear cache before saving
-      clearAllCache();
-      clearTableCache('72');
+      const area = props.areas[props.areas.length - 1];
       
-      for (const area of areas) {
-        // Prepare data for API
-        const alanData = {
-          alan_adi: area.name,
-          aciklama: area.description,
-          renk: area.color,
-          gunluk_saatler: JSON.stringify(area.dayHours),
-          aktif_gunler: JSON.stringify(area.activeDays),
-          vardiyalar: JSON.stringify(area.shifts),
-          kurum_id: user.kurum_id,
-          departman_id: user.departman_id,
-          birim_id: user.birim_id,
-          aktif_mi: true
-        };
-        
-        // Save to database
-        const response = await fetch('/.netlify/functions/api-proxy', {
+      const data = {
+        alan_adi: area.name,
+        renk: area.color,
+        aciklama: area.description,
+        gunluk_saatler: JSON.stringify(area.dayHours),
+        aktif_gunler: JSON.stringify(area.activeDays),
+        vardiyalar: JSON.stringify(area.shifts),
+        kullanici_id: user?.id,
+        kurum_id: user?.kurum_id,
+        departman_id: user?.departman_id,
+        birim_id: user?.birim_id
+      };
+
+      const response = await fetch('/.netlify/functions/api-proxy', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          path: '/api/v1/data/table/18/rows',
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            path: '/api/v1/data/table/72/rows',
-            method: 'POST',
-            data: alanData,
-            apiKey: API_CONFIG.apiKey,
-            userEmail: API_CONFIG.userEmail,
-            projectPassword: API_CONFIG.projectPassword
-          })
+          body: data,
+          apiKey: API_CONFIG.apiKey,
+          userEmail: API_CONFIG.userEmail,
+          projectPassword: API_CONFIG.projectPassword
+        })
+      });
+
+      if (response.ok) {
+        clearTableCache('18');
+        clearAllCache();
+        
+        showToast({
+          type: 'success',
+          title: 'Alan başarıyla kaydedildi!',
+          message: 'Tüm günlere vardiya başarılı bir şekilde eklendi.',
+          duration: 4000
         });
         
-        if (!response.ok) {
-          throw new Error(`API request failed: ${response.status}`);
+        // Reset to initial state
+        const resetState = resetToInitialState();
+        props.setAreas(resetState.areas);
+        props.setShowShiftSettings(resetState.showShiftSettings);
+        props.setShowShiftAddition(resetState.showShiftAddition);
+        props.setSelectedDays(resetState.selectedDays);
+        props.setDayHours(resetState.dayHours);
+        props.setDailyWorkHours(resetState.dailyWorkHours);
+        props.setSelectedShiftDays(resetState.selectedShiftDays);
+        props.setSelectedShift(resetState.selectedShift);
+      } else {
+        let errorMessage = 'Bilinmeyen hata';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorData.error || 'API hatası';
+        } catch (parseError) {
+          errorMessage = `HTTP ${response.status}: ${response.statusText}`;
         }
         
-        const result = await response.json();
-        
-        if (!result.success) {
-          throw new Error(result.message || 'Kaydetme işlemi başarısız');
-        }
+        showToast({
+          type: 'error',
+          title: 'Kaydetme hatası!',
+          message: errorMessage,
+          duration: 5000
+        });
+      }
+    } catch (error: any) {
+      let errorMessage = 'Bilinmeyen hata';
+      
+      if (error?.name === 'TypeError' && error?.message?.includes('Failed to fetch')) {
+        errorMessage = 'Ağ bağlantısı hatası. Lütfen internet bağlantınızı kontrol edin.';
+      } else if (error?.name === 'AbortError') {
+        errorMessage = 'İstek zaman aşımına uğradı. Lütfen tekrar deneyin.';
+      } else {
+        errorMessage = error?.message || 'Bilinmeyen hata';
       }
       
-      showToast(`${areas.length} alan başarıyla kaydedildi!`, 'success');
-      
-      // Clear cache after saving
-      clearAllCache();
-      clearTableCache('72');
-      
-    } catch (error) {
-      console.error('Save error:', error);
-      showToast('Kaydetme sırasında hata oluştu!', 'error');
+      showToast({
+        type: 'error',
+        title: 'Kaydetme hatası!',
+        message: `Kaydetme sırasında bir hata oluştu: ${errorMessage}`,
+        duration: 5000
+      });
     } finally {
-      setIsSaving(false);
-      setIsProcessing(false);
+      props.setIsSaving(false);
+      props.setIsProcessing(false);
     }
-  }, [areas, user, setIsSaving, setIsProcessing, showToast]);
-  
+  }, [props, user, showToast]);
+
   return {
-    addArea,
-    removeArea,
-    addShiftToArea,
-    removeShiftFromArea,
-    saveToDatabase
+    handleAddArea,
+    handleAddShiftSettings,
+    handleAddShift,
+    handleSaveToDatabase
   };
 }; 

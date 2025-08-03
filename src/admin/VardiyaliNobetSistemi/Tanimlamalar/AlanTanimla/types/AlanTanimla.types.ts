@@ -16,14 +16,13 @@ export interface DayHours {
 export interface Shift {
   id: string;
   name: string;
-  start: string;
-  end: string;
+  hours: string;
+  duration: number;
   days: string[];
-  hours: number;
 }
 
 export interface AlanTanimlaState {
-  alanAdi: string;
+  name: string;
   description: string;
   selectedColor: string;
   usedColors: string[];
@@ -38,24 +37,4 @@ export interface AlanTanimlaState {
   isSaving: boolean;
   isProcessing: boolean;
   hasShownCompletionToast: boolean;
-}
-
-export interface AlanTanimlaActions {
-  setAlanAdi: (value: string) => void;
-  setDescription: (value: string) => void;
-  setSelectedColor: (value: string) => void;
-  setUsedColors: React.Dispatch<React.SetStateAction<string[]>>;
-  setShowShiftSettings: (value: boolean) => void;
-  setShowShiftAddition: (value: boolean) => void;
-  setAreas: React.Dispatch<React.SetStateAction<Area[]>>;
-  setDailyWorkHours: (value: number) => void;
-  setSelectedDays: React.Dispatch<React.SetStateAction<string[]>>;
-  setDayHours: (value: DayHours) => void;
-  setSelectedShift: (value: string) => void;
-  setSelectedShiftDays: React.Dispatch<React.SetStateAction<string[]>>;
-  setIsSaving: (value: boolean) => void;
-  setIsProcessing: (value: boolean) => void;
-  setHasShownCompletionToast: (value: boolean) => void;
-}
-
-export type AlanTanimlaHookReturn = AlanTanimlaState & AlanTanimlaActions; 
+} 

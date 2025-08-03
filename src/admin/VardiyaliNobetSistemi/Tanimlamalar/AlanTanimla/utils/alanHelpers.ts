@@ -2,53 +2,73 @@ import { DayHours } from '../types/AlanTanimla.types';
 import { weekDays } from '../constants/alanConstants';
 
 /**
- * Günlük saatleri hesaplar
+ * Gün geçiş işlemleri
  */
-export const calculateDayHours = (totalHours: number, selectedDays: string[]): DayHours => {
-  const dayHours: DayHours = {};
-  const hoursPerDay = selectedDays.length > 0 ? totalHours / selectedDays.length : 0;
-  
+export const toggleDay = (day: string, selectedDays: string[]): string[] => {
+  return selectedDays.includes(day) 
+    ? selectedDays.filter(d => d !== day) 
+    : [...selectedDays, day];
+};
+
+export const toggleAllDays = (selectedDays: string[]): string[] => {
+  return selectedDays.length === weekDays.length 
+    ? [] 
+    : weekDays.map(day => day.value);
+};
+
+export const toggleShiftDay = (day: string, selectedShiftDays: string[]): string[] => {
+  return selectedShiftDays.includes(day) 
+    ? selectedShiftDays.filter(d => d !== day) 
+    : [...selectedShiftDays, day];
+};
+
+/**
+ * Saat hesapları
+ */
+export const updateAllDaysHours = (dailyWorkHours: number, dayHours: DayHours): DayHours => {
+  const newDayHours = { ...dayHours };
   weekDays.forEach(day => {
-    dayHours[day.value] = selectedDays.includes(day.value) ? hoursPerDay : 0;
+    newDayHours[day.value] = dailyWorkHours;
   });
-  
-  return dayHours;
+  return newDayHours;
 };
 
-/**
- * Toplam saatleri hesaplar
- */
-export const calculateTotalHours = (dayHours: DayHours): number => {
-  return Object.values(dayHours).reduce((total, hours) => total + hours, 0);
-};
-
-/**
- * Gün adlarını formatlar
- */
-export const formatDayNames = (days: string[]): string => {
-  const dayMap: { [key: string]: string } = {
-    'pazartesi': 'Pzt',
-    'sali': 'Sal',
-    'carsamba': 'Çar',
-    'persembe': 'Per',
-    'cuma': 'Cum',
-    'cumartesi': 'Cmt',
-    'pazar': 'Paz'
+export const updateDayHour = (day: string, hours: number, dayHours: DayHours): DayHours => {
+  return {
+    ...dayHours,
+    [day]: hours
   };
-  
-  return days.map(day => dayMap[day] || day).join(', ');
 };
 
 /**
- * Renk kullanımını kontrol eder
+ * Renk yardımcıları
  */
 export const isColorUsed = (color: string, usedColors: string[]): boolean => {
   return usedColors.includes(color);
 };
 
 /**
- * Unique ID oluşturur
+ * Form reset helpers
  */
-export const generateId = (): string => {
-  return Date.now().toString(36) + Math.random().toString(36).substr(2);
+export const resetFormState = () => {
+  return {
+    name: '',
+    description: '',
+    selectedColor: '',
+    selectedShiftDays: [],
+    hasShownCompletionToast: false
+  };
+};
+
+export const resetToInitialState = () => {
+  return {
+    areas: [],
+    showShiftSettings: false,
+    showShiftAddition: false,
+    selectedDays: weekDays.map(day => day.value),
+    dayHours: weekDays.reduce((acc, day) => ({ ...acc, [day.value]: 40 }), {}),
+    dailyWorkHours: 40,
+    selectedShiftDays: [],
+    selectedShift: 'GÜNDÜZ'
+  };
 }; 
